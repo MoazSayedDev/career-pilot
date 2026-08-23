@@ -1,214 +1,724 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form';
-import {createCertificate} from '../api/certificate.service'
-import SkillForm from '@/services/skill/components/SkillForm';
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { createCertificate , getCertificates , updateCertificate , deleteCertificate } from "../api/certificate.service";
+// const initialCertificates = [
+//   {
+//     id: crypto.randomUUID(),
+//     name: "Front-End",
+//     issuer: "NTI",
+//     issueDate: "2025-06-20",
+//     expirationDate: "2025-12-20",
+//     credentialId: "qwfdsd",
+//     credentialUrl: "https://example.com",
+//   },
+// ];
 
-
-
-
-
+const emptyCertificate = {
+  name: "",
+  issuer: "",
+  issueDate: "",
+  expirationDate: "",
+  credentialId: "",
+  credentialUrl: "",
+};
 
 export default function Form() {
+  const [certificates, setCertificates] = useState("");
 
-//  const [dataCertificate,setDataCertificate]=useState({name:"",organization:"",issueDate:"",expirationdate:"",url:""})
-// console.log(dataCertificate);
-const [cer , setcer]=useState()
-const [loading,setLoading]=useState(false)
-// const [dataCertificate,setDataCertificate]=useState([{name:"Front-End",issuer:"NTI",issueData:"20/6/2025",expirationDate:"323",credentialId:"qwfdsd"}])
-const {register, handleSubmit,formState:{errors},reset}=useForm()
-const [dialog,setdialog]=useState({edit:false,delete:false})
+  const [loading, setLoading] = useState(false);
 
-console.log(dialog);
+  const [editingCertificate, setEditingCertificate] = useState(null);
+  const [deletingCertificate, setDeletingCertificate] = useState(null);
+  const [viewingCertificate, setViewingCertificate] = useState(null);
+  
+  
+  // =========================
+  // Add Form
+  // =========================
 
-// add certificate >>>>>>
-const onSubmit=async (data)=>{
-    
-    setLoading(true)
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm({
+    defaultValues: emptyCertificate,
+  });
+
+  // =========================
+  // Edit Form
+  // =========================
+
+  const {
+    register: registerEdit,
+    handleSubmit: handleSubmitEdit,
+    reset: resetEdit,
+    formState: { errors: errorsEdit },
+  } = useForm({
+    defaultValues: emptyCertificate,
+  });
+
+   // =========================
+  // Get Certificate
+  // =========================
+
+  useEffect(()=>{
+  const getData=async ()=>{
     try{
-    const response = await createCertificate(data)
-    console.log(response)
-    setcer(response.data)
+      const data=await getCertificates()
+      setCertificates(data)
+    }catch (error) {
+      console.log("error:", error )
     }
-    catch(error) {
-        console.error('error:',error)
-    
-}finally{
-    setLoading(false)
-}
-
-}
-
-
-
- 
-// get certificate >>>>>
-
-useEffect(()=>{
-  const fetchCertificate=async ()=>{
-      setLoading(true)
-      try{
-       const response= await getCertificates();
-      
-      setcer(response)
-      
-      }
-      catch(error) {
-          console.error('error:',error)
-      
-  }finally{
-      setLoading(false)
   }
-}
-  fetchCertificate();
- },[])
+  getData()
+},[])
 
-// const  handleView=(id)=>{
+  // =========================
+  // Add Certificate
+  // =========================
 
-// }
+ const onSubmit = async (data) => {
+  const newCertificate = {
+    ...data,
+    id: crypto.randomUUID(),
+  };
 
-// const  handleEdit=(certificate)=>{
-// reset({
-//     name:certificate.name,
-//     issuer:certificate.issuer,
+  try {
+    await createCertificate(newCertificate);
 
-// })
+    setCertificates((prev) => [...prev, newCertificate]);
+    
+    reset();
+  } catch (error) {
+    console.error(error);
+    alert("Error creating certificate");
+  }
+};
 
-// }
+  // =========================
+  // Open Edit Modal
+  // =========================
 
-// const  handleDelete=(id)=>{
-//         const prev =dataCertificate.filter((e)=>{return e.credentialId!=id}) 
-//         setDataCertificate(prev)
-// }
+  const handleEdit = (certificate) => {
+    setEditingCertificate(certificate);
 
+    resetEdit({
+      name: certificate.name,
+      issuer: certificate.issuer,
+      issueDate: certificate.issueDate,
+      expirationDate: certificate.expirationDate,
+      credentialId: certificate.credentialId,
+      credentialUrl: certificate.credentialUrl,
+    });
+  };
+
+  // =========================
+  // Save Edit
+  // =========================
+
+  const handleSaveEdit = async (data) => {
+  try {
+    await updateCertificate(editingCertificate.id, data);
+
+    setCertificates((prev) =>
+      prev.map((certificate) =>
+        certificate.id === editingCertificate.id
+          ? {
+              ...certificate,
+              ...data,
+            }
+          : certificate
+      )
+    );
+
+    setEditingCertificate(null);
+    resetEdit();
+  } catch (error) {
+    console.error(error);
+    alert("Error updating certificate");
+  }
+};
+
+  // =========================
+  // Delete
+  // =========================
+
+  const handleDelete = (certificate) => {
+    setDeletingCertificate(certificate);
+  };
+
+  const confirmDelete = async () => {
+  try {
+    await deleteCertificate(deletingCertificate.id);
+
+    setCertificates((prev) =>
+      prev.filter(
+        (certificate) => certificate.id !== deletingCertificate.id
+      )
+    );
+
+    setDeletingCertificate(null);
+
+    alert("Certificate deleted successfully");
+  } catch (error) {
+    console.error(error);
+    alert("Error deleting certificate");
+  }
+};
+
+  // =========================
+  // View
+  // =========================
+
+  const handleView = (certificate) => {
+    setViewingCertificate(certificate);
+  };
 
   return (
-loading ?<div className='flex justify-center  items-center bg-amber-300'>Loading......</div>:
-<>
-    <div className='p-10 flex gap-10'>
-        {/* <div className='p-6 w-70'>
+    <>
+      {loading ? (
+        <div className="flex min-h-screen items-center justify-center">
+          Loading...
+        </div>
+      ) : (
+        <div className="flex gap-10 p-10">
+          {/* =========================
+              ADD CERTIFICATE
+          ========================= */}
+
+          <div className="w-1/2 p-10">
             <div>
-                <p className='text-[12px]  font-bold'> RESUME PROFILE</p>
-                <p className='  font-bold'>{} % Complete</p>
+              <h2 className="text-[22px] font-extrabold">
+                Add Certificate
+              </h2>
 
+              <p className="text-[14px] text-gray-600">
+                List your academic degrees, certifications, or major
+                self-learning milestones.
+              </p>
             </div>
-            <hr />
-            <div>
-            <Link href=""></Link>
-            </div>
-        </div> */}
 
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="flex flex-col gap-4 pt-6"
+            >
+              {/* Name */}
 
+              <div>
+                <label htmlFor="name">Name Certificate</label>
 
+                <input
+                  id="name"
+                  type="text"
+                  {...register("name", {
+                    required: "Name is required",
+                    minLength: {
+                      value: 3,
+                      message: "Name must be at least 3 characters",
+                    },
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
 
-        <div className='p-10 w-[50%]'>
-            <form action="" onSubmit={handleSubmit(onSubmit)}>
+                {errors.name && (
+                  <p className="text-sm text-red-600">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Issuer */}
+
+              <div>
+                <label htmlFor="issuer">Issuing Organization</label>
+
+                <input
+                  id="issuer"
+                  type="text"
+                  {...register("issuer", {
+                    required: "Issuer is required",
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+
+                {errors.issuer && (
+                  <p className="text-sm text-red-600">
+                    {errors.issuer.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Dates */}
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <p className='text-[22px] font-extrabold'>Add Certificate</p>
-                    <p className='text-[14px]'>List your academic degrees, certifications, or major self-learning milestones</p>
+                  <label htmlFor="issueDate">Issue Date</label>
+
+                  <input
+                    id="issueDate"
+                    type="date"
+                    {...register("issueDate", {
+                      required: "Issue date is required",
+                    })}
+                    className="w-full rounded border border-gray-300 p-2"
+                  />
+
+                  {errors.issueDate && (
+                    <p className="text-sm text-red-600">
+                      {errors.issueDate.message}
+                    </p>
+                  )}
                 </div>
 
-                <div className='flex flex-col gap-2 pt-4'>
-                    
-                    <label htmlFor="Name">Name Certificate</label>
-                    <input id='Name' type="text" {...register("name",{required:"name is required" ,minLength:{value:3,message:"Username mudt be at least 3 characters"}})}className='border border-gray-300 rounded p-1'/>
-                    {errors.name&& <p className='text-red-600 pt-0 mt-0'>{errors.name.message}</p>}
-                    <label htmlFor="">Issuing Organization </label>
-                    <input type="text" {...register("issuer" ,{required:true})} className='border border-gray-300 rounded  p-1'/>
-                    {errors.issuer && <p className='text-red-600'>issuer is required</p>}
-                    <div className='flex  justify-between'>
-                        <div className=''>
-                    <label htmlFor="">Issue Date</label><br />
-                    <input type="date" {...register("issueData" ,{required:true})} className='border border-gray-300 rounded p-1 w-full'/></div>
-                    {errors.issueData&& <p className='text-red-600'>issue Data is required</p>}
-                    <div className=''>
-                    <label htmlFor="">Expiration Date</label><br />
-                    <input type="date" {...register("expirationData" ,{required:true})} className='border border-gray-300 rounded p-1 w-full'/>
-                    {errors.expirationDate&& <p className='text-red-600'>expiration date is required</p>}
-                    </div></div>
+                <div>
+                  <label htmlFor="expirationDate">
+                    Expiration Date
+                  </label>
 
-                    <label htmlFor="">Credential ID</label>
-                    <input type="text" {...register("credentialId" ,{})} className='border border-gray-300 rounded p-1'/>
-                 
-                    <label htmlFor="">Credential URL</label>
-                    <input type="url" {...register("credentialUrl" ,{required:true})} className='border border-gray-300 rounded p-1'/>
-                    {errors.url&& <p className='text-red-600'>URL is required</p>}
+                  <input
+                    id="expirationDate"
+                    type="date"
+                    {...register("expirationDate", {
+                      required: "Expiration date is required",
+                    })}
+                    className="w-full rounded border border-gray-300 p-2"
+                  />
+
+                  {errors.expirationDate && (
+                    <p className="text-sm text-red-600">
+                      {errors.expirationDate.message}
+                    </p>
+                  )}
                 </div>
-                <div className='flex justify-center pt-8'>
-                <button className='bg-gray-500 p-3   rounded-md'>save</button></div>
+              </div>
+
+              {/* Credential ID */}
+
+              <div>
+                <label htmlFor="credentialId">
+                  Credential ID
+                </label>
+
+                <input
+                  id="credentialId"
+                  type="text"
+                  {...register("credentialId")}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+              </div>
+
+              {/* Credential URL */}
+
+              <div>
+                <label htmlFor="credentialUrl">
+                  Credential URL
+                </label>
+
+                <input
+                  id="credentialUrl"
+                  type="url"
+                  {...register("credentialUrl", {
+                    required: "Credential URL is required",
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+
+                {errors.credentialUrl && (
+                  <p className="text-sm text-red-600">
+                    {errors.credentialUrl.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-center pt-4">
+                <button
+                  type="submit"
+                  className="rounded-md bg-gray-700 px-6 py-3 text-white hover:bg-gray-800 cursor-pointer"
+                >
+                  Save
+                </button>
+              </div>
             </form>
+          </div>
 
+          {/* =========================
+              CERTIFICATES LIST
+          ========================= */}
 
-        </div>
-
-        <div className='p-10 w-3xl'>
-            <div className='pb-4'>
-                <p className='text-[22px] font-extrabold'>
-                    Your Certificate ({dataCertificate.length})
-                </p>
+          <div className="w-1/2 p-10">
+            <div className="pb-4">
+              <h2 className="text-[22px] font-extrabold">
+                Your Certificates ({certificates.length})
+              </h2>
             </div>
 
-            {cer.length>0?
-                cer.map((e)=>(
-                    <div key={e.credentialId} className='border rounded-md border-gray-300 flex items-center mt-4 p-2'>
-                        <div className='h-28 w-28 flex-1'></div>
-                        <div className='flex-4 '>
-                            <p className='text-xl font-bold'>{e.name}</p>
-                            <p><span></span>{e.issuer}</p>
-                            <p><span></span>{e.issueData}</p>
-                            {e.credentialId&&<p><span></span>{e.credentialId}</p>}
-                            
-                        </div>
-                        <div className='flex flex-1 gap-1 flex-col'>
-                            <button className='p-1 border rounded-md border-gray-300 text-[14px] font-bold' onClick={()=>handleView()}>View</button>
-                            <button className='p-1 border rounded-md border-gray-300 text-[14px] font-bold' onClick={()=>handleEdit(e)}>Edit</button>
-                            <button className='p-1 border rounded-md border-gray-300 text-[14px] font-bold' onClick={()=>handleEdit(e)}>Delete</button>
-                        </div>
+            {certificates.length === 0 ? (
+              <p className="text-gray-500">
+                No certificates yet.
+              </p>
+            ) : (
+              <div className="flex flex-col gap-4">
+                {certificates.map((certificate) => (
+                  <div
+                    key={certificate.id}
+                    className="flex items-center gap-4 rounded-md border border-gray-300 p-4"
+                  >
+                    {/* Image Placeholder */}
 
+                    <div className="h-24 w-24 shrink-0 rounded bg-gray-100" />
 
-                    </div>)):<>not certificate</>}
-                    
-                    
-            
+                    {/* Certificate Info */}
+
+                    <div className="flex-1">
+                      <p className="text-xl font-bold">
+                        {certificate.name}
+                      </p>
+
+                      <p className="text-gray-600">
+                        {certificate.issuer}
+                      </p>
+
+                      <p className="text-sm text-gray-500">
+                        {certificate.issueDate}
+                      </p>
+
+                      {certificate.credentialId && (
+                        <p className="text-sm text-gray-500">
+                          ID: {certificate.credentialId}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+
+                    <div className="flex flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleView(certificate)}
+                        className="rounded-md border border-gray-300 px-4 py-1 text-sm font-bold hover:bg-gray-100 cursor-pointer"
+                      >
+                        View
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(certificate)}
+                        className="rounded-md border border-gray-300 px-4 py-1 text-sm font-bold hover:bg-gray-100 cursor-pointer"
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(certificate)}
+                        className="rounded-md border border-red-300 px-4 py-1 text-sm font-bold text-red-600 hover:bg-red-50 cursor-pointer"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+      )}
 
-       
-    </div>
-     {/* {dialog.edit&&<div className='fixed w-full h-full bg-amber-200 z-50 flex' style={{backgroundColor:"rgba(0,0,0,.4)"}}>
-                        <dialog open={dialog.edit} onClose={dialog.edit} className='h-200 w-200 bg-amber-50 m-auto  self-center  shadow-2xl rounded-2xl' >
-                            <div className='h-20 flex justify-center items-center font-extrabold text-3xl '>Edit Certificate</div>
-                            <div className='p-5'>
-                             <div className='flex flex-col gap-2 pt-4'>
-                    
-                    <label htmlFor="Name">Name Certificate</label>
-                    <input id='Name' type="text" {...register("name",{required:"name is required" ,minLength:{value:3,message:"Username mudt be at least 3 characters"}})}className='border border-gray-300 rounded p-1'/>
-                    {errors.name&& <p className='text-red-600 pt-0 mt-0'>{errors.name.message}</p>}
-                    <label htmlFor="">Issuing Organization </label>
-                    <input type="text" {...register("issuer" ,{required:true})} className='border border-gray-300 rounded  p-1'/>
-                    {errors.issuer && <p className='text-red-600'>issuer is required</p>}
-                    <div className='flex  justify-between'>
-                        <div className=''>
-                    <label htmlFor="">Issue Date</label><br />
-                    <input type="date" {...register("issueData" ,{required:true})} className='border border-gray-300 rounded p-1 w-full'/></div>
-                    {errors.issueData&& <p className='text-red-600'>issue Data is required</p>}
-                    <div className=''>
-                    <label htmlFor="">Expiration Date</label><br />
-                    <input type="date" {...register("expirationData" ,{required:true})} className='border border-gray-300 rounded p-1 w-full'/>
-                    {errors.expirationDate&& <p className='text-red-600'>expiration date is required</p>}
-                    </div></div>
+      {/* ==================================================
+          EDIT MODAL
+      ================================================== */}
 
-                    <label htmlFor="">Credential ID</label>
-                    <input type="text" {...register("credentialId" ,{})} className='border border-gray-300 rounded p-1'/>
-                 
-                    <label htmlFor="">Credential URL</label>
-                    <input type="url" {...register("credentialUrl" ,{required:true})} className='border border-gray-300 rounded p-1'/>
-                    {errors.url&& <p className='text-red-600'>URL is required</p>}
+      {editingCertificate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setEditingCertificate(null)}
+        >
+          <div
+            className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="mb-6 text-center text-3xl font-extrabold">
+              Edit Certificate
+            </h2>
+
+            <form
+              onSubmit={handleSubmitEdit(handleSaveEdit)}
+              className="flex flex-col gap-4"
+            >
+              {/* Name */}
+
+              <div>
+                <label htmlFor="edit-name">
+                  Name Certificate
+                </label>
+
+                <input
+                  id="edit-name"
+                  type="text"
+                  {...registerEdit("name", {
+                    required: "Name is required",
+                    minLength: {
+                      value: 3,
+                      message: "Name must be at least 3 characters",
+                    },
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+
+                {errorsEdit.name && (
+                  <p className="text-sm text-red-600">
+                    {errorsEdit.name.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Issuer */}
+
+              <div>
+                <label htmlFor="edit-issuer">
+                  Issuing Organization
+                </label>
+
+                <input
+                  id="edit-issuer"
+                  type="text"
+                  {...registerEdit("issuer", {
+                    required: "Issuer is required",
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+
+                {errorsEdit.issuer && (
+                  <p className="text-sm text-red-600">
+                    {errorsEdit.issuer.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Dates */}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="edit-issueDate">
+                    Issue Date
+                  </label>
+
+                  <input
+                    id="edit-issueDate"
+                    type="date"
+                    {...registerEdit("issueDate", {
+                      required: "Issue date is required",
+                      
+                    })}
+                    className="w-full rounded border border-gray-300 p-2"
+                  />
+
+                  {errorsEdit.issueDate && (
+                    <p className="text-sm text-red-600">
+                      {errorsEdit.issueDate.message}
+                    </p>
+                  )}
                 </div>
-                            </div>
-                            <button onClick={()=>setdialog({...dialog,edit:false})}>cancel</button>
-                            <button type='submit'>Save change</button>
-                        </dialog></div>} */}
-                    </>
-)
+
+                <div>
+                  <label htmlFor="edit-expirationDate">
+                    Expiration Date
+                  </label>
+
+                  <input
+                    id="edit-expirationDate"
+                    type="date"
+                    {...registerEdit("expirationDate", {
+                      required: "Expiration date is required",
+                    })}
+                    className="w-full rounded border border-gray-300 p-2"
+                  />
+
+                  {errorsEdit.expirationDate && (
+                    <p className="text-sm text-red-600">
+                      {errorsEdit.expirationDate.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Credential ID */}
+
+              <div>
+                <label htmlFor="edit-credentialId">
+                  Credential ID
+                </label>
+
+                <input
+                  id="edit-credentialId"
+                  type="text"
+                  {...registerEdit("credentialId")}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+              </div>
+
+              {/* Credential URL */}
+
+              <div>
+                <label htmlFor="edit-credentialUrl">
+                  Credential URL
+                </label>
+
+                <input
+                  id="edit-credentialUrl"
+                  type="url"
+                  {...registerEdit("credentialUrl", {
+                    required: "Credential URL is required",
+                  })}
+                  className="w-full rounded border border-gray-300 p-2"
+                />
+
+                {errorsEdit.credentialUrl && (
+                  <p className="text-sm text-red-600">
+                    {errorsEdit.credentialUrl.message}
+                  </p>
+                )}
+              </div>
+
+              {/* Buttons */}
+
+              <div className="mt-4 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setEditingCertificate(null)}
+                  className="rounded-md border border-gray-300 px-5 py-2 cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  className="rounded-md bg-gray-700 px-5 py-2 text-white cursor-pointer"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================
+          DELETE MODAL
+      ================================================== */}
+
+      {deletingCertificate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setDeletingCertificate(null)}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-center text-2xl font-extrabold">
+              Delete Certificate
+            </h2>
+
+            <p className="mt-4 text-center text-gray-600">
+              Are you sure you want to delete{" "}
+              <span className="font-bold">
+                {deletingCertificate.name}
+              </span>
+              ?
+            </p>
+
+            <div className="mt-6 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setDeletingCertificate(null)}
+                className="rounded-md border border-gray-300 px-5 py-2 cursor-pointer"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmDelete}
+                className="rounded-md bg-red-600 px-5 py-2 text-white cursor-pointer"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==================================================
+          VIEW MODAL
+      ================================================== */}
+
+      {viewingCertificate && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setViewingCertificate(null)}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-2xl font-extrabold">
+              {viewingCertificate.name}
+            </h2>
+
+            <div className="mt-4 space-y-2">
+              <p>
+                <strong>Issuer:</strong>{" "}
+                {viewingCertificate.issuer}
+              </p>
+
+              <p>
+                <strong>Issue Date:</strong>{" "}
+                {viewingCertificate.issueDate}
+              </p>
+
+              <p>
+                <strong>Expiration Date:</strong>{" "}
+                {viewingCertificate.expirationDate}
+              </p>
+
+              {viewingCertificate.credentialId && (
+                <p>
+                  <strong>Credential ID:</strong>{" "}
+                  {viewingCertificate.credentialId}
+                </p>
+              )}
+
+              {viewingCertificate.credentialUrl && (
+                <p>
+                  <strong>Credential URL:</strong>{" "}
+                  <a
+                    href={viewingCertificate.credentialUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
+                    View Credential
+                  </a>
+                </p>
+              )}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setViewingCertificate(null)}
+                className="rounded-md border border-gray-300 px-5 py-2 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
