@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -6,14 +7,9 @@ import { Divider } from "../../components/ui/Divider";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
-import type { Page } from "../../types";
+import { useRouter } from "next/navigation";
 
-interface SignInPageProps {
-  onNav: (p: Page) => void;
-  onLogin: () => void;
-}
-
-export function SignInPage({ onNav, onLogin }: SignInPageProps) {
+export function SignInPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -21,16 +17,29 @@ export function SignInPage({ onNav, onLogin }: SignInPageProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const router = useRouter();
+
   const handleSubmit = () => {
-    if (!email) { setError("Email is required"); return; }
-    if (!password) { setError("Password is required"); return; }
+    if (!email) {
+      setError("Email is required");
+      return;
+    }
+    if (!password) {
+      setError("Password is required");
+      return;
+    }
     setError("");
     setLoading(true);
-    setTimeout(() => { setLoading(false); onLogin(); }, 1500);
+    setTimeout(() => {
+      setLoading(false);
+    }, 1500);
   };
 
   return (
-    <AuthCard title="Welcome back" subtitle="Sign in to your CareerPilot account">
+    <AuthCard
+      title="Welcome back"
+      subtitle="Sign in to your CareerPilot account"
+    >
       <GoogleBtn />
       <Divider label="or sign in with email" />
 
@@ -82,7 +91,7 @@ export function SignInPage({ onNav, onLogin }: SignInPageProps) {
             <span className="text-sm text-gray-600">Remember me</span>
           </label>
           <button
-            onClick={() => onNav("forgot-password")}
+            onClick={() => router.push("/login")}
             className="text-sm text-violet-600 hover:underline"
           >
             Forgot password?
@@ -91,7 +100,10 @@ export function SignInPage({ onNav, onLogin }: SignInPageProps) {
 
         <Btn className="w-full" disabled={loading} onClick={handleSubmit}>
           {loading ? (
-            <><Loader2 size={16} className="animate-spin" />Signing in…</>
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Signing in…
+            </>
           ) : (
             "Sign in"
           )}
@@ -101,7 +113,7 @@ export function SignInPage({ onNav, onLogin }: SignInPageProps) {
       <p className="text-center text-sm text-gray-500 mt-6">
         Don&apos;t have an account?{" "}
         <button
-          onClick={() => onNav("signup")}
+          onClick={() => router.push("/register")}
           className="text-violet-600 font-medium hover:underline"
         >
           Create one

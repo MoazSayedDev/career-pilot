@@ -1,23 +1,25 @@
+"use client";
 import { useState } from "react";
 import { Mail, Loader2, ArrowLeft } from "lucide-react";
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
-import type { Page } from "../../types";
+import { useRouter } from "next/navigation";
 
-interface ForgotPasswordPageProps {
-  onNav: (p: Page) => void;
-}
-
-export function ForgotPasswordPage({ onNav }: ForgotPasswordPageProps) {
+export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
+
   const handleSend = () => {
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSent(true); }, 1500);
+    setTimeout(() => {
+      setLoading(false);
+      setSent(true);
+    }, 1500);
   };
 
   return (
@@ -31,9 +33,14 @@ export function ForgotPasswordPage({ onNav }: ForgotPasswordPageProps) {
             <Mail size={32} className="text-violet-500" />
           </div>
           <p className="text-sm text-gray-600 text-center">
-            Check <strong>{email}</strong> for a password reset link. It may take a few minutes.
+            Check <strong>{email}</strong> for a password reset link. It may
+            take a few minutes.
           </p>
-          <Btn variant="outline" className="w-full" onClick={() => onNav("signin")}>
+          <Btn
+            variant="outline"
+            className="w-full"
+            onClick={() => router.push("/login")}
+          >
             Back to sign in
           </Btn>
         </div>
@@ -49,19 +56,27 @@ export function ForgotPasswordPage({ onNav }: ForgotPasswordPageProps) {
             />
           </Field>
 
-          <Btn className="w-full" disabled={loading || !email} onClick={handleSend}>
+          <Btn
+            className="w-full"
+            disabled={loading || !email}
+            onClick={handleSend}
+          >
             {loading ? (
-              <><Loader2 size={16} className="animate-spin" />Sending…</>
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Sending…
+              </>
             ) : (
               "Send reset link"
             )}
           </Btn>
 
           <button
-            onClick={() => onNav("signin")}
+            onClick={() => router.push("/login")}
             className="text-sm text-center text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
           >
-            <ArrowLeft size={14} />Back to sign in
+            <ArrowLeft size={14} />
+            Back to sign in
           </button>
         </div>
       )}

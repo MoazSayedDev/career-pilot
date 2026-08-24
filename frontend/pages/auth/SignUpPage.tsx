@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -6,13 +7,9 @@ import { Divider } from "../../components/ui/Divider";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
-import type { Page } from "../../types";
+import { useRouter } from "next/navigation";
 
-interface SignUpPageProps {
-  onNav: (p: Page) => void;
-}
-
-export function SignUpPage({ onNav }: SignUpPageProps) {
+export function SignUpPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,11 +18,13 @@ export function SignUpPage({ onNav }: SignUpPageProps) {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const router = useRouter();
   const validate = () => {
     const e: Record<string, string> = {};
     if (!name.trim()) e.name = "Full name is required";
     if (!email.includes("@")) e.email = "Enter a valid email address";
-    if (password.length < 8) e.password = "Password must be at least 8 characters";
+    if (password.length < 8)
+      e.password = "Password must be at least 8 characters";
     if (password !== confirm) e.confirm = "Passwords do not match";
     setErrors(e);
     return Object.keys(e).length === 0;
@@ -34,24 +33,44 @@ export function SignUpPage({ onNav }: SignUpPageProps) {
   const handleSubmit = () => {
     if (!validate()) return;
     setLoading(true);
-    setTimeout(() => { setLoading(false); onNav("verify-otp"); }, 1500);
+    setTimeout(() => {
+      setLoading(false);
+    }, 1500);
   };
 
   return (
-    <AuthCard title="Create your account" subtitle="Build your AI-powered CV today">
+    <AuthCard
+      title="Create your account"
+      subtitle="Build your AI-powered CV today"
+    >
       <GoogleBtn label="Sign up with Google" />
       <Divider label="or sign up with email" />
 
       <div className="flex flex-col gap-4">
         <Field label="Full name" error={errors.name}>
-          <Input value={name} onChange={setName} placeholder="Sarah Johnson" icon={<User size={15} />} />
+          <Input
+            value={name}
+            onChange={setName}
+            placeholder="Sarah Johnson"
+            icon={<User size={15} />}
+          />
         </Field>
 
         <Field label="Email address" error={errors.email}>
-          <Input value={email} onChange={setEmail} placeholder="you@company.com" type="email" icon={<Mail size={15} />} />
+          <Input
+            value={email}
+            onChange={setEmail}
+            placeholder="you@company.com"
+            type="email"
+            icon={<Mail size={15} />}
+          />
         </Field>
 
-        <Field label="Password" error={errors.password} hint="Minimum 8 characters">
+        <Field
+          label="Password"
+          error={errors.password}
+          hint="Minimum 8 characters"
+        >
           <div className="relative">
             <Input
               value={password}
@@ -82,7 +101,10 @@ export function SignUpPage({ onNav }: SignUpPageProps) {
 
         <Btn className="w-full" disabled={loading} onClick={handleSubmit}>
           {loading ? (
-            <><Loader2 size={16} className="animate-spin" />Creating account…</>
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Creating account…
+            </>
           ) : (
             "Create account"
           )}
@@ -90,14 +112,22 @@ export function SignUpPage({ onNav }: SignUpPageProps) {
 
         <p className="text-xs text-center text-gray-400">
           By creating an account you agree to our{" "}
-          <a href="#" className="text-violet-600 hover:underline">Terms of Service</a> and{" "}
-          <a href="#" className="text-violet-600 hover:underline">Privacy Policy</a>
+          <a href="#" className="text-violet-600 hover:underline">
+            Terms of Service
+          </a>{" "}
+          and{" "}
+          <a href="#" className="text-violet-600 hover:underline">
+            Privacy Policy
+          </a>
         </p>
       </div>
 
       <p className="text-center text-sm text-gray-500 mt-5">
         Already have an account?{" "}
-        <button onClick={() => onNav("signin")} className="text-violet-600 font-medium hover:underline">
+        <button
+          onClick={() => router.push("/login")}
+          className="text-violet-600 font-medium hover:underline"
+        >
           Sign in
         </button>
       </p>
