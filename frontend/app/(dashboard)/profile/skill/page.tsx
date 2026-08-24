@@ -1,9 +1,9 @@
-import SkillForm from "@/services/skill/components/SkillForm";
+import SkillsPage from "@/pages/app/SkillsPage";
 
-export default function SkillPage() {
+export default function Skill() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <SkillForm />
+      <SkillsPage />
     </div>
   );
 }

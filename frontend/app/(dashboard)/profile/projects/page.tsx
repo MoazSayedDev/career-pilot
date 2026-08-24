@@ -1,9 +1,9 @@
-import ProjectForm from "@/services/project/components/ProjectForm";
+import ProjectsPage from "@/pages/app/ProjectsPage";
 
-export default function ProjectsPage() {
+export default function Projects() {
   return (
     <main className="min-h-screen px-4 py-10 flex justify-center items-center">
-      <ProjectForm />
+      <ProjectsPage />
     </main>
   );
 }
