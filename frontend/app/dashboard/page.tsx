@@ -1,9 +1,9 @@
-import CurrentUserCard from "@/services/auth/components/CurrentUserCard";
+import { AppLayout } from "@/components/layout/AppLayout";
 
 export default function DashboardPage() {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center font-sans">
-      <CurrentUserCard />
-    </div>
+    <AppLayout page="dashboard" onNav={() => {}} onLogout={() => {}}>
+      <h1>Dashboard</h1>
+    </AppLayout>
   );
 }
