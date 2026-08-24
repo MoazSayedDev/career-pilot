@@ -1,9 +1,9 @@
-import ExperienceForm from "@/services/experience/components/ExperienceForm";
+import ExperiencePage from "@/pages/app/ExperiencePage";
 
-export default function ExperiencePage() {
+export default function Experience() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <ExperienceForm />
+      <ExperiencePage />
     </div>
   );
 }

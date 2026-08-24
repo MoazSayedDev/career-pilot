@@ -1,9 +1,9 @@
-import EducationForm from "@/services/education/components/EducationForm";
+import EducationPage from "@/pages/app/EducationPage";
 
-export default function EducationPage() {
+export default function Education() {
   return (
     <div className="flex min-h-screen items-center justify-center p-6">
-      <EducationForm />
+      <EducationPage />
     </div>
   );
 }

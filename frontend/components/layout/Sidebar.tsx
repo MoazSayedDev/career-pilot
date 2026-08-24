@@ -27,7 +27,7 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
   },
   {
-    href: "/profile",
+    href: "/profile/contact-info",
     label: "Personal Info",
     icon: User,
   },
