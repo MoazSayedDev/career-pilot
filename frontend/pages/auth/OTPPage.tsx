@@ -1,18 +1,16 @@
+"use client";
 import { useState } from "react";
 import { CheckCircle, Loader2, ArrowLeft } from "lucide-react";
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import type { Page } from "../../types";
+import { useRouter } from "next/navigation";
 
-interface OTPPageProps {
-  onNav: (p: Page) => void;
-  onLogin: () => void;
-}
-
-export function OTPPage({ onNav, onLogin }: OTPPageProps) {
+export function OTPPage() {
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const router = useRouter();
 
   const handleChange = (i: number, v: string) => {
     if (!/^\d*$/.test(v)) return;
@@ -33,15 +31,13 @@ export function OTPPage({ onNav, onLogin }: OTPPageProps) {
   const handleVerify = () => {
     if (otp.join("").length < 6) return;
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSuccess(true);
-      setTimeout(() => onLogin(), 1200);
-    }, 1500);
   };
 
   return (
-    <AuthCard title="Verify your email" subtitle="We sent a 6-digit code to your email address">
+    <AuthCard
+      title="Verify your email"
+      subtitle="We sent a 6-digit code to your email address"
+    >
       {success ? (
         <div className="flex flex-col items-center gap-4 py-4">
           <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
@@ -73,19 +69,25 @@ export function OTPPage({ onNav, onLogin }: OTPPageProps) {
             disabled={loading || otp.join("").length < 6}
           >
             {loading ? (
-              <><Loader2 size={16} className="animate-spin" />Verifying…</>
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                Verifying…
+              </>
             ) : (
               "Verify email"
             )}
+            onClick={() => onNav("signin")}
           </Btn>
 
           <p className="text-sm text-gray-500">
             Didn&apos;t receive it?{" "}
-            <button className="text-violet-600 font-medium hover:underline">Resend code</button>
+            <button className="text-violet-600 font-medium hover:underline">
+              Resend code
+            </button>
           </p>
 
           <button
-            onClick={() => onNav("signin")}
+            onClick={() => router.push("/login")}
             className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1"
           >
             <ArrowLeft size={14} /> Back to sign in

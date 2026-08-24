@@ -1,11 +1,11 @@
+import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
 import { Suspense } from "react";
-import ResetPasswordForm from "@/services/auth/components/ResetPasswordForm";
 
-export default function ResetPasswordPage() {
+export default function ResetPassword() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center font-sans">
       <Suspense>
-        <ResetPasswordForm />
+        <ResetPasswordPage />
       </Suspense>
     </div>
   );
