@@ -1,38 +1,75 @@
 "use client";
-import { useState } from "react";
-import { Mail, Lock, Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
-import { AuthCard } from "../../components/ui/AuthCard";
-import { GoogleBtn } from "../../components/ui/GoogleBtn";
-import { Divider } from "../../components/ui/Divider";
-import { Btn } from "../../components/ui/Btn";
-import { Field } from "../../components/ui/Field";
-import { Input } from "../../components/ui/Input";
-import { useRouter } from "next/navigation";
 
-export function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+import axios from "axios";
+import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { AuthCard } from "../../components/ui/AuthCard";
+import { Btn } from "../../components/ui/Btn";
+import { Divider } from "../../components/ui/Divider";
+import { Field } from "../../components/ui/Field";
+import { GoogleBtn } from "../../components/ui/GoogleBtn";
+import { Input } from "../../components/ui/Input";
+
+import { login } from "../../services/auth/api/auth.service";
+import {
+  loginSchema,
+  type LoginFormData,
+} from "../../services/auth/schemas/login.schema";
+
+const SignInPageComponent = () => {
+  const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
 
-  const router = useRouter();
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    mode: "onBlur",
+  });
 
-  const handleSubmit = () => {
-    if (!email) {
-      setError("Email is required");
-      return;
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      await login(data);
+
+      if (remember) {
+        localStorage.setItem("careerpilot_remember_me", "true");
+      } else {
+        localStorage.removeItem("careerpilot_remember_me");
+      }
+
+      router.push("/dashboard");
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const message = error.response?.data?.message;
+
+        if (typeof message === "string") {
+          setError("root", {
+            type: "server",
+            message,
+          });
+        } else {
+          setError("root", {
+            type: "server",
+            message: "Invalid email or password.",
+          });
+        }
+
+        return;
+      }
+
+      setError("root", {
+        type: "server",
+        message: "Something went wrong. Please try again.",
+      });
     }
-    if (!password) {
-      setError("Password is required");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1500);
   };
 
   return (
@@ -41,84 +78,110 @@ export function SignInPage() {
       subtitle="Sign in to your CareerPilot account"
     >
       <GoogleBtn />
+
       <Divider label="or sign in with email" />
 
-      <div className="flex flex-col gap-4">
-        {error && (
-          <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5 text-sm text-red-600">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
+        {/* Server Error */}
+        {errors.root && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-600">
             <AlertCircle size={15} />
-            {error}
+            <span>{errors.root.message}</span>
           </div>
         )}
 
+        {/* Email */}
         <Field label="Email address">
           <Input
-            value={email}
-            onChange={setEmail}
+            {...register("email")}
             placeholder="you@company.com"
             type="email"
             icon={<Mail size={15} />}
+            disabled={isSubmitting}
           />
         </Field>
 
+        {errors.email && (
+          <p className="-mt-2 text-sm text-red-500">{errors.email.message}</p>
+        )}
+
+        {/* Password */}
         <Field label="Password">
           <div className="relative">
             <Input
-              value={password}
-              onChange={setPassword}
+              {...register("password")}
               placeholder="Your password"
               type={showPw ? "text" : "password"}
               icon={<Lock size={15} />}
+              disabled={isSubmitting}
             />
+
             <button
               type="button"
-              onClick={() => setShowPw((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              onClick={() => setShowPw((value) => !value)}
+              disabled={isSubmitting}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
         </Field>
 
+        {errors.password && (
+          <p className="-mt-2 text-sm text-red-500">
+            {errors.password.message}
+          </p>
+        )}
+
+        {/* Remember + Forgot Password */}
         <div className="flex items-center justify-between">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
               checked={remember}
-              onChange={(e) => setRemember(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              onChange={(event) => setRemember(event.target.checked)}
+              disabled={isSubmitting}
+              className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
             />
+
             <span className="text-sm text-gray-600">Remember me</span>
           </label>
+
           <button
-            onClick={() => router.push("/login")}
-            className="text-sm text-violet-600 hover:underline"
+            type="button"
+            onClick={() => router.push("/forget-password")}
+            disabled={isSubmitting}
+            className="text-sm text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
             Forgot password?
           </button>
         </div>
 
-        <Btn className="w-full" disabled={loading} onClick={handleSubmit}>
-          {loading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              Signing in…
-            </>
-          ) : (
-            "Sign in"
-          )}
+        {/* Submit */}
+        <Btn type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Signing in..." : "Sign in"}
         </Btn>
-      </div>
+      </form>
 
-      <p className="text-center text-sm text-gray-500 mt-6">
+      {/* Register */}
+      <p className="mt-6 text-center text-sm text-gray-500">
         Don&apos;t have an account?{" "}
         <button
+          type="button"
           onClick={() => router.push("/register")}
-          className="text-violet-600 font-medium hover:underline"
+          disabled={isSubmitting}
+          className="font-medium text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           Create one
         </button>
       </p>
     </AuthCard>
   );
-}
+};
+
+export { SignInPageComponent as SignInPage };
+export default SignInPageComponent;

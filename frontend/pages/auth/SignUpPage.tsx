@@ -1,41 +1,63 @@
 "use client";
-import { useState } from "react";
-import { User, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
-import { AuthCard } from "../../components/ui/AuthCard";
-import { GoogleBtn } from "../../components/ui/GoogleBtn";
-import { Divider } from "../../components/ui/Divider";
-import { Btn } from "../../components/ui/Btn";
-import { Field } from "../../components/ui/Field";
-import { Input } from "../../components/ui/Input";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
-export function SignUpPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+import { AuthCard } from "../../components/ui/AuthCard";
+import { Btn } from "../../components/ui/Btn";
+import { Divider } from "../../components/ui/Divider";
+import { Field } from "../../components/ui/Field";
+import { GoogleBtn } from "../../components/ui/GoogleBtn";
+import { Input } from "../../components/ui/Input";
+import { register as registerUser } from "../../services/auth/api/auth.service";
+import {
+  registerSchema,
+  type RegisterFormData,
+} from "../../services/auth/schemas/register.schema";
+
+const SignUpPageComponent = () => {
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
   const router = useRouter();
-  const validate = () => {
-    const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Full name is required";
-    if (!email.includes("@")) e.email = "Enter a valid email address";
-    if (password.length < 8)
-      e.password = "Password must be at least 8 characters";
-    if (password !== confirm) e.confirm = "Passwords do not match";
-    setErrors(e);
-    return Object.keys(e).length === 0;
-  };
 
-  const handleSubmit = () => {
-    if (!validate()) return;
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-    }, 1500);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
+    mode: "onBlur",
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      const response = await registerUser(data);
+
+      if (response?.success) {
+        localStorage.setItem("careerpilot_verification_email", data.email);
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
+
+      setError("root", {
+        type: "server",
+        message: response?.message || "Unable to create your account.",
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
+          : undefined;
+
+      setError("root", {
+        type: "server",
+        message: message || "Unable to create your account.",
+      });
+    }
   };
 
   return (
@@ -43,41 +65,47 @@ export function SignUpPage() {
       title="Create your account"
       subtitle="Build your AI-powered CV today"
     >
-      <GoogleBtn label="Sign up with Google" />
-      <Divider label="or sign up with email" />
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+        <GoogleBtn label="Sign up with Google" />
+        <Divider label="or sign up with email" />
 
-      <div className="flex flex-col gap-4">
-        <Field label="Full name" error={errors.name}>
+        {errors.root && (
+          <p className="flex items-center gap-1 text-xs text-red-500">
+            {errors.root.message}
+          </p>
+        )}
+
+        <Field label="Full name" error={errors.username?.message}>
           <Input
-            value={name}
-            onChange={setName}
+            {...register("username")}
             placeholder="Sarah Johnson"
             icon={<User size={15} />}
+            disabled={isSubmitting}
           />
         </Field>
 
-        <Field label="Email address" error={errors.email}>
+        <Field label="Email address" error={errors.email?.message}>
           <Input
-            value={email}
-            onChange={setEmail}
+            {...register("email")}
             placeholder="you@company.com"
             type="email"
             icon={<Mail size={15} />}
+            disabled={isSubmitting}
           />
         </Field>
 
         <Field
           label="Password"
-          error={errors.password}
+          error={errors.password?.message}
           hint="Minimum 8 characters"
         >
           <div className="relative">
             <Input
-              value={password}
-              onChange={setPassword}
+              {...register("password")}
               placeholder="Create a strong password"
               type={showPw ? "text" : "password"}
               icon={<Lock size={15} />}
+              disabled={isSubmitting}
             />
             <button
               type="button"
@@ -89,18 +117,18 @@ export function SignUpPage() {
           </div>
         </Field>
 
-        <Field label="Confirm password" error={errors.confirm}>
+        <Field label="Confirm password" error={errors.confirmPassword?.message}>
           <Input
-            value={confirm}
-            onChange={setConfirm}
+            {...register("confirmPassword")}
             placeholder="Repeat your password"
             type="password"
             icon={<Lock size={15} />}
+            disabled={isSubmitting}
           />
         </Field>
 
-        <Btn className="w-full" disabled={loading} onClick={handleSubmit}>
-          {loading ? (
+        <Btn type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
             <>
               <Loader2 size={16} className="animate-spin" />
               Creating account…
@@ -110,7 +138,7 @@ export function SignUpPage() {
           )}
         </Btn>
 
-        <p className="text-xs text-center text-gray-400">
+        <p className="text-center text-xs text-gray-400">
           By creating an account you agree to our{" "}
           <a href="#" className="text-violet-600 hover:underline">
             Terms of Service
@@ -120,17 +148,21 @@ export function SignUpPage() {
             Privacy Policy
           </a>
         </p>
-      </div>
+      </form>
 
-      <p className="text-center text-sm text-gray-500 mt-5">
+      <p className="mt-5 text-center text-sm text-gray-500">
         Already have an account?{" "}
         <button
+          type="button"
           onClick={() => router.push("/login")}
-          className="text-violet-600 font-medium hover:underline"
+          className="font-medium text-violet-600 hover:underline"
         >
           Sign in
         </button>
       </p>
     </AuthCard>
   );
-}
+};
+
+export { SignUpPageComponent as SignUpPage };
+export default SignUpPageComponent;

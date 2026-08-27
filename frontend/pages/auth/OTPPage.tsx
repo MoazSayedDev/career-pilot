@@ -1,36 +1,94 @@
 "use client";
-import { useState } from "react";
-import { CheckCircle, Loader2, ArrowLeft } from "lucide-react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import type { Page } from "../../types";
-import { useRouter } from "next/navigation";
+import { verifyEmail } from "../../services/auth/api/auth.service";
+import {
+  verifyEmailSchema,
+  type VerifyEmailFormData,
+} from "../../services/auth/schemas/verify-email.schema";
 
-export function OTPPage() {
-  const [otp, setOtp] = useState(["", "", "", "", "", ""]);
-  const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
+const OTPPageComponent = () => {
   const router = useRouter();
 
-  const handleChange = (i: number, v: string) => {
-    if (!/^\d*$/.test(v)) return;
-    const next = [...otp];
-    next[i] = v.slice(-1);
-    setOtp(next);
-    if (v && i < 5) {
-      document.getElementById(`otp-${i + 1}`)?.focus();
+  const {
+    handleSubmit,
+    setError,
+    setValue,
+    watch,
+    formState: { errors, isSubmitting },
+  } = useForm<VerifyEmailFormData>({
+    resolver: zodResolver(verifyEmailSchema),
+    mode: "onBlur",
+    defaultValues: { otp: "" },
+  });
+
+  const otpValue = watch("otp") || "";
+  const otpDigits = Array.from({ length: 6 }, (_, index) => otpValue[index] ?? "");
+
+  const handleDigitChange = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+
+    const nextDigits = [...otpDigits];
+    nextDigits[index] = value.slice(-1);
+    const nextOtp = nextDigits.join("").slice(0, 6);
+
+    setValue("otp", nextOtp, { shouldDirty: true, shouldValidate: true });
+
+    if (value && index < 5) {
+      document.getElementById(`otp-${index + 1}`)?.focus();
     }
   };
 
-  const handleKeyDown = (i: number, e: React.KeyboardEvent) => {
-    if (e.key === "Backspace" && !otp[i] && i > 0) {
-      document.getElementById(`otp-${i - 1}`)?.focus();
+  const handleKeyDown = (index: number, event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Backspace" && !otpDigits[index] && index > 0) {
+      document.getElementById(`otp-${index - 1}`)?.focus();
     }
   };
 
-  const handleVerify = () => {
-    if (otp.join("").length < 6) return;
-    setLoading(true);
+  const onSubmit = async (data: VerifyEmailFormData) => {
+    const email =
+      new URLSearchParams(window.location.search).get("email") ||
+      localStorage.getItem("careerpilot_verification_email") ||
+      "";
+
+    if (!email) {
+      setError("root", {
+        type: "server",
+        message: "Missing email context. Please try again from the register flow.",
+      });
+      return;
+    }
+
+    try {
+      const response = await verifyEmail({ email, otp: data.otp });
+
+      if (response?.success) {
+        router.push("/login");
+        return;
+      }
+
+      setError("root", {
+        type: "server",
+        message: response?.message || "OTP verification failed.",
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
+          : undefined;
+
+      setError("root", {
+        type: "server",
+        message: message || "Invalid OTP. Please try again.",
+      });
+    }
   };
 
   return (
@@ -38,62 +96,66 @@ export function OTPPage() {
       title="Verify your email"
       subtitle="We sent a 6-digit code to your email address"
     >
-      {success ? (
-        <div className="flex flex-col items-center gap-4 py-4">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
-            <CheckCircle size={32} className="text-emerald-500" />
-          </div>
-          <p className="text-sm text-gray-600 text-center">
-            Email verified! Redirecting to your dashboard…
-          </p>
+      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col items-center gap-6" noValidate>
+        {errors.root && (
+          <p className="w-full text-center text-xs text-red-500">{errors.root.message}</p>
+        )}
+
+        <div className="flex gap-3">
+          {otpDigits.map((digit, index) => (
+            <input
+              key={index}
+              id={`otp-${index}`}
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              value={digit}
+              maxLength={1}
+              onChange={(event) => handleDigitChange(index, event.target.value)}
+              onKeyDown={(event) => handleKeyDown(index, event)}
+              className="h-12 w-11 rounded-xl border-2 border-gray-200 text-center text-lg font-bold transition-colors focus:border-violet-500 focus:outline-none"
+              aria-invalid={Boolean(errors.otp)}
+            />
+          ))}
         </div>
-      ) : (
-        <div className="flex flex-col items-center gap-6">
-          <div className="flex gap-3">
-            {otp.map((digit, i) => (
-              <input
-                key={i}
-                id={`otp-${i}`}
-                value={digit}
-                onChange={(e) => handleChange(i, e.target.value)}
-                onKeyDown={(e) => handleKeyDown(i, e)}
-                className="w-11 h-12 text-center text-lg font-bold border-2 border-gray-200 rounded-xl focus:border-violet-500 focus:outline-none transition-colors"
-                maxLength={1}
-              />
-            ))}
-          </div>
 
-          <Btn
-            className="w-full"
-            onClick={handleVerify}
-            disabled={loading || otp.join("").length < 6}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Verifying…
-              </>
-            ) : (
-              "Verify email"
-            )}
-            onClick={() => onNav("signin")}
-          </Btn>
+        {errors.otp && (
+          <p className="text-xs text-red-500">{errors.otp.message}</p>
+        )}
 
-          <p className="text-sm text-gray-500">
-            Didn&apos;t receive it?{" "}
-            <button className="text-violet-600 font-medium hover:underline">
-              Resend code
-            </button>
-          </p>
+        <Btn
+          type="submit"
+          className="w-full"
+          disabled={isSubmitting || otpValue.length < 6}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Verifying…
+            </>
+          ) : (
+            "Verify email"
+          )}
+        </Btn>
 
-          <button
-            onClick={() => router.push("/login")}
-            className="text-sm text-gray-400 hover:text-gray-600 flex items-center gap-1"
-          >
-            <ArrowLeft size={14} /> Back to sign in
+        <p className="text-sm text-gray-500">
+          Didn&apos;t receive it?{" "}
+          <button type="button" className="font-medium text-violet-600 hover:underline">
+            Resend code
           </button>
-        </div>
-      )}
+        </p>
+
+        <button
+          type="button"
+          onClick={() => router.push("/login")}
+          className="flex items-center gap-1 text-sm text-gray-400 hover:text-gray-600"
+        >
+          <ArrowLeft size={14} /> Back to sign in
+        </button>
+      </form>
     </AuthCard>
   );
-}
+};
+
+export { OTPPageComponent as OTPPage };
+export default OTPPageComponent;

@@ -1,29 +1,84 @@
 "use client";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
-import {
-  Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
+import { useForm } from "react-hook-form";
+
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
-import type { Page } from "../../types";
-import { useRouter } from "next/navigation";
+import { resetPassword } from "../../services/auth/api/auth.service";
+import {
+  resetPasswordSchema,
+  type ResetPasswordFormData,
+} from "../../services/auth/schemas/reset-password.schema";
 
-export function ResetPasswordPage() {
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+const ResetPasswordPageComponent = () => {
   const [showPw, setShowPw] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
-
   const router = useRouter();
-  const mismatch = confirm.length > 0 && password !== confirm;
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ResetPasswordFormData>({
+    resolver: zodResolver(resetPasswordSchema),
+    mode: "onBlur",
+  });
+
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    const email =
+      new URLSearchParams(window.location.search).get("email") ||
+      localStorage.getItem("careerpilot_reset_email") ||
+      "";
+    const resetToken =
+      new URLSearchParams(window.location.search).get("token") ||
+      localStorage.getItem("careerpilot_reset_token") ||
+      "";
+
+    if (!email || !resetToken) {
+      setError("root", {
+        type: "server",
+        message: "Missing reset session. Please request a new password reset.",
+      });
+      return;
+    }
+
+    try {
+      const response = await resetPassword({
+        email,
+        resetToken,
+        password: data.password,
+        confirmPassword: data.confirmPassword,
+      });
+
+      if (response?.success) {
+        setDone(true);
+        return;
+      }
+
+      setError("root", {
+        type: "server",
+        message: response?.message || "Unable to reset your password.",
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
+          : undefined;
+
+      setError("root", {
+        type: "server",
+        message: message || "Unable to reset your password.",
+      });
+    }
+  };
 
   return (
     <AuthCard
@@ -32,26 +87,37 @@ export function ResetPasswordPage() {
     >
       {done ? (
         <div className="flex flex-col items-center gap-4 py-4">
-          <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
             <CheckCircle size={32} className="text-emerald-500" />
           </div>
-          <p className="text-sm text-gray-600 text-center">
+          <p className="text-center text-sm text-gray-600">
             Password reset successfully!
           </p>
-          <Btn className="w-full" onClick={() => router.push("/login")}>
+          <Btn type="button" className="w-full" onClick={() => router.push("/login")}>
             Sign in with new password
           </Btn>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
-          <Field label="New password" hint="Minimum 8 characters">
+        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
+          {errors.root && (
+            <p className="flex items-center gap-1 text-xs text-red-500">
+              <AlertCircle size={12} />
+              {errors.root.message}
+            </p>
+          )}
+
+          <Field
+            label="New password"
+            error={errors.password?.message}
+            hint="Minimum 8 characters"
+          >
             <div className="relative">
               <Input
-                value={password}
-                onChange={setPassword}
+                {...register("password")}
                 placeholder="New password"
                 type={showPw ? "text" : "password"}
                 icon={<Lock size={15} />}
+                disabled={isSubmitting}
               />
               <button
                 type="button"
@@ -63,35 +129,18 @@ export function ResetPasswordPage() {
             </div>
           </Field>
 
-          <Field label="Confirm new password">
+          <Field label="Confirm new password" error={errors.confirmPassword?.message}>
             <Input
-              value={confirm}
-              onChange={setConfirm}
+              {...register("confirmPassword")}
               placeholder="Repeat new password"
-              type="password"
+              type={showPw ? "text" : "password"}
               icon={<Lock size={15} />}
+              disabled={isSubmitting}
             />
           </Field>
 
-          {mismatch && (
-            <p className="text-xs text-red-500 flex items-center gap-1">
-              <AlertCircle size={12} />
-              Passwords do not match
-            </p>
-          )}
-
-          <Btn
-            className="w-full"
-            disabled={loading || !password || mismatch}
-            onClick={() => {
-              setLoading(true);
-              setTimeout(() => {
-                setLoading(false);
-                setDone(true);
-              }, 1500);
-            }}
-          >
-            {loading ? (
+          <Btn type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
                 Resetting…
@@ -100,8 +149,11 @@ export function ResetPasswordPage() {
               "Reset password"
             )}
           </Btn>
-        </div>
+        </form>
       )}
     </AuthCard>
   );
-}
+};
+
+export { ResetPasswordPageComponent as ResetPasswordPage };
+export default ResetPasswordPageComponent;

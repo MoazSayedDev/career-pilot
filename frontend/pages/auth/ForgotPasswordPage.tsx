@@ -1,25 +1,59 @@
 "use client";
-import { useState } from "react";
-import { Mail, Loader2, ArrowLeft } from "lucide-react";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowLeft, Loader2, Mail } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useForm } from "react-hook-form";
+
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
-import { useRouter } from "next/navigation";
+import { forgotPassword } from "../../services/auth/api/auth.service";
+import {
+  forgotPasswordSchema,
+  type ForgotPasswordFormData,
+} from "../../services/auth/schemas/forgot-password.schema";
 
-export function ForgotPasswordPage() {
-  const [email, setEmail] = useState("");
-  const [sent, setSent] = useState(false);
-  const [loading, setLoading] = useState(false);
-
+const ForgotPasswordPageComponent = () => {
   const router = useRouter();
 
-  const handleSend = () => {
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      setSent(true);
-    }, 1500);
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors, isSubmitting },
+  } = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    mode: "onBlur",
+  });
+
+  const onSubmit = async (data: ForgotPasswordFormData) => {
+    try {
+      const response = await forgotPassword(data);
+
+      if (response?.success) {
+        localStorage.setItem("careerpilot_reset_email", data.email);
+        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        return;
+      }
+
+      setError("root", {
+        type: "server",
+        message: response?.message || "Unable to send reset instructions.",
+      });
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response
+              ?.data?.message
+          : undefined;
+
+      setError("root", {
+        type: "server",
+        message: message || "Unable to send reset instructions.",
+      });
+    }
   };
 
   return (
@@ -27,59 +61,48 @@ export function ForgotPasswordPage() {
       title="Forgot your password?"
       subtitle="Enter your email and we'll send you a reset link"
     >
-      {sent ? (
-        <div className="flex flex-col items-center gap-4 py-4">
-          <div className="w-16 h-16 rounded-full bg-violet-100 flex items-center justify-center">
-            <Mail size={32} className="text-violet-500" />
-          </div>
-          <p className="text-sm text-gray-600 text-center">
-            Check <strong>{email}</strong> for a password reset link. It may
-            take a few minutes.
-          </p>
-          <Btn
-            variant="outline"
-            className="w-full"
-            onClick={() => router.push("/login")}
-          >
-            Back to sign in
-          </Btn>
-        </div>
-      ) : (
-        <div className="flex flex-col gap-4">
-          <Field label="Email address">
-            <Input
-              value={email}
-              onChange={setEmail}
-              placeholder="you@company.com"
-              type="email"
-              icon={<Mail size={15} />}
-            />
-          </Field>
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="flex flex-col gap-4"
+        noValidate
+      >
+        {errors.root && (
+          <p className="text-xs text-red-500">{errors.root.message}</p>
+        )}
 
-          <Btn
-            className="w-full"
-            disabled={loading || !email}
-            onClick={handleSend}
-          >
-            {loading ? (
-              <>
-                <Loader2 size={16} className="animate-spin" />
-                Sending…
-              </>
-            ) : (
-              "Send reset link"
-            )}
-          </Btn>
+        <Field label="Email address" error={errors.email?.message}>
+          <Input
+            {...register("email")}
+            placeholder="you@company.com"
+            type="email"
+            icon={<Mail size={15} />}
+            disabled={isSubmitting}
+          />
+        </Field>
 
-          <button
-            onClick={() => router.push("/login")}
-            className="text-sm text-center text-gray-500 hover:text-gray-700 flex items-center justify-center gap-1"
-          >
-            <ArrowLeft size={14} />
-            Back to sign in
-          </button>
-        </div>
-      )}
+        <Btn type="submit" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Sending…
+            </>
+          ) : (
+            "Send reset link"
+          )}
+        </Btn>
+
+        <button
+          type="button"
+          onClick={() => router.push("/login")}
+          className="flex items-center justify-center gap-1 text-center text-sm text-gray-500 hover:text-gray-700"
+        >
+          <ArrowLeft size={14} />
+          Back to sign in
+        </button>
+      </form>
     </AuthCard>
   );
-}
+};
+
+export { ForgotPasswordPageComponent as ForgotPasswordPage };
+export default ForgotPasswordPageComponent;
