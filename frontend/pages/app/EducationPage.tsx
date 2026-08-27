@@ -1,17 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import {
-  GraduationCap,
-  MapPin,
-  Calendar,
-  Eye,
-  Edit2,
-  Trash2,
-  Plus,
-  Check,
-  Building2,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { GraduationCap, Calendar, Edit2, Trash2, Plus, Check, Building2 } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
@@ -19,19 +9,14 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { cn } from "@/utils";
 
-type Education = {
-  id: string;
-  degree: string;
-  field: string;
-  school: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  current: boolean;
-  description: string;
-};
+import {
+  createEducation,
+  deleteEducation,
+  getEducations,
+  updateEducation,
+} from "@/services/education/api/education.service";
+import type { Education } from "@/services/education/types/education";
 
 const EMPTY_FORM = {
   degree: "",
@@ -44,81 +29,103 @@ const EMPTY_FORM = {
   description: "",
 };
 
+const formatDate = (value?: string | null) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toISOString().slice(0, 10);
+};
+
 export default function EducationPage() {
   const [form, setForm] = useState(EMPTY_FORM);
-
   const [education, setEducation] = useState<Education[]>([]);
-
   const [editId, setEditId] = useState<string | null>(null);
-
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+
+  const loadEducation = async () => {
+    try {
+      const data = await getEducations();
+      setEducation(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadEducation();
+  }, []);
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
-
-    if (!form.degree.trim()) {
-      nextErrors.degree = "Degree / qualification is required";
-    }
-
-    if (!form.school.trim()) {
-      nextErrors.school = "School / university is required";
-    }
-
-    if (!form.startDate.trim()) {
-      nextErrors.startDate = "Start date is required";
-    }
-
+    if (!form.degree.trim()) nextErrors.degree = "Degree / qualification is required";
+    if (!form.school.trim()) nextErrors.school = "School / university is required";
+    if (!form.startDate) nextErrors.startDate = "Start date is required";
     setErrors(nextErrors);
-
     return Object.keys(nextErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!validate()) return;
-
-    if (editId) {
-      setEducation((prev) =>
-        prev.map((item) =>
-          item.id === editId
-            ? {
-                ...form,
-                id: editId,
-              }
-            : item,
-        ),
-      );
-
-      setEditId(null);
-    } else {
-      const newEducation: Education = {
-        ...form,
-        id: crypto.randomUUID(),
+    setSubmitting(true);
+    try {
+      const payload = {
+        university: form.school.trim(),
+        degree: form.degree.trim(),
+        field: form.field.trim(),
+        description: form.description.trim() || undefined,
+        startDate: new Date(form.startDate).toISOString(),
+        endDate: form.current || !form.endDate ? undefined : new Date(form.endDate).toISOString(),
       };
 
-      setEducation((prev) => [newEducation, ...prev]);
-    }
+      if (editId) {
+        await updateEducation(editId, payload);
+      } else {
+        await createEducation(payload);
+      }
 
-    setForm(EMPTY_FORM);
-    setErrors({});
+      setForm(EMPTY_FORM);
+      setEditId(null);
+      setErrors({});
+      await loadEducation();
+    } catch (error) {
+      console.error(error);
+      setErrors((prev) => ({ ...prev, root: "Failed to save education." }));
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleEdit = (item: Education) => {
     setForm({
       degree: item.degree,
       field: item.field,
-      school: item.school,
-      location: item.location,
-      startDate: item.startDate,
-      endDate: item.endDate,
-      current: item.current,
-      description: item.description,
+      school: item.university,
+      location: "",
+      startDate: formatDate(item.startDate),
+      endDate: formatDate(item.endDate),
+      current: !item.endDate,
+      description: item.description ?? "",
     });
-
     setEditId(item.id);
+    setErrors({});
   };
 
-  const handleDelete = (id: string) => {
-    setEducation((prev) => prev.filter((item) => item.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteEducation(id);
+      if (editId === id) {
+        setEditId(null);
+        setForm(EMPTY_FORM);
+      }
+      await loadEducation();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleCancelEdit = () => {
@@ -137,165 +144,57 @@ export default function EducationPage() {
       />
 
       <div className="grid lg:grid-cols-5 gap-6">
-        {/* Form */}
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
             <GraduationCap size={15} className="text-violet-500" />
-
             {editId ? "Edit Education" : "Add New Education"}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Fill in the details of your education
-          </p>
+          <p className="text-xs text-gray-400 mb-5">Fill in the details of your education</p>
 
           <div className="flex flex-col gap-4">
-            <Field
-              label="Degree / Qualification"
-              required
-              error={errors.degree}
-            >
-              <Input
-                value={form.degree}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    degree: value,
-                  }))
-                }
-                placeholder="e.g. Bachelor of Science"
-              />
+            <Field label="Degree / Qualification" required error={errors.degree}>
+              <Input value={form.degree} onChange={(value) => setForm((prev) => ({ ...prev, degree: value }))} placeholder="e.g. Bachelor of Science" />
             </Field>
 
             <Field label="Field of Study" required>
-              <Input
-                value={form.field}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    field: value,
-                  }))
-                }
-                placeholder="e.g. Computer Science"
-              />
+              <Input value={form.field} onChange={(value) => setForm((prev) => ({ ...prev, field: value }))} placeholder="e.g. Computer Science" />
             </Field>
 
             <Field label="School / University" required error={errors.school}>
-              <Input
-                value={form.school}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    school: value,
-                  }))
-                }
-                placeholder="e.g. Al-Azhar University"
-                icon={<Building2 size={14} />}
-              />
+              <Input value={form.school} onChange={(value) => setForm((prev) => ({ ...prev, school: value }))} placeholder="e.g. Al-Azhar University" icon={<Building2 size={14} />} />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
               <Field label="Start Date" required error={errors.startDate}>
-                <Input
-                  value={form.startDate}
-                  onChange={(value) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      startDate: value,
-                    }))
-                  }
-                  placeholder="MM/YYYY"
-                  icon={<Calendar size={14} />}
-                />
+                <Input value={form.startDate} onChange={(value) => setForm((prev) => ({ ...prev, startDate: value }))} type="date" icon={<Calendar size={14} />} />
               </Field>
 
               <Field label="End Date">
-                <Input
-                  value={form.endDate}
-                  onChange={(value) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      endDate: value,
-                    }))
-                  }
-                  placeholder="MM/YYYY"
-                  icon={<Calendar size={14} />}
-                  disabled={form.current}
-                />
+                <Input value={form.endDate} onChange={(value) => setForm((prev) => ({ ...prev, endDate: value }))} type="date" disabled={form.current} icon={<Calendar size={14} />} />
               </Field>
             </div>
 
             <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.current}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    current: event.target.checked,
-                    endDate: "",
-                  }))
-                }
-                className="w-4 h-4 rounded border-gray-300 text-violet-600"
-              />
-
-              <span className="text-sm text-gray-600">Currently studying</span>
+              <input type="checkbox" checked={form.current} onChange={(event) => setForm((prev) => ({ ...prev, current: event.target.checked, endDate: event.target.checked ? "" : prev.endDate }))} className="w-4 h-4 rounded border-gray-300 text-violet-600" />
+              <span className="text-sm text-gray-600">I currently study here</span>
             </label>
 
-            <Field label="Location">
-              <Input
-                value={form.location}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    location: value,
-                  }))
-                }
-                placeholder="e.g. Cairo, Egypt"
-                icon={<MapPin size={14} />}
-              />
+            <Field label="Additional Notes">
+              <Textarea value={form.description} onChange={(value) => setForm((prev) => ({ ...prev, description: value }))} placeholder="Add details about coursework, achievements, or honors..." rows={4} />
             </Field>
 
-            <Field label="Description (Optional)">
-              <Textarea
-                value={form.description}
-                onChange={(value) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    description: value,
-                  }))
-                }
-                placeholder="Relevant coursework, achievements, honors…"
-                rows={3}
-                maxLength={200}
-              />
-            </Field>
+            {errors.root && <p className="text-sm text-red-500">{errors.root}</p>}
 
             <div className="flex gap-2">
-              <Btn className="flex-1" onClick={handleSave}>
-                {editId ? (
-                  <>
-                    <Check size={15} />
-                    Update
-                  </>
-                ) : (
-                  <>
-                    <Plus size={15} />
-                    Add Education
-                  </>
-                )}
+              <Btn className="flex-1" onClick={handleSave} disabled={submitting}>
+                {submitting ? <span>Saving...</span> : <>{editId ? <Check size={15} /> : <Plus size={15} />} {editId ? "Update" : "Save"}</>}
               </Btn>
-
-              {editId && (
-                <Btn variant="outline" onClick={handleCancelEdit}>
-                  Cancel
-                </Btn>
-              )}
+              {editId && <Btn variant="outline" onClick={handleCancelEdit}>Cancel</Btn>}
             </div>
           </div>
         </Card>
 
-        {/* List + Preview */}
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
@@ -303,157 +202,38 @@ export default function EducationPage() {
               Your Education ({education.length})
             </h3>
 
-            {education.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
-                  <GraduationCap size={22} className="text-gray-400" />
-                </div>
-
-                <p className="font-medium text-gray-600 mb-1">
-                  No education added yet
-                </p>
-
-                <p className="text-sm text-gray-400">
-                  Add your educational background using the form.
-                </p>
-              </div>
+            {loading ? (
+              <p className="text-sm text-gray-500">Loading education...</p>
+            ) : education.length === 0 ? (
+              <div className="py-8 text-center text-sm text-gray-500">No education added yet.</div>
             ) : (
-              <div className="flex flex-col gap-3">
+              <div className="space-y-4">
                 {education.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex gap-4 p-4 rounded-xl border border-gray-100 bg-gray-50"
-                  >
-                    <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
-                      <GraduationCap size={18} />
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold text-gray-900 text-sm">
-                        {item.degree}
-                      </h4>
-
-                      {item.field && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {item.field}
-                        </p>
-                      )}
-
-                      <p className="text-violet-600 text-xs font-medium mt-0.5">
-                        {item.school}
-                      </p>
-
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="flex items-center gap-1 text-xs text-gray-400">
-                          <Calendar size={10} />
-                          {item.startDate} –{" "}
-                          {item.current ? "Present" : item.endDate}
-                        </span>
-
-                        {item.location && (
-                          <span className="flex items-center gap-1 text-xs text-gray-400">
-                            <MapPin size={10} />
-
-                            {item.location}
-                          </span>
-                        )}
+                  <div key={item.id} className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="font-semibold text-gray-900">{item.degree}</p>
+                        <p className="text-sm text-violet-600">{item.university}</p>
                       </div>
-
-                      {item.description && (
-                        <p className="text-xs text-gray-500 mt-1.5 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
+                      <div className="flex gap-2">
+                        <button type="button" onClick={() => handleEdit(item)} className="p-2 text-gray-500 hover:text-violet-600"><Edit2 size={14} /></button>
+                        <button type="button" onClick={() => void handleDelete(item.id)} className="p-2 text-gray-500 hover:text-red-600"><Trash2 size={14} /></button>
+                      </div>
                     </div>
 
-                    <div className="flex flex-col gap-1.5">
-                      <Btn
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(item)}
-                      >
-                        <Edit2 size={12} />
-                        Edit
-                      </Btn>
-
-                      <Btn
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleDelete(item.id)}
-                      >
-                        <Trash2 size={12} />
-                        Delete
-                      </Btn>
+                    <div className="mt-2 text-xs text-gray-500">
+                      {item.field} · {formatDate(item.startDate)} {item.endDate ? `- ${formatDate(item.endDate)}` : "- Present"}
                     </div>
+
+                    {item.description && <p className="mt-2 text-sm text-gray-600">{item.description}</p>}
                   </div>
                 ))}
               </div>
             )}
-          </Card>
-
-          {/* CV Preview */}
-          <Card className="p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Eye size={15} className="text-violet-500" />
-              Preview in CV
-            </h3>
-
-            <p className="text-xs text-gray-400 mb-4">
-              This is how your education section will appear in your CV
-            </p>
-
-            <div className="border-t-2 border-violet-600 pt-4">
-              <p className="text-xs font-bold tracking-widest text-violet-700 uppercase mb-3">
-                Education
-              </p>
-
-              {education.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">
-                  Add education to see the preview
-                </p>
-              ) : (
-                education.map((item, index) => (
-                  <div key={item.id} className="mb-4 flex gap-2">
-                    <div
-                      className={cn(
-                        "w-2 h-2 rounded-full mt-1.5 flex-shrink-0",
-                        index === 0 ? "bg-violet-600" : "bg-emerald-500",
-                      )}
-                    />
-
-                    <div className="flex-1">
-                      <div className="flex justify-between gap-4">
-                        <p className="text-sm font-bold text-gray-900">
-                          {item.degree}
-                        </p>
-
-                        <p className="text-xs text-gray-400 whitespace-nowrap">
-                          {item.startDate} –{" "}
-                          {item.current ? "Present" : item.endDate}
-                        </p>
-                      </div>
-
-                      {item.field && (
-                        <p className="text-xs text-gray-500">{item.field}</p>
-                      )}
-
-                      <p className="text-xs text-gray-500 italic">
-                        {item.school}
-                      </p>
-
-                      {item.description && (
-                        <p className="text-xs text-gray-600 mt-1">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
           </Card>
         </div>
       </div>
     </div>
   );
 }
+
