@@ -20,4 +20,4 @@ export interface CreateCertificateDto {
   credentialUrl?: string;
 }
 
-export interface UpdateCertificateDto extends Partial<CreateCertificateDto> {}
+export type UpdateCertificateDto = Partial<CreateCertificateDto>;
