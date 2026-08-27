@@ -3,11 +3,14 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import {
+  forgotPassword,
+  resendVerificationOtp,
   verifyEmail,
   verifyResetOtp,
 } from "../../services/auth/api/auth.service";
@@ -19,6 +22,8 @@ import {
 const OTPPageComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
   const flow = searchParams.get("mode") ?? "verify-email";
   const isResetPasswordFlow = flow === "reset-password";
 
@@ -57,13 +62,56 @@ const OTPPageComponent = () => {
     }
   };
 
-  const onSubmit = async (data: VerifyEmailFormData) => {
-    const email =
+  const getEmailFromContext = () => {
+    return (
       searchParams.get("email") ||
       (isResetPasswordFlow
         ? localStorage.getItem("careerpilot_reset_email")
         : localStorage.getItem("careerpilot_verification_email")) ||
-      "";
+      ""
+    );
+  };
+
+  const handleResendOtp = async () => {
+    const email = getEmailFromContext();
+
+    if (!email) {
+      setError("root", {
+        type: "server",
+        message: isResetPasswordFlow
+          ? "Missing email context. Please try again from the password reset flow."
+          : "Missing email context. Please try again from the register flow.",
+      });
+      return;
+    }
+
+    setIsResending(true);
+    setResendMessage(null);
+
+    try {
+      const response = isResetPasswordFlow
+        ? await forgotPassword({ email })
+        : await resendVerificationOtp({ email });
+
+      setResendMessage(response?.message || "A new code has been sent.");
+    } catch (error: unknown) {
+      const message =
+        typeof error === "object" && error !== null && "response" in error
+          ? (error as { response?: { data?: { message?: string } } }).response?.data
+              ?.message
+          : undefined;
+
+      setError("root", {
+        type: "server",
+        message: message || "Unable to resend the code right now.",
+      });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const onSubmit = async (data: VerifyEmailFormData) => {
+    const email = getEmailFromContext();
 
     if (!email) {
       setError("root", {
@@ -171,10 +219,19 @@ const OTPPageComponent = () => {
 
         <p className="text-sm text-gray-500">
           Didn&apos;t receive it?{" "}
-          <button type="button" className="font-medium text-violet-600 hover:underline">
-            Resend code
+          <button
+            type="button"
+            onClick={handleResendOtp}
+            disabled={isResending || isSubmitting}
+            className="font-medium text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {isResending ? "Sending..." : "Resend code"}
           </button>
         </p>
+
+        {resendMessage && (
+          <p className="text-xs text-emerald-600">{resendMessage}</p>
+        )}
 
         <button
           type="button"
