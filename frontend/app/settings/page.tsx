@@ -1,3 +1,3 @@
-import SettingsPage from "@/pages/app/SettingsPage";
-
-export default function Settings() {}
+export default function SettingsPage() {
+  return null;
+}
