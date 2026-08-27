@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { User, Mail, Phone, MapPin, Globe, Link, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { User, Mail, Phone, MapPin, Globe, Link as LinkIcon, Check } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +9,46 @@ import { Field } from "@/components/ui/Field";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { PageHeader } from "@/components/ui/PageHeader";
+
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+
+import {
+  getProfile,
+  updateProfile,
+  createProfile,
+} from "@/services/profile/api/profile.service";
+import { profileSchema, ProfileFormData } from "@/services/profile/schemas/profile.schema";
+
+import {
+  getContactInfo,
+  createContactInfo,
+  updateContactInfo,
+} from "@/services/contact-info/api/contact-info.api";
+import {
+  contactInfoSchema,
+  ContactInfoFormData,
+} from "@/services/contact-info/schemas/contact-info.schema";
+
+import {
+  LinkType,
+  type ContactInfo,
+  type CreateContactInfoDto,
+} from "@/services/contact-info/types/contact-info";
+import type { ProfileResponse } from "@/services/profile/types/profile";
+
+const LOADING_INITIAL: PersonalInfo = {
+  firstName: "",
+  lastName: "",
+  title: "",
+  email: "",
+  phone: "",
+  location: "",
+  website: "",
+  linkedin: "",
+  github: "",
+  summary: "",
+};
 
 interface PersonalInfo {
   firstName: string;
@@ -23,66 +63,212 @@ interface PersonalInfo {
   summary: string;
 }
 
-const INITIAL_DATA: PersonalInfo = {
-  firstName: "",
-  lastName: "",
-  title: "",
-  email: "",
-  phone: "",
-  location: "",
-  website: "",
-  linkedin: "",
-  github: "",
-  summary: "",
-};
-
 export default function PersonalInfoPage() {
-  const [personalInfo, setPersonalInfo] = useState<PersonalInfo>(INITIAL_DATA);
+  const [personalInfoPreview, setPersonalInfoPreview] = useState<PersonalInfo>(LOADING_INITIAL);
 
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const updateField = (key: keyof PersonalInfo, value: string) => {
-    setPersonalInfo((prev) => ({
-      ...prev,
-      [key]: value,
-    }));
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      headline: "",
+      bio: "",
+      image: "",
+    },
+  });
 
-    setSaved(false);
-  };
+  const contactForm = useForm<ContactInfoFormData>({
+    resolver: zodResolver(contactInfoSchema),
+    defaultValues: {
+      phone: "",
+      email: "",
+      country: "",
+      city: "",
+      links: [],
+    },
+  });
 
-  const handleSave = () => {
-    // TODO: Replace with API request
-    setSaved(true);
+  // Track existing contactInfo id to decide create vs update
+  const [existingContactInfo, setExistingContactInfo] = useState<ContactInfo | null>(null);
 
-    setTimeout(() => {
-      setSaved(false);
-    }, 2000);
+  useEffect(() => {
+    let mounted = true;
+
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const [profileResp, contactResp] = await Promise.allSettled([getProfile(), getContactInfo()]);
+
+        if (!mounted) return;
+
+        if (profileResp.status === "fulfilled" && profileResp.value) {
+          const p: ProfileResponse = profileResp.value as ProfileResponse;
+          profileForm.reset({
+            firstName: p.firstName ?? "",
+            lastName: p.lastName ?? "",
+            headline: p.headline ?? "",
+            bio: p.bio ?? "",
+            image: p.image ?? "",
+          });
+
+          setPersonalInfoPreview((prev) => ({
+            ...prev,
+            firstName: p.firstName ?? "",
+            lastName: p.lastName ?? "",
+            title: p.headline ?? "",
+            summary: p.bio ?? "",
+          }));
+        }
+
+        if (contactResp.status === "fulfilled" && contactResp.value) {
+          const c = contactResp.value as ContactInfo;
+          setExistingContactInfo(c);
+
+          contactForm.reset({
+            phone: c.phone ?? "",
+            email: c.email ?? "",
+            country: c.country ?? "",
+            city: c.city ?? "",
+            links: c.links ?? [],
+          });
+
+          // Extract known links for preview form fields
+          const links = c.links ?? [];
+          const linkedin = links.find((l) => l.type === "LINKEDIN")?.url ?? "";
+          const github = links.find((l) => l.type === "GITHUB")?.url ?? "";
+          const portfolio = links.find((l) => l.type === "PORTFOLIO")?.url ?? "";
+
+          setPersonalInfoPreview((prev) => ({
+            ...prev,
+            email: c.email ?? prev.email,
+            phone: c.phone ?? prev.phone,
+            website: portfolio,
+            linkedin,
+            github,
+            location: c.city ? `${c.city}${c.country ? ", " + c.country : ""}` : prev.location,
+          }));
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Failed to load profile data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const onSubmit = async () => {
+    setSaving(true);
+    setError(null);
+
+    try {
+      // Validate both forms (resolvers already run on submit trigger)
+      const profileValues = profileForm.getValues();
+      const contactValues = contactForm.getValues();
+
+      // Update or create profile
+      try {
+        await updateProfile(profileValues);
+      } catch (err) {
+        // If profile doesn't exist, create it
+        await createProfile(profileValues);
+      }
+
+      const links: CreateContactInfoDto["links"] = [];
+      const website = personalInfoPreview.website.trim();
+      if (website) {
+        links.push({ type: LinkType.PORTFOLIO, url: website });
+      }
+
+      const linkedin = personalInfoPreview.linkedin.trim();
+      if (linkedin) {
+        links.push({ type: LinkType.LINKEDIN, url: linkedin });
+      }
+
+      const github = personalInfoPreview.github.trim();
+      if (github) {
+        links.push({ type: LinkType.GITHUB, url: github });
+      }
+
+      const contactDto: CreateContactInfoDto = {
+        phone: contactValues.phone || undefined,
+        email: contactValues.email || undefined,
+        country: contactValues.country || undefined,
+        city: contactValues.city || undefined,
+        links: links.length ? links : undefined,
+      };
+
+      if (existingContactInfo && existingContactInfo.id) {
+        await updateContactInfo(contactDto);
+      } else {
+        await createContactInfo(contactDto);
+      }
+
+      // Update preview state from current form values
+      const namePreview = `${profileValues.firstName || ""}`;
+      setPersonalInfoPreview((prev) => ({
+        ...prev,
+        firstName: profileValues.firstName || "",
+        lastName: profileValues.lastName || "",
+        title: profileValues.headline || "",
+        summary: profileValues.bio || "",
+        email: contactValues.email || prev.email,
+        phone: contactValues.phone || prev.phone,
+        website: prev.website,
+        linkedin: prev.linkedin,
+        github: prev.github,
+      }));
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 1800);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save profile. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const profileItems = [
     {
       label: "Name",
-      done: !!(personalInfo.firstName && personalInfo.lastName),
+      done:
+        !!(
+          profileForm.getValues("firstName") && profileForm.getValues("lastName")
+        ),
     },
     {
       label: "Professional title",
-      done: !!personalInfo.title,
+      done: !!profileForm.getValues("headline"),
     },
     {
       label: "Email",
-      done: !!personalInfo.email,
+      done: !!contactForm.getValues("email"),
     },
     {
       label: "Phone",
-      done: !!personalInfo.phone,
+      done: !!contactForm.getValues("phone"),
     },
     {
       label: "Location",
-      done: !!personalInfo.location,
+      done: !!(contactForm.getValues("city") || contactForm.getValues("country")),
     },
     {
       label: "Summary",
-      done: !!personalInfo.summary,
+      done: !!profileForm.getValues("bio"),
     },
   ];
 
@@ -107,16 +293,22 @@ export default function PersonalInfoPage() {
             <div className="grid grid-cols-2 gap-4">
               <Field label="First Name" required>
                 <Input
-                  value={personalInfo.firstName}
-                  onChange={(value) => updateField("firstName", value)}
+                  value={profileForm.watch("firstName") ?? ""}
+                  onChange={(v) => {
+                    profileForm.setValue("firstName", v);
+                    setPersonalInfoPreview((prev) => ({ ...prev, firstName: v }));
+                  }}
                   placeholder="Sarah"
                 />
               </Field>
 
               <Field label="Last Name" required>
                 <Input
-                  value={personalInfo.lastName}
-                  onChange={(value) => updateField("lastName", value)}
+                  value={profileForm.watch("lastName") ?? ""}
+                  onChange={(v) => {
+                    profileForm.setValue("lastName", v);
+                    setPersonalInfoPreview((prev) => ({ ...prev, lastName: v }));
+                  }}
                   placeholder="Johnson"
                 />
               </Field>
@@ -124,16 +316,22 @@ export default function PersonalInfoPage() {
 
             <Field label="Professional Title" required>
               <Input
-                value={personalInfo.title}
-                onChange={(value) => updateField("title", value)}
+                value={profileForm.watch("headline") ?? ""}
+                onChange={(v) => {
+                  profileForm.setValue("headline", v);
+                  setPersonalInfoPreview((prev) => ({ ...prev, title: v }));
+                }}
                 placeholder="e.g. Senior Frontend Developer"
               />
             </Field>
 
             <Field label="Email Address" required>
               <Input
-                value={personalInfo.email}
-                onChange={(value) => updateField("email", value)}
+                value={contactForm.watch("email") ?? ""}
+                onChange={(v) => {
+                  contactForm.setValue("email", v);
+                  setPersonalInfoPreview((prev) => ({ ...prev, email: v }));
+                }}
                 placeholder="you@email.com"
                 type="email"
                 icon={<Mail size={14} />}
@@ -142,8 +340,11 @@ export default function PersonalInfoPage() {
 
             <Field label="Phone Number">
               <Input
-                value={personalInfo.phone}
-                onChange={(value) => updateField("phone", value)}
+                value={contactForm.watch("phone") ?? ""}
+                onChange={(v) => {
+                  contactForm.setValue("phone", v);
+                  setPersonalInfoPreview((prev) => ({ ...prev, phone: v }));
+                }}
                 placeholder="+1 (555) 234-5678"
                 icon={<Phone size={14} />}
               />
@@ -151,8 +352,11 @@ export default function PersonalInfoPage() {
 
             <Field label="Location">
               <Input
-                value={personalInfo.location}
-                onChange={(value) => updateField("location", value)}
+                value={contactForm.watch("city") ?? ""}
+                onChange={(v) => {
+                  contactForm.setValue("city", v);
+                  setPersonalInfoPreview((prev) => ({ ...prev, location: v }));
+                }}
                 placeholder="San Francisco, CA"
                 icon={<MapPin size={14} />}
               />
@@ -160,8 +364,8 @@ export default function PersonalInfoPage() {
 
             <Field label="Website / Portfolio">
               <Input
-                value={personalInfo.website}
-                onChange={(value) => updateField("website", value)}
+                value={personalInfoPreview.website}
+                onChange={(v) => setPersonalInfoPreview((prev) => ({ ...prev, website: v }))}
                 placeholder="https://yoursite.com"
                 icon={<Globe size={14} />}
               />
@@ -169,19 +373,19 @@ export default function PersonalInfoPage() {
 
             <Field label="LinkedIn Profile">
               <Input
-                value={personalInfo.linkedin}
-                onChange={(value) => updateField("linkedin", value)}
+                value={personalInfoPreview.linkedin}
+                onChange={(v) => setPersonalInfoPreview((prev) => ({ ...prev, linkedin: v }))}
                 placeholder="linkedin.com/in/yourname"
-                icon={<Link size={14} />}
+                icon={<LinkIcon size={14} />}
               />
             </Field>
 
             <Field label="GitHub Profile">
               <Input
-                value={personalInfo.github}
-                onChange={(value) => updateField("github", value)}
+                value={personalInfoPreview.github}
+                onChange={(v) => setPersonalInfoPreview((prev) => ({ ...prev, github: v }))}
                 placeholder="github.com/yourname"
-                icon={<Link size={14} />}
+                icon={<LinkIcon size={14} />}
               />
             </Field>
 
@@ -190,24 +394,33 @@ export default function PersonalInfoPage() {
               hint="A brief 2-3 sentence overview of your professional background"
             >
               <Textarea
-                value={personalInfo.summary}
-                onChange={(value) => updateField("summary", value)}
+                value={profileForm.watch("bio") ?? ""}
+                onChange={(v) => {
+                  profileForm.setValue("bio", v);
+                  setPersonalInfoPreview((prev) => ({ ...prev, summary: v }));
+                }}
                 placeholder="Describe your professional background and key strengths…"
                 rows={4}
-                maxLength={300}
+                maxLength={1000}
               />
             </Field>
 
-            <Btn onClick={handleSave}>
-              {saved ? (
-                <>
-                  <Check size={16} />
-                  Saved!
-                </>
-              ) : (
-                "Save Personal Info"
-              )}
-            </Btn>
+            <div className="flex items-center gap-3">
+              <Btn onClick={onSubmit} disabled={saving}>
+                {saving ? (
+                  "Saving..."
+                ) : saved ? (
+                  <>
+                    <Check size={16} />
+                    Saved!
+                  </>
+                ) : (
+                  "Save Personal Info"
+                )}
+              </Btn>
+
+              {error && <span className="text-sm text-red-600">{error}</span>}
+            </div>
           </div>
         </Card>
 
@@ -221,46 +434,46 @@ export default function PersonalInfoPage() {
 
             <div className="flex items-start gap-4">
               <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-                {personalInfo.firstName?.[0] || "?"}
-                {personalInfo.lastName?.[0] || ""}
+                {personalInfoPreview.firstName?.[0] || "?"}
+                {personalInfoPreview.lastName?.[0] || ""}
               </div>
 
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {personalInfo.firstName || "First"}{" "}
-                  {personalInfo.lastName || "Last"}
+                  {personalInfoPreview.firstName || "First"} {" "}
+                  {personalInfoPreview.lastName || "Last"}
                 </h2>
 
                 <p className="text-violet-600 font-medium text-sm">
-                  {personalInfo.title || "Professional Title"}
+                  {personalInfoPreview.title || "Professional Title"}
                 </p>
 
                 <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2">
-                  {personalInfo.email && (
+                  {personalInfoPreview.email && (
                     <span className="flex items-center gap-1 text-xs text-gray-500">
                       <Mail size={11} />
-                      {personalInfo.email}
+                      {personalInfoPreview.email}
                     </span>
                   )}
 
-                  {personalInfo.phone && (
+                  {personalInfoPreview.phone && (
                     <span className="flex items-center gap-1 text-xs text-gray-500">
                       <Phone size={11} />
-                      {personalInfo.phone}
+                      {personalInfoPreview.phone}
                     </span>
                   )}
 
-                  {personalInfo.location && (
+                  {personalInfoPreview.location && (
                     <span className="flex items-center gap-1 text-xs text-gray-500">
                       <MapPin size={11} />
-                      {personalInfo.location}
+                      {personalInfoPreview.location}
                     </span>
                   )}
                 </div>
 
-                {personalInfo.summary && (
+                {personalInfoPreview.summary && (
                   <p className="mt-3 text-xs text-gray-600 leading-relaxed">
-                    {personalInfo.summary}
+                    {personalInfoPreview.summary}
                   </p>
                 )}
               </div>
