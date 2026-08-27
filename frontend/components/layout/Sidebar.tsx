@@ -5,19 +5,19 @@ import {
   User,
   Briefcase,
   GraduationCap,
-  Award,
   Zap,
   FolderOpen,
-  Sparkles,
-  LayoutTemplate,
-  Eye,
-  Download,
   Settings,
   LogOut,
   FileText,
+  Award,
+  LayoutTemplate,
+  Globe,
 } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
+
+import { logout } from "@/services/auth/api/auth.service";
 import { cn } from "@/utils";
 
 const NAV_ITEMS = [
@@ -51,16 +51,40 @@ const NAV_ITEMS = [
     label: "Projects",
     icon: FolderOpen,
   },
+  {
+    href: "/profile/certificates",
+    label: "Certificates",
+    icon: Award,
+  },
+  {
+    href: "/resume",
+    label: "Resume",
+    icon: FileText,
+  },
+  {
+    href: "/resume/templates",
+    label: "Templates",
+    icon: LayoutTemplate,
+  },
+  {
+    href: "/profile/language",
+    label: "Languages",
+    icon: Globe,
+  },
 ];
 
 export function Sidebar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
 
-  const handleLogout = () => {
-    // TODO:
-    // امسح الـ token / session هنا
-    router.push("/login");
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      router.push("/login");
+    }
   };
 
   return (

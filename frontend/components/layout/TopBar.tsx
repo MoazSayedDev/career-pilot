@@ -19,10 +19,11 @@ const BREADCRUMBS: Record<string, string> = {
 };
 
 export function TopBar() {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
 
-  const currentPage = BREADCRUMBS[pathname] || "Dashboard";
+  const currentPage =
+    BREADCRUMBS[pathname as keyof typeof BREADCRUMBS] || "Dashboard";
 
   return (
     <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20">
