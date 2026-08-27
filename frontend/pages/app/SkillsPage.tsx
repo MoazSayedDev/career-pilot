@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Zap, Eye, Plus, X } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Zap, Plus, X } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
@@ -11,23 +11,12 @@ import { Select } from "@/components/ui/Select";
 import { SkillLevelBadge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
 
-interface Skill {
-  id: string;
-  name: string;
-  level: string;
-  category: string;
-}
-
-const CATEGORIES = [
-  "Frontend",
-  "Backend",
-  "Languages",
-  "Design",
-  "DevOps",
-  "Database",
-  "Mobile",
-  "Other",
-];
+import { createSkill, deleteSkill, getSkills } from "@/services/skill/api/skill.service";
+import {
+  SKILL_LEVELS,
+  SKILL_LEVEL_LABELS,
+  type Skill,
+} from "@/services/skill/types/skill";
 
 const QUICK_SKILLS = [
   "JavaScript",
@@ -40,59 +29,71 @@ const QUICK_SKILLS = [
   "React Native",
 ];
 
+const mapLevelToBackend = (value: string): Skill["level"] => {
+  const normalized = value.toUpperCase().replace(/\s+/g, "_");
+  if (normalized === "BEGINNER" || normalized === "INTERMEDIATE" || normalized === "ADVANCED" || normalized === "EXPERT") {
+    return normalized as Skill["level"];
+  }
+  return "INTERMEDIATE";
+};
+
 export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
-
   const [name, setName] = useState("");
-  const [level, setLevel] = useState("");
-  const [category, setCategory] = useState("");
+  const [level, setLevel] = useState("INTERMEDIATE");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleAdd = () => {
+  const loadSkills = async () => {
+    try {
+      const data = await getSkills();
+      setSkills(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void loadSkills();
+  }, []);
+
+  const handleAdd = async () => {
     if (!name.trim()) {
       setError("Skill name is required");
       return;
     }
 
-    const newSkill: Skill = {
-      id: crypto.randomUUID(),
-      name: name.trim(),
-      level: level || "Intermediate",
-      category: category || "Other",
-    };
-
-    setSkills((prev) => [...prev, newSkill]);
-
-    setName("");
-    setLevel("");
-    setCategory("");
-    setError("");
+    setSubmitting(true);
+    try {
+      await createSkill({
+        name: name.trim(),
+        level: mapLevelToBackend(level),
+        yearsOfExperience: 1,
+      });
+      setName("");
+      setLevel("INTERMEDIATE");
+      setError("");
+      await loadSkills();
+    } catch (err) {
+      console.error(err);
+      setError("Failed to save skill.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setSkills((prev) => prev.filter((skill) => skill.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteSkill(id);
+      await loadSkills();
+    } catch (err) {
+      console.error(err);
+    }
   };
-
-  const grouped = CATEGORIES.reduce(
-    (acc, categoryName) => {
-      const items = skills.filter((skill) => skill.category === categoryName);
-
-      if (items.length > 0) {
-        acc[categoryName] = items;
-      }
-
-      return acc;
-    },
-    {} as Record<string, Skill[]>,
-  );
-
-  const ungrouped = skills.filter(
-    (skill) => !CATEGORIES.includes(skill.category),
-  );
-
-  if (ungrouped.length > 0) {
-    grouped["Other"] = [...(grouped["Other"] || []), ...ungrouped];
-  }
 
   return (
     <div>
@@ -104,16 +105,13 @@ export default function SkillsPage() {
       />
 
       <div className="grid lg:grid-cols-5 gap-6">
-        {/* Form */}
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
             <Zap size={15} className="text-violet-500" />
             Add Skill
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Add your skills one at a time
-          </p>
+          <p className="text-xs text-gray-400 mb-5">Add your skills one at a time</p>
 
           <div className="flex flex-col gap-4">
             <Field label="Skill Name" required error={error}>
@@ -131,27 +129,17 @@ export default function SkillsPage() {
               <Select
                 value={level}
                 onChange={setLevel}
-                options={["Beginner", "Intermediate", "Advanced", "Expert"]}
+                options={SKILL_LEVELS.map((skillLevel) => SKILL_LEVEL_LABELS[skillLevel])}
                 placeholder="Select level"
               />
             </Field>
 
-            <Field label="Category">
-              <Select
-                value={category}
-                onChange={setCategory}
-                options={CATEGORIES}
-                placeholder="Select category"
-              />
-            </Field>
-
-            <Btn onClick={handleAdd}>
+            <Btn onClick={() => void handleAdd()} disabled={submitting}>
               <Plus size={15} />
-              Add Skill
+              {submitting ? "Saving..." : "Add Skill"}
             </Btn>
           </div>
 
-          {/* Quick Add */}
           <div className="mt-6 pt-5 border-t border-gray-100">
             <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
               Quick Add
@@ -175,116 +163,44 @@ export default function SkillsPage() {
           </div>
         </Card>
 
-        {/* Skills + Preview */}
         <div className="lg:col-span-3 flex flex-col gap-5">
-          {/* Skills List */}
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <Zap size={15} className="text-violet-500" />
               Your Skills ({skills.length})
             </h3>
 
-            {skills.length === 0 ? (
+            {loading ? (
+              <p className="text-sm text-gray-500">Loading skills...</p>
+            ) : skills.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
                   <Zap size={22} className="text-gray-400" />
                 </div>
-
                 <p className="font-medium text-gray-600">No skills added yet</p>
-
-                <p className="text-sm text-gray-400">
-                  Add your first skill using the form.
-                </p>
+                <p className="text-sm text-gray-400">Add your first skill using the form.</p>
               </div>
             ) : (
-              <div className="flex flex-col gap-5">
-                {Object.entries(grouped).map(([categoryName, items]) => (
-                  <div key={categoryName}>
-                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-                      {categoryName}
-                    </p>
-
-                    <div className="flex flex-wrap gap-2">
-                      {items.map((skill) => (
-                        <div
-                          key={skill.id}
-                          className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 group"
-                        >
-                          <span>{skill.name}</span>
-
-                          <SkillLevelBadge level={skill.level} />
-
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(skill.id)}
-                            className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all ml-1"
-                          >
-                            <X size={13} />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+              <div className="flex flex-wrap gap-2">
+                {skills.map((skill) => (
+                  <div
+                    key={skill.id}
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 group"
+                  >
+                    <span>{skill.name}</span>
+                    <SkillLevelBadge level={SKILL_LEVEL_LABELS[skill.level]} />
+                    <button
+                      type="button"
+                      onClick={() => void handleDelete(skill.id)}
+                      className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all ml-1"
+                      aria-label={`Delete ${skill.name}`}
+                    >
+                      <X size={12} />
+                    </button>
                   </div>
                 ))}
               </div>
             )}
-          </Card>
-
-          {/* Preview */}
-          <Card className="p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Eye size={15} className="text-violet-500" />
-              Preview in CV
-            </h3>
-
-            <div className="border-t-2 border-violet-600 pt-4">
-              <p className="text-xs font-bold tracking-widest text-violet-700 uppercase mb-3">
-                Skills
-              </p>
-
-              {skills.length === 0 ? (
-                <p className="text-xs text-gray-400 italic">
-                  Add skills to see the preview
-                </p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  {skills.slice(0, 10).map((skill) => {
-                    const levels = [
-                      "Beginner",
-                      "Intermediate",
-                      "Advanced",
-                      "Expert",
-                    ];
-
-                    const currentLevel = levels.indexOf(skill.level);
-
-                    return (
-                      <div
-                        key={skill.id}
-                        className="flex items-center justify-between"
-                      >
-                        <span className="text-xs text-gray-700">
-                          {skill.name}
-                        </span>
-
-                        <div className="flex gap-0.5">
-                          {levels.map((item, index) => (
-                            <div
-                              key={item}
-                              className={`w-2 h-2 rounded-full ${
-                                currentLevel >= index
-                                  ? "bg-violet-500"
-                                  : "bg-gray-200"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
           </Card>
         </div>
       </div>
