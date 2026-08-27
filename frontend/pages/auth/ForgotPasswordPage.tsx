@@ -34,7 +34,9 @@ const ForgotPasswordPageComponent = () => {
 
       if (response?.success) {
         localStorage.setItem("careerpilot_reset_email", data.email);
-        router.push(`/verify-email?email=${encodeURIComponent(data.email)}`);
+        router.push(
+          `/verify-email?email=${encodeURIComponent(data.email)}&mode=reset-password`,
+        );
         return;
       }
 

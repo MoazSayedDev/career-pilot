@@ -2,12 +2,15 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import { verifyEmail } from "../../services/auth/api/auth.service";
+import {
+  verifyEmail,
+  verifyResetOtp,
+} from "../../services/auth/api/auth.service";
 import {
   verifyEmailSchema,
   type VerifyEmailFormData,
@@ -15,6 +18,9 @@ import {
 
 const OTPPageComponent = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const flow = searchParams.get("mode") ?? "verify-email";
+  const isResetPasswordFlow = flow === "reset-password";
 
   const {
     handleSubmit,
@@ -53,22 +59,47 @@ const OTPPageComponent = () => {
 
   const onSubmit = async (data: VerifyEmailFormData) => {
     const email =
-      new URLSearchParams(window.location.search).get("email") ||
-      localStorage.getItem("careerpilot_verification_email") ||
+      searchParams.get("email") ||
+      (isResetPasswordFlow
+        ? localStorage.getItem("careerpilot_reset_email")
+        : localStorage.getItem("careerpilot_verification_email")) ||
       "";
 
     if (!email) {
       setError("root", {
         type: "server",
-        message: "Missing email context. Please try again from the register flow.",
+        message: isResetPasswordFlow
+          ? "Missing email context. Please try again from the password reset flow."
+          : "Missing email context. Please try again from the register flow.",
       });
       return;
     }
 
     try {
-      const response = await verifyEmail({ email, otp: data.otp });
+      const response = isResetPasswordFlow
+        ? await verifyResetOtp({ email, otp: data.otp })
+        : await verifyEmail({ email, otp: data.otp });
 
       if (response?.success) {
+        if (isResetPasswordFlow) {
+          const resetToken = (response as { data?: { resetToken?: string } })?.data
+            ?.resetToken;
+
+          if (!resetToken) {
+            setError("root", {
+              type: "server",
+              message: "Reset token was not returned. Please try again.",
+            });
+            return;
+          }
+
+          localStorage.setItem("careerpilot_reset_token", resetToken);
+          router.push(
+            `/reset-password?email=${encodeURIComponent(email)}&token=${encodeURIComponent(resetToken)}`,
+          );
+          return;
+        }
+
         router.push("/login");
         return;
       }

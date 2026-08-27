@@ -20,22 +20,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
       }
 
       const callback = onChange as (value: string | ChangeEvent<HTMLInputElement>) => void;
+      const target = event?.target as HTMLInputElement | undefined;
+      const value = target?.value ?? "";
       const source = callback.toString();
       const usesEventTarget =
-        /\b(event|e)\.target(\.value)?\b/.test(source) ||
+        /\b(?:event|e)\.target(?:\.value)?\b/.test(source) ||
         /target\.value/.test(source) ||
         /shouldValidate|setValue/.test(source);
 
-      try {
-        if (usesEventTarget) {
-          callback(event);
-          return;
-        }
-      } catch {
-        // Fall back to the value-only callback style below.
+      if (usesEventTarget) {
+        callback(event);
+        return;
       }
 
-      callback(event.target.value);
+      callback(value);
     };
 
     const inputClassName = cn(
