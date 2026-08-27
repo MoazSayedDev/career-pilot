@@ -95,6 +95,8 @@ export interface Resume {
   updatedAt?: string;
 }
 
+export type ResumeDetails = Resume;
+
 export interface CreateResumeDto {
   title: string;
   template: ResumeTemplate;
