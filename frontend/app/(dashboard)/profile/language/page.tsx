@@ -1,7 +1,6 @@
 import { Globe } from "lucide-react";
 
 import { PageHeader } from "@/components/ui/PageHeader";
-import LanguageForm from "@/services/language/components/LanguageForm";
 
 export default function LanguagePage() {
   return (
@@ -12,9 +11,7 @@ export default function LanguagePage() {
         subtitle="Manage the languages you speak and your proficiency levels."
       />
 
-      <div className="max-w-4xl">
-        <LanguageForm />
-      </div>
+      <div className="max-w-4xl"></div>
     </div>
   );
 }

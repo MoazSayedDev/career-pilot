@@ -19,9 +19,7 @@ export const getExperiences = async (): Promise<Experience[]> => {
   return response.data.data;
 };
 
-export const getExperienceById = async (
-  id: string,
-): Promise<Experience> => {
+export const getExperienceById = async (id: string): Promise<Experience> => {
   const response = await api.get(`${BASE_URL}/${encodeURIComponent(id)}`);
   return response.data.data;
 };
