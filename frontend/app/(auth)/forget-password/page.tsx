@@ -1,9 +1,9 @@
-import ForgetPasswordForm from "@/services/auth/components/ForgetPasswordForm";
+import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
 
 export default function ForgetPasswordPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center font-sans">
-      <ForgetPasswordForm />
+      <ForgotPasswordPage />
     </div>
   );
 }

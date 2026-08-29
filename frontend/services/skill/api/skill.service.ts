@@ -23,9 +23,12 @@ export const getSkills = async (): Promise<Skill[]> => {
   }
 };
 
-export const updateSkill = async (data: UpdateSkillDto): Promise<Skill> => {
+export const updateSkill = async (
+  id: string,
+  data: UpdateSkillDto,
+): Promise<Skill> => {
   try {
-    const response = await axios.patch(BASE_URL, data);
+    const response = await axios.patch(`${BASE_URL}/${encodeURIComponent(id)}`, data);
     return response.data.data;
   } catch (error) {
     console.error("Error updating skill:", error);

@@ -8,10 +8,10 @@ export const LANGUAGE_LEVELS = [
 export type LanguageLevel = (typeof LANGUAGE_LEVELS)[number];
 
 export const LANGUAGE_LEVEL_LABELS: Record<LanguageLevel, string> = {
-  BASIC: "Basic",
-  CONVERSATIONAL: "Conversational",
-  PROFESSIONAL: "Professional",
-  NATIVE: "Native",
+  BASIC: "BASIC",
+  CONVERSATIONAL: "CONVERSATIONAL",
+  PROFESSIONAL: "PROFESSIONAL",
+  NATIVE: "NATIVE",
 };
 
 export interface Language {

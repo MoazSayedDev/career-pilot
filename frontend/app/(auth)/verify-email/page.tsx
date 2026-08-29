@@ -1,11 +1,11 @@
 import { Suspense } from "react";
-import VerifyEmailForm from "@/services/auth/components/VerifyEmailForm";
+import { OTPPage } from "@/pages/auth/OTPPage";
 
 export default function VerifyEmailPage() {
   return (
     <div className="flex flex-1 flex-col items-center justify-center font-sans">
       <Suspense>
-        <VerifyEmailForm />
+        <OTPPage />
       </Suspense>
     </div>
   );

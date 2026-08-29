@@ -40,4 +40,4 @@ export interface CreateProfileDto {
   image?: string;
 }
 
-export interface UpdateProfileDto extends Partial<CreateProfileDto> {}
+export type UpdateProfileDto = Partial<CreateProfileDto>;

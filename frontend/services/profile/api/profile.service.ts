@@ -1,7 +1,6 @@
 import axios from "@/lib/axios";
 import {
   CreateProfileDto,
-  Profile,
   ProfileResponse,
   UpdateProfileDto,
 } from "../types/profile";
@@ -13,7 +12,7 @@ export const createProfile = async (
 ): Promise<ProfileResponse> => {
   try {
     const response = await axios.post(BASE_URL, data);
-    return response.data.date;
+    return response.data.data;
   } catch (error) {
     console.error("Error creating profile:", error);
     throw error;

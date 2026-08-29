@@ -35,4 +35,4 @@ export interface CreateContactInfoDto {
   city?: string;
 }
 
-export interface UpdateContactInfoDto extends Partial<CreateContactInfoDto> {}
+export type UpdateContactInfoDto = Partial<CreateContactInfoDto>;

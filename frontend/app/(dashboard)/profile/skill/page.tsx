@@ -1,0 +1,9 @@
+import SkillsPage from "@/pages/app/SkillsPage";
+
+export default function Skill() {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-6">
+      <SkillsPage />
+    </div>
+  );
+}

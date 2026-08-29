@@ -22,4 +22,4 @@ export interface CreateEducationDto {
   endDate?: string;
 }
 
-export interface UpdateEducationDto extends Partial<CreateEducationDto> {}
+export type UpdateEducationDto = Partial<CreateEducationDto>;

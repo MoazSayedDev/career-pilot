@@ -9,11 +9,11 @@ export const EMPLOYMENT_TYPE = [
 export type EmploymentType = (typeof EMPLOYMENT_TYPE)[number];
 
 export const EMPLOYMENT_TYPE_LABELS: Record<EmploymentType, string> = {
-  FULL_TIME: "Full Time",
-  PART_TIME: "Part Time",
-  CONTRACT: "Contract",
-  INTERNSHIP: "Internship",
-  FREELANCE: "Freelance",
+  FULL_TIME: "FULL_TIME",
+  PART_TIME: "PART_TIME",
+  CONTRACT: "CONTRACT",
+  INTERNSHIP: "INTERNSHIP",
+  FREELANCE: "FREELANCE",
 };
 
 export interface Experience {
