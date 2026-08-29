@@ -1,520 +1,895 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
+import type { Dispatch, ReactNode, SetStateAction } from "react";
 import {
-  ArrowRight,
   Award,
-  BriefcaseBusiness,
+  Briefcase,
   Check,
-  FileCheck2,
-  FolderOpen,
-  Globe,
+  ChevronDown,
+  FileText,
+  FolderGit2,
   GraduationCap,
+  Languages,
+  Loader2,
+  Plus,
   Sparkles,
-  Target,
-  Wand2,
-  Zap,
 } from "lucide-react";
 
-import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
-import { PageHeader } from "@/components/ui/PageHeader";
-import { Textarea } from "@/components/ui/Textarea";
-import { cn } from "@/utils";
+import { Btn } from "@/components/ui/Btn";
 
-type Step = "choice" | "section-picker" | "job-form" | "analyzing" | "result";
+import { createResume } from "@/services/resume/api/resume.service";
+import { getProfile } from "@/services/profile/api/profile.service";
 
-type ResumeSection = {
+import type { CreateResumeDto } from "@/services/resume/types/resume";
+
+interface Skill {
   id: string;
-  label: string;
+  name: string;
+  level: string;
+  yearsOfExperience: number;
+}
+
+interface Experience {
+  id: string;
+  company: string;
+  position: string;
+  employmentType: string;
+  location: string;
+  startDate: string;
+  endDate: string | null;
+  currentlyWorking: boolean;
+  description: string[];
+  technologies: string[];
+}
+
+interface Education {
+  id: string;
+  university: string;
+  degree: string;
+  field: string;
+  grade: string | null;
+  startDate: string;
+  endDate: string | null;
+  description: string | null;
+}
+
+interface Certificate {
+  id: string;
+  name: string;
+  issuer: string;
+  issueDate: string;
+  expirationDate: string | null;
+  credentialId: string | null;
+  credentialUrl: string | null;
+}
+
+interface Project {
+  id: string;
+  name: string;
   description: string;
-  icon: ReactNode;
+  github: string | null;
+  liveDemo: string | null;
+  technologies: string[];
+  startDate: string | null;
+  endDate: string | null;
+}
+
+interface Language {
+  id: string;
+  language: string;
+  level: string;
+}
+
+interface Profile {
+  skills: Skill[];
+  experiences: Experience[];
+  educations: Education[];
+  certificates: Certificate[];
+  projects: Project[];
+  languages: Language[];
+}
+
+type SectionKey =
+  | "skills"
+  | "experience"
+  | "education"
+  | "certificates"
+  | "projects"
+  | "languages";
+
+const SECTION_INFO: Record<
+  SectionKey,
+  {
+    title: string;
+    description: string;
+  }
+> = {
+  skills: {
+    title: "Skills",
+    description: "Choose the skills you want to include in your resume.",
+  },
+  experience: {
+    title: "Experience",
+    description:
+      "Choose the work experience you want to include in your resume.",
+  },
+  education: {
+    title: "Education",
+    description:
+      "Choose the education entries you want to include in your resume.",
+  },
+  certificates: {
+    title: "Certificates",
+    description: "Choose the certificates you want to include in your resume.",
+  },
+  projects: {
+    title: "Projects",
+    description: "Choose the projects you want to include in your resume.",
+  },
+  languages: {
+    title: "Languages",
+    description: "Choose the languages you want to include in your resume.",
+  },
 };
 
-const MOCK_SKILLS = ["JavaScript", "React", "TypeScript", "Node.js"];
-const MOCK_KEYWORDS = ["REST API", "Git", "Agile", "Backend"];
+export default function StartBuildingPage() {
+  const [profile, setProfile] = useState<Profile | null>(null);
 
-const RESUME_SECTIONS: ResumeSection[] = [
-  {
-    id: "skills",
-    label: "Skills",
-    description: "Highlight the technical and soft skills relevant to your target role.",
-    icon: <Zap size={16} />,
-  },
-  {
-    id: "experience",
-    label: "Experience",
-    description: "Include recent roles and measurable impact from your work history.",
-    icon: <BriefcaseBusiness size={16} />,
-  },
-  {
-    id: "education",
-    label: "Education",
-    description: "Add your degrees, certifications, and academic background.",
-    icon: <GraduationCap size={16} />,
-  },
-  {
-    id: "projects",
-    label: "Projects",
-    description: "Showcase case studies, prototypes, and portfolio work.",
-    icon: <FolderOpen size={16} />,
-  },
-  {
-    id: "certificates",
-    label: "Certificates",
-    description: "Add professional certificates and credentials.",
-    icon: <Award size={16} />,
-  },
-  {
-    id: "languages",
-    label: "Languages",
-    description: "Include spoken or written languages that strengthen your profile.",
-    icon: <Globe size={16} />,
-  },
-];
+  const [title, setTitle] = useState("");
+  const [template, setTemplate] = useState("MODERN");
 
-function ResumeCreationOption({
-  title,
-  description,
-  features,
-  buttonLabel,
-  icon,
-  onClick,
-  variant = "manual",
-}: {
-  title: string;
-  description: string;
-  features: string[];
-  buttonLabel: string;
-  icon: ReactNode;
-  onClick: () => void;
-  variant?: "manual" | "ai";
-}) {
-  const cardClassName =
-    variant === "ai" ? "border-violet-200 bg-violet-50/60" : "border-gray-200 bg-white";
-
-  return (
-    <Card className={cn("p-5 md:p-6 h-full", cardClassName)}>
-      <div
-        className={cn(
-          "flex h-12 w-12 items-center justify-center rounded-xl",
-          variant === "ai" ? "bg-violet-600 text-white" : "bg-violet-100 text-violet-600",
-        )}
-      >
-        {icon}
-      </div>
-
-      <h2 className="mt-4 text-xl font-bold text-gray-900">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-gray-600">{description}</p>
-
-      <ul className="mt-5 space-y-2.5">
-        {features.map((feature) => (
-          <li key={feature} className="flex items-start gap-2 text-sm text-gray-700">
-            <span
-              className={cn(
-                "mt-1.5 inline-block h-1.5 w-1.5 rounded-full",
-                variant === "ai" ? "bg-violet-500" : "bg-violet-400",
-              )}
-            />
-            <span>{feature}</span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-6 flex">
-        <Btn
-          onClick={onClick}
-          variant={variant === "ai" ? "primary" : "outline"}
-          className="w-full justify-center"
-        >
-          {buttonLabel}
-          {variant === "manual" ? <ArrowRight size={16} /> : <Sparkles size={15} />}
-        </Btn>
-      </div>
-    </Card>
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
+  const [selectedEducations, setSelectedEducations] = useState<string[]>([]);
+  const [selectedCertificates, setSelectedCertificates] = useState<string[]>(
+    [],
   );
-}
+  const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
+  const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
 
-function SectionPicker({
-  selectedSections,
-  onToggle,
-  onContinue,
-  onBack,
-}: {
-  selectedSections: string[];
-  onToggle: (id: string) => void;
-  onContinue: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <Card className="p-6 md:p-8">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Choose what to include in your CV</h2>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          Select the sections you want CareerPilot to include in your resume.
-        </p>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {RESUME_SECTIONS.map((section) => {
-          const isSelected = selectedSections.includes(section.id);
-
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => onToggle(section.id)}
-              className={cn(
-                "flex items-start gap-3 rounded-xl border p-4 text-left transition-all",
-                isSelected
-                  ? "border-violet-200 bg-violet-50 text-violet-700"
-                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-300",
-              )}
-            >
-              <div
-                className={cn(
-                  "mt-0.5 flex h-10 w-10 items-center justify-center rounded-lg",
-                  isSelected ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-500",
-                )}
-              >
-                {section.icon}
-              </div>
-              <div className="flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-gray-900">{section.label}</p>
-                  {isSelected ? (
-                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-600 text-white">
-                      <Check size={12} />
-                    </span>
-                  ) : (
-                    <span className="h-5 w-5 rounded-full border border-gray-300" />
-                  )}
-                </div>
-                <p className="mt-1 text-xs leading-relaxed text-gray-500">{section.description}</p>
-              </div>
-            </button>
-          );
-        })}
-      </div>
-
-      <div className="mt-7 rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-gray-500">Selected sections</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          {selectedSections.length === 0 ? (
-            <span className="text-sm text-gray-400">No sections selected yet.</span>
-          ) : (
-            selectedSections.map((sectionId) => {
-              const section = RESUME_SECTIONS.find((item) => item.id === sectionId);
-              return section ? (
-                <span
-                  key={sectionId}
-                  className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-xs font-medium text-violet-700"
-                >
-                  {section.label}
-                </span>
-              ) : null;
-            })
-          )}
-        </div>
-      </div>
-
-      <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Btn variant="outline" onClick={onBack}>
-          Back
-        </Btn>
-        <Btn onClick={onContinue} disabled={selectedSections.length === 0}>
-          Continue to Resume Builder
-        </Btn>
-      </div>
-    </Card>
-  );
-}
-
-function JobDescriptionForm({
-  value,
-  onChange,
-  onAnalyze,
-  onBack,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  onAnalyze: () => void;
-  onBack: () => void;
-}) {
-  return (
-    <Card className="p-6 md:p-8">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Paste the Job Description</h2>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          CareerPilot will analyze the job description and help you create a resume tailored to this position.
-        </p>
-      </div>
-
-      <Textarea
-        value={value}
-        onChange={onChange}
-        rows={11}
-        placeholder="Paste the job description here..."
-      />
-
-      <div className="mt-3 flex justify-end">
-        <p className="text-xs text-gray-400">{value.length.toLocaleString()} / 10,000 characters</p>
-      </div>
-
-      <div className="mt-7">
-        <h3 className="text-sm font-semibold text-gray-800">What CareerPilot will analyze</h3>
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <Card className="border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-gray-800">Required Skills</p>
-            <p className="mt-2 text-xs leading-relaxed text-gray-600">
-              Identify technical and soft skills required for the position.
-            </p>
-          </Card>
-
-          <Card className="border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-gray-800">Experience</p>
-            <p className="mt-2 text-xs leading-relaxed text-gray-600">
-              Understand the experience and qualifications expected.
-            </p>
-          </Card>
-
-          <Card className="border-gray-200 bg-gray-50 p-4">
-            <p className="text-sm font-semibold text-gray-800">Keywords</p>
-            <p className="mt-2 text-xs leading-relaxed text-gray-600">
-              Extract important ATS keywords from the job description.
-            </p>
-          </Card>
-        </div>
-      </div>
-
-      <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-        <Btn variant="outline" onClick={onBack}>
-          Back
-        </Btn>
-        <Btn onClick={onAnalyze} disabled={!value.trim()}>
-          Analyze Job Description <Sparkles size={15} />
-        </Btn>
-      </div>
-    </Card>
-  );
-}
-
-function AnalysisProgress() {
-  const steps = [
-    { label: "Reading job description", state: "done" },
-    { label: "Identifying required skills", state: "done" },
-    { label: "Matching your experience", state: "active" },
-    { label: "Optimizing resume", state: "pending" },
-  ];
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900">Analyzing Job Description</h2>
-        <p className="mt-2 text-sm leading-relaxed text-gray-600">
-          CareerPilot is identifying the skills, experience, and keywords required for this role.
-        </p>
-      </div>
-
-      <div className="flex items-center justify-center py-4">
-        <div className="flex h-12 w-12 items-center justify-center rounded-full border border-violet-200 bg-violet-50 text-violet-600">
-          <Wand2 size={20} className="animate-pulse" />
-        </div>
-      </div>
-
-      <div className="space-y-3">
-        {steps.map((step) => (
-          <div key={step.label} className="flex items-center gap-3 text-sm text-gray-700">
-            {step.state === "done" ? (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-                <Check size={12} />
-              </span>
-            ) : step.state === "active" ? (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-600">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-violet-600" />
-              </span>
-            ) : (
-              <span className="h-5 w-5 rounded-full border border-gray-300 bg-gray-100" />
-            )}
-            <span className={cn(step.state === "pending" && "text-gray-400")}>{step.label}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function JobDescriptionResult({ onCreateResume }: { onCreateResume: () => void }) {
-  return (
-    <Card className="p-6 md:p-8">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
-          <Sparkles size={18} />
-        </div>
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Your Resume Strategy</h2>
-          <p className="text-sm text-gray-500">Here&apos;s what we found in this job description.</p>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500">Skills</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {MOCK_SKILLS.map((skill) => (
-              <span
-                key={skill}
-                className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-sm font-medium text-violet-700"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500">Experience Requirements</h3>
-          <p className="mt-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
-            2+ years of software development experience
-          </p>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-gray-500">Important Keywords</h3>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {MOCK_KEYWORDS.map((keyword) => (
-              <span
-                key={keyword}
-                className="rounded-full border border-gray-200 bg-white px-3 py-1.5 text-sm text-gray-700"
-              >
-                {keyword}
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="mt-8 flex justify-end">
-        <Btn onClick={onCreateResume}>
-          Create Tailored Resume <ArrowRight size={16} />
-        </Btn>
-      </div>
-    </Card>
-  );
-}
-
-export default function ResumePage() {
-  const [step, setStep] = useState<Step>("choice");
-  const [jobDescription, setJobDescription] = useState("");
-  const [selectedSections, setSelectedSections] = useState<string[]>([
+  const [openSections, setOpenSections] = useState<SectionKey[]>([
     "skills",
     "experience",
     "education",
+    "certificates",
+    "projects",
+    "languages",
   ]);
-  const analysisTimeoutRef = useRef<number | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    return () => {
-      if (analysisTimeoutRef.current) {
-        window.clearTimeout(analysisTimeoutRef.current);
+    const loadProfile = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // One request only
+        const response = await getProfile();
+
+        const data = response.data ?? response;
+
+        setProfile(data);
+
+        // Select everything by default
+        setSelectedSkills(data.skills?.map((item: Skill) => item.id) ?? []);
+
+        setSelectedExperiences(
+          data.experiences?.map((item: Experience) => item.id) ?? [],
+        );
+
+        setSelectedEducations(
+          data.educations?.map((item: Education) => item.id) ?? [],
+        );
+
+        setSelectedCertificates(
+          data.certificates?.map((item: Certificate) => item.id) ?? [],
+        );
+
+        setSelectedProjects(
+          data.projects?.map((item: Project) => item.id) ?? [],
+        );
+
+        setSelectedLanguages(
+          data.languages?.map((item: Language) => item.id) ?? [],
+        );
+      } catch (err) {
+        console.error("Failed to load profile:", err);
+        setError("Failed to load your profile. Please try again.");
+      } finally {
+        setLoading(false);
       }
     };
+
+    void loadProfile();
   }, []);
 
-  const toggleSection = (id: string) => {
-    setSelectedSections((current) =>
-      current.includes(id) ? current.filter((sectionId) => sectionId !== id) : [...current, id],
+  const toggleItem = (
+    id: string,
+    setSelected: Dispatch<SetStateAction<string[]>>,
+  ) => {
+    setSelected((current) =>
+      current.includes(id)
+        ? current.filter((itemId) => itemId !== id)
+        : [...current, id],
     );
   };
 
-  const handleAnalyze = () => {
-    if (!jobDescription.trim()) return;
+  const toggleSection = (section: SectionKey) => {
+    setOpenSections((current) =>
+      current.includes(section)
+        ? current.filter((item) => item !== section)
+        : [...current, section],
+    );
+  };
 
-    if (analysisTimeoutRef.current) {
-      window.clearTimeout(analysisTimeoutRef.current);
+  const selectedCount =
+    selectedSkills.length +
+    selectedExperiences.length +
+    selectedEducations.length +
+    selectedCertificates.length +
+    selectedProjects.length +
+    selectedLanguages.length;
+
+  const handleCreateResume = async () => {
+    // Validate title
+    if (!title.trim()) {
+      setError("Please enter a title for your resume.");
+      return;
     }
 
-    setStep("analyzing");
-    analysisTimeoutRef.current = window.setTimeout(() => {
-      setStep("result");
-    }, 1400);
+    // Validate selected items
+    if (selectedCount === 0) {
+      setError("Please select at least one item for your resume.");
+      return;
+    }
+
+    setCreating(true);
+    setError(null);
+
+    try {
+      const payload: CreateResumeDto = {
+        title: title.trim(),
+        template,
+
+        skillIds: selectedSkills,
+        experienceIds: selectedExperiences,
+        educationIds: selectedEducations,
+        certificateIds: selectedCertificates,
+        projectIds: selectedProjects,
+        languageIds: selectedLanguages,
+      };
+
+      console.log("Creating resume:", payload);
+
+      const resume = await createResume(payload);
+
+      console.log("Resume created:", resume);
+
+      // Navigate to resume editor after creation
+      // router.push(`/resume/${resume.id}`);
+    } catch (err) {
+      console.error("Failed to create resume:", err);
+      setError("Failed to create your resume. Please try again.");
+    } finally {
+      setCreating(false);
+    }
   };
 
-  const handleCreateTailoredResume = () => {
-    setStep("section-picker");
-  };
+  if (loading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50">
+        <div className="flex items-center gap-3 text-gray-600">
+          <Loader2 size={20} className="animate-spin" />
+          <span>Loading your profile...</span>
+        </div>
+      </main>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+        <div className="text-center">
+          <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+
+          <p className="text-sm text-gray-500">
+            We couldn't load your profile.
+          </p>
+        </div>
+      </main>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto">
-      <PageHeader
-        icon={<FileCheck2 size={24} />}
-        title="Resume"
-        subtitle="Build and manage the final resume your CV will use."
-      />
+    <main className="min-h-screen bg-gray-50 px-4 py-10">
+      <div className="mx-auto max-w-4xl">
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+            <Sparkles size={22} />
+          </div>
 
-      {step === "choice" && (
-        <div className="grid gap-5 md:grid-cols-2">
-          <ResumeCreationOption
-            title="Build Your Resume"
-            description="Create your resume step by step by choosing the information you want to include."
-            features={[
-              "Choose your skills",
-              "Add your experience",
-              "Add your education",
-              "Add projects and certifications",
-              "Customize your resume",
-            ]}
-            buttonLabel="Start Building"
-            icon={<Target size={18} />}
-            onClick={() => setStep("section-picker")}
-            variant="manual"
-          />
+          <h1 className="text-3xl font-bold text-gray-900">
+            Build Your Resume
+          </h1>
 
-          <ResumeCreationOption
-            title="Build Resume from Job Description"
-            description="Paste a job description and let CareerPilot tailor your resume to match the role."
-            features={[
-              "Analyze the job description",
-              "Identify required skills",
-              "Match your experience",
-              "Optimize your resume for the role",
-              "Improve ATS compatibility",
-            ]}
-            buttonLabel="Build from Job Description"
-            icon={<Sparkles size={18} />}
-            onClick={() => setStep("job-form")}
-            variant="ai"
-          />
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-gray-500">
+            Select the information you want to include in your resume.
+            Everything comes from your profile.
+          </p>
+        </div>
+
+        {/* Error */}
+        {error && (
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        {/* Resume Details */}
+        <Card className="mb-5 p-5">
+          <div className="mb-5">
+            <h2 className="font-semibold text-gray-900">Resume Details</h2>
+
+            <p className="mt-1 text-xs text-gray-500">
+              Give your resume a name and choose a template.
+            </p>
+          </div>
+
+          <div className="grid gap-5 sm:grid-cols-2">
+            {/* Resume Title */}
+            <div>
+              <label
+                htmlFor="resume-title"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Resume Title
+              </label>
+
+              <input
+                id="resume-title"
+                type="text"
+                value={title}
+                onChange={(event) => {
+                  setTitle(event.target.value);
+
+                  if (error) {
+                    setError(null);
+                  }
+                }}
+                placeholder="e.g. Backend Developer Resume"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              />
+            </div>
+
+            {/* Template */}
+            <div>
+              <label
+                htmlFor="resume-template"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Resume Template
+              </label>
+
+              <select
+                id="resume-template"
+                value={template}
+                onChange={(event) => setTemplate(event.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+              >
+                <option value="MODERN">Modern</option>
+                <option value="CLASSIC">Classic</option>
+                <option value="MINIMAL">Minimal</option>
+              </select>
+            </div>
+          </div>
+        </Card>
+
+        {/* Skills */}
+        <SelectionSection
+          icon={<Sparkles size={18} />}
+          title={SECTION_INFO.skills.title}
+          description={SECTION_INFO.skills.description}
+          open={openSections.includes("skills")}
+          onToggle={() => toggleSection("skills")}
+          selectedCount={selectedSkills.length}
+          totalCount={profile.skills.length}
+          onSelectAll={() =>
+            setSelectedSkills((current) =>
+              current.length === profile.skills.length
+                ? []
+                : profile.skills.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.skills.length > 0 &&
+            selectedSkills.length === profile.skills.length
+          }
+        >
+          {profile.skills.length === 0 ? (
+            <EmptyState text="No skills found in your profile." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {profile.skills.map((skill) => (
+                <SelectableCard
+                  key={skill.id}
+                  selected={selectedSkills.includes(skill.id)}
+                  onClick={() => toggleItem(skill.id, setSelectedSkills)}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{skill.name}</p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formatEnum(skill.level)}
+
+                      {skill.yearsOfExperience
+                        ? ` • ${skill.yearsOfExperience} ${
+                            skill.yearsOfExperience === 1 ? "year" : "years"
+                          }`
+                        : ""}
+                    </p>
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Experience */}
+        <SelectionSection
+          icon={<Briefcase size={18} />}
+          title={SECTION_INFO.experience.title}
+          description={SECTION_INFO.experience.description}
+          open={openSections.includes("experience")}
+          onToggle={() => toggleSection("experience")}
+          selectedCount={selectedExperiences.length}
+          totalCount={profile.experiences.length}
+          onSelectAll={() =>
+            setSelectedExperiences((current) =>
+              current.length === profile.experiences.length
+                ? []
+                : profile.experiences.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.experiences.length > 0 &&
+            selectedExperiences.length === profile.experiences.length
+          }
+        >
+          {profile.experiences.length === 0 ? (
+            <EmptyState text="No experience found in your profile." />
+          ) : (
+            <div className="space-y-3">
+              {profile.experiences.map((experience) => (
+                <SelectableCard
+                  key={experience.id}
+                  selected={selectedExperiences.includes(experience.id)}
+                  onClick={() =>
+                    toggleItem(experience.id, setSelectedExperiences)
+                  }
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {experience.position}
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-600">
+                      {experience.company}
+
+                      {experience.location ? ` • ${experience.location}` : ""}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formatDate(experience.startDate)} —{" "}
+                      {experience.currentlyWorking
+                        ? "Present"
+                        : formatDate(experience.endDate)}
+                    </p>
+
+                    {experience.technologies?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {experience.technologies.map((technology) => (
+                          <span
+                            key={technology}
+                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600"
+                          >
+                            {technology}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Education */}
+        <SelectionSection
+          icon={<GraduationCap size={18} />}
+          title={SECTION_INFO.education.title}
+          description={SECTION_INFO.education.description}
+          open={openSections.includes("education")}
+          onToggle={() => toggleSection("education")}
+          selectedCount={selectedEducations.length}
+          totalCount={profile.educations.length}
+          onSelectAll={() =>
+            setSelectedEducations((current) =>
+              current.length === profile.educations.length
+                ? []
+                : profile.educations.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.educations.length > 0 &&
+            selectedEducations.length === profile.educations.length
+          }
+        >
+          {profile.educations.length === 0 ? (
+            <EmptyState text="No education found in your profile." />
+          ) : (
+            <div className="space-y-3">
+              {profile.educations.map((education) => (
+                <SelectableCard
+                  key={education.id}
+                  selected={selectedEducations.includes(education.id)}
+                  onClick={() =>
+                    toggleItem(education.id, setSelectedEducations)
+                  }
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {education.degree}
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-600">
+                      {education.university}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {education.field}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-400">
+                      {formatDate(education.startDate)} —{" "}
+                      {formatDate(education.endDate)}
+                    </p>
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Certificates */}
+        <SelectionSection
+          icon={<Award size={18} />}
+          title={SECTION_INFO.certificates.title}
+          description={SECTION_INFO.certificates.description}
+          open={openSections.includes("certificates")}
+          onToggle={() => toggleSection("certificates")}
+          selectedCount={selectedCertificates.length}
+          totalCount={profile.certificates.length}
+          onSelectAll={() =>
+            setSelectedCertificates((current) =>
+              current.length === profile.certificates.length
+                ? []
+                : profile.certificates.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.certificates.length > 0 &&
+            selectedCertificates.length === profile.certificates.length
+          }
+        >
+          {profile.certificates.length === 0 ? (
+            <EmptyState text="No certificates found in your profile." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {profile.certificates.map((certificate) => (
+                <SelectableCard
+                  key={certificate.id}
+                  selected={selectedCertificates.includes(certificate.id)}
+                  onClick={() =>
+                    toggleItem(certificate.id, setSelectedCertificates)
+                  }
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {certificate.name}
+                    </p>
+
+                    <p className="mt-1 text-sm text-gray-600">
+                      {certificate.issuer}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      Issued {formatDate(certificate.issueDate)}
+                    </p>
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Projects */}
+        <SelectionSection
+          icon={<FolderGit2 size={18} />}
+          title={SECTION_INFO.projects.title}
+          description={SECTION_INFO.projects.description}
+          open={openSections.includes("projects")}
+          onToggle={() => toggleSection("projects")}
+          selectedCount={selectedProjects.length}
+          totalCount={profile.projects.length}
+          onSelectAll={() =>
+            setSelectedProjects((current) =>
+              current.length === profile.projects.length
+                ? []
+                : profile.projects.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.projects.length > 0 &&
+            selectedProjects.length === profile.projects.length
+          }
+        >
+          {profile.projects.length === 0 ? (
+            <EmptyState text="No projects found in your profile." />
+          ) : (
+            <div className="space-y-3">
+              {profile.projects.map((project) => (
+                <SelectableCard
+                  key={project.id}
+                  selected={selectedProjects.includes(project.id)}
+                  onClick={() => toggleItem(project.id, setSelectedProjects)}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{project.name}</p>
+
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                      {project.description}
+                    </p>
+
+                    {project.technologies?.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {project.technologies.map((technology) => (
+                          <span
+                            key={technology}
+                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600"
+                          >
+                            {technology}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Languages */}
+        <SelectionSection
+          icon={<Languages size={18} />}
+          title={SECTION_INFO.languages.title}
+          description={SECTION_INFO.languages.description}
+          open={openSections.includes("languages")}
+          onToggle={() => toggleSection("languages")}
+          selectedCount={selectedLanguages.length}
+          totalCount={profile.languages.length}
+          onSelectAll={() =>
+            setSelectedLanguages((current) =>
+              current.length === profile.languages.length
+                ? []
+                : profile.languages.map((item) => item.id),
+            )
+          }
+          allSelected={
+            profile.languages.length > 0 &&
+            selectedLanguages.length === profile.languages.length
+          }
+        >
+          {profile.languages.length === 0 ? (
+            <EmptyState text="No languages found in your profile." />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {profile.languages.map((language) => (
+                <SelectableCard
+                  key={language.id}
+                  selected={selectedLanguages.includes(language.id)}
+                  onClick={() => toggleItem(language.id, setSelectedLanguages)}
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">
+                      {language.language}
+                    </p>
+
+                    <p className="mt-1 text-xs text-gray-500">
+                      {formatEnum(language.level)}
+                    </p>
+                  </div>
+                </SelectableCard>
+              ))}
+            </div>
+          )}
+        </SelectionSection>
+
+        {/* Bottom Action */}
+        <Card className="sticky bottom-4 mt-6 p-4 shadow-lg">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="font-medium text-gray-900">
+                {selectedCount} items selected
+              </p>
+
+              <p className="text-xs text-gray-500">
+                You can change your selections before creating the resume.
+              </p>
+            </div>
+
+            <Btn onClick={handleCreateResume} disabled={creating}>
+              {creating ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  Create Resume
+                  <Plus size={16} />
+                </>
+              )}
+            </Btn>
+          </div>
+        </Card>
+      </div>
+    </main>
+  );
+}
+
+function SelectionSection({
+  icon,
+  title,
+  description,
+  open,
+  onToggle,
+  selectedCount,
+  totalCount,
+  onSelectAll,
+  allSelected,
+  children,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  open: boolean;
+  onToggle: () => void;
+  selectedCount: number;
+  totalCount: number;
+  onSelectAll: () => void;
+  allSelected: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Card className="mb-5 overflow-hidden">
+      {/* Section Header */}
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center justify-between p-5 text-left"
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+            {icon}
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="font-semibold text-gray-900">{title}</h2>
+
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+                {selectedCount}/{totalCount}
+              </span>
+            </div>
+
+            <p className="mt-0.5 text-xs text-gray-500">{description}</p>
+          </div>
+        </div>
+
+        <ChevronDown
+          size={18}
+          className={`text-gray-400 transition-transform ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        <div className="border-t border-gray-100 px-5 pb-5 pt-4">
+          {totalCount > 0 && (
+            <div className="mb-4 flex justify-end">
+              <button
+                type="button"
+                onClick={onSelectAll}
+                className="text-xs font-medium text-violet-600 hover:text-violet-700"
+              >
+                {allSelected ? "Remove all" : "Select all"}
+              </button>
+            </div>
+          )}
+
+          {children}
         </div>
       )}
+    </Card>
+  );
+}
 
-      {step === "section-picker" && (
-        <SectionPicker
-          selectedSections={selectedSections}
-          onToggle={toggleSection}
-          onContinue={() => setStep("choice")}
-          onBack={() => setStep("choice")}
-        />
-      )}
+function SelectableCard({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+        selected
+          ? "border-violet-300 bg-violet-50"
+          : "border-gray-200 bg-white hover:border-gray-300"
+      }`}
+    >
+      <span
+        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
+          selected
+            ? "border-violet-600 bg-violet-600 text-white"
+            : "border-gray-300 bg-white"
+        }`}
+      >
+        {selected && <Check size={13} />}
+      </span>
 
-      {step === "job-form" && (
-        <JobDescriptionForm
-          value={jobDescription}
-          onChange={setJobDescription}
-          onAnalyze={handleAnalyze}
-          onBack={() => setStep("choice")}
-        />
-      )}
+      {children}
+    </button>
+  );
+}
 
-      {step === "analyzing" && (
-        <Card className="p-6 md:p-8">
-          <AnalysisProgress />
-        </Card>
-      )}
+function EmptyState({ text }: { text: string }) {
+  return (
+    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
+      <FileText size={24} className="mx-auto text-gray-300" />
 
-      {step === "result" && (
-        <JobDescriptionResult onCreateResume={handleCreateTailoredResume} />
-      )}
+      <p className="mt-2 text-sm text-gray-500">{text}</p>
     </div>
   );
+}
+
+function formatDate(date: string | null | undefined) {
+  if (!date) return "Present";
+
+  return new Date(date).toLocaleDateString("en-US", {
+    month: "short",
+    year: "numeric",
+  });
+}
+
+function formatEnum(value: string) {
+  return value
+    .toLowerCase()
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }

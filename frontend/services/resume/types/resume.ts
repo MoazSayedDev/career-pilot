@@ -99,19 +99,16 @@ export type ResumeDetails = Resume;
 
 export interface CreateResumeDto {
   title: string;
-  template: ResumeTemplate;
-  jobDescription?: string;
+  template: string;
+
   generatedSummary?: string;
 
   skillIds: string[];
   experienceIds: string[];
-  educationIds: string[];
   projectIds: string[];
-  certificateIds: string[];
   languageIds: string[];
-
-  experienceDescriptions?: Record<string, string[]>;
-  projectDescriptions?: Record<string, string>;
+  educationIds: string[];
+  certificateIds?: string[];
 }
 
 export type UpdateResumeDto = Partial<CreateResumeDto>;
