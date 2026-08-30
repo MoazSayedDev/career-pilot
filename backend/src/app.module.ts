@@ -16,6 +16,8 @@ import { PrismaModule } from './prisma/prisma.module';
 
 // Feature modules
 import { ProfileModule } from './profile/profile.module';
+import { CacheModule } from './cache/cache.module';
+
 import { ContactInfoModule } from './contact-info/contact-info.module';
 import { SkillModule } from './skill/skill.module';
 import { ExperienceModule } from './experience/experience.module';
@@ -58,6 +60,8 @@ import { AiService } from './ai/ai.service';
     // Core
     PrismaModule,
 
+    //
+    CacheModule,
     // Authentication
     AuthModule,
     UsersModule,
