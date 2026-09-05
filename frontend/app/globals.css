@@ -1,31 +1,56 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: the ThemeProvider toggles `.dark` on <html>
+   (following the OS preference when the user has not chosen). */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
 
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-geist-sans), var(--font-arabic), Arial, sans-serif;
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* Arabic is the default locale: Tajawal leads so Arabic glyphs are
+     never stolen by the Arial-backed "Geist Fallback" face. */
+  font-family: var(--font-arabic), var(--font-geist-sans), Arial, sans-serif;
+}
+
+html[lang="en"] body {
+  font-family: var(--font-geist-sans), var(--font-arabic), Arial, sans-serif;
+}
+
+/* The .font-sans utility inlines the Geist-first stack; mirror the
+   language-based order so Arabic pages render fully in Tajawal. */
+html[lang="ar"] .font-sans {
+  font-family: var(--font-arabic), var(--font-geist-sans), Arial, sans-serif;
 }
 
 /* Brand identity (Cockpit): deep navy → royal blue, used by the logo mark and user avatars. */
 .bg-brand-gradient {
   background-image: linear-gradient(135deg, #12264f 0%, #1e40af 100%);
+}
+
+/* Flip directional glyphs (arrows, chevrons) when the page is in RTL. */
+[dir="rtl"] .rtl-flip {
+  transform: scaleX(-1);
+}
+
+/* Native date inputs render a calendar icon on the leading side in LTR;
+   flip it in RTL so it sits on the correct side. */
+[dir="rtl"] input[type="date"]::-webkit-calendar-picker-indicator {
+  transform: scaleX(-1);
 }

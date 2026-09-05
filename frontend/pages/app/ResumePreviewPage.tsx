@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 import { getApiErrorMessage } from "@/lib/api-error";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 import { getProfile } from "@/services/profile/api/profile.service";
 import type { ProfileResponse } from "@/services/profile/types/profile";
@@ -31,14 +32,14 @@ import type { Resume } from "@/services/resume/types/resume";
  * Mirrors formatDate in the backend PDF mapper:
  * ISO date -> "Jan 2024", empty string when missing/invalid.
  */
-function formatDate(dateStr?: string | null): string {
+function formatDate(dateStr: string | null | undefined, locale: string): string {
   if (!dateStr) return "";
 
   const date = new Date(dateStr);
 
   if (isNaN(date.getTime())) return "";
 
-  return date.toLocaleDateString("en-US", {
+  return date.toLocaleDateString(locale === "ar" ? "ar" : "en-US", {
     month: "short",
     year: "numeric",
   });
@@ -46,16 +47,29 @@ function formatDate(dateStr?: string | null): string {
 
 /**
  * Mirrors formatEmploymentType in the backend PDF mapper:
- * "FULL_TIME" -> "Full Time".
+ * "FULL_TIME" -> "Full Time" (or the localized employment-type label).
  */
-function formatEnum(value?: string | null): string {
+function formatEnum(
+  value: string | null | undefined,
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   if (!value) return "";
 
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  const key = `employmentType.${value}`;
+
+  const localized = t(key);
+
+  // Unknown enum values are not in the dictionary; fall back to
+  // "Full Time"-style title casing like the backend PDF mapper.
+  if (localized === key) {
+    return value
+      .toLowerCase()
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+
+  return localized;
 }
 
 /**
@@ -83,14 +97,16 @@ function safeHref(url: string): string {
 function sanitizeFileNamePart(value: string): string {
   return (
     value
-      .replace(/[^a-zA-Z0-9-_ ]/g, "")
+      // Keep Unicode letters (Arabic included) so localized names
+      // still produce a meaningful download file name.
+      .replace(/[^\p{L}\p{N}\-_ ]/gu, "")
       .trim()
       .replace(/\s+/g, "_") ?? ""
   );
 }
 
 const SectionHeader = ({ label }: { label: string }) => (
-  <h2 className="mb-2 border-b border-[#0066cc] text-[13px] font-bold uppercase tracking-wider text-[#0066cc]">
+  <h2 className="mb-2 border-b border-[#0066cc] text-[13px] font-bold uppercase tracking-wider text-[#0066cc] dark:border-blue-400 dark:text-blue-400">
     {label}
   </h2>
 );
@@ -98,6 +114,7 @@ const SectionHeader = ({ label }: { label: string }) => (
 export default function ResumePreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t, locale } = useI18n();
   const resumeId = searchParams?.get("id");
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -138,9 +155,7 @@ export default function ResumePreviewPage() {
       } catch (error) {
         if (!cancelled) {
           setResume(null);
-          setLoadError(
-            getApiErrorMessage(error, "Failed to load the resume."),
-          );
+          setLoadError(getApiErrorMessage(error, t("resume.preview.loadFailed")));
         }
       } finally {
         if (!cancelled) {
@@ -154,6 +169,7 @@ export default function ResumePreviewPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resumeId, reloadKey]);
 
   /**
@@ -182,9 +198,9 @@ export default function ResumePreviewPage() {
         jobTitle: exp.position ?? "",
         company: exp.company ?? "",
         location: exp.location ?? "",
-        employmentType: formatEnum(exp.employmentType),
-        dateRange: `${formatDate(exp.startDate)} - ${
-          exp.currentlyWorking ? "Present" : formatDate(exp.endDate)
+        employmentType: formatEnum(exp.employmentType, t),
+        dateRange: `${formatDate(exp.startDate, locale)} - ${
+          exp.currentlyWorking ? t("common.present") : formatDate(exp.endDate, locale)
         }`,
         bullets:
           item.customDescription?.length > 0
@@ -197,8 +213,10 @@ export default function ResumePreviewPage() {
       const proj = item.project ?? ({} as Resume["projects"][number]["project"]);
 
       const links = [
-        proj.github ? { type: "GitHub", url: proj.github } : null,
-        proj.liveDemo ? { type: "Live Demo", url: proj.liveDemo } : null,
+        proj.github ? { type: t("resume.preview.label.github"), url: proj.github } : null,
+        proj.liveDemo
+          ? { type: t("resume.preview.label.liveDemo"), url: proj.liveDemo }
+          : null,
       ].filter(Boolean) as { type: string; url: string }[];
 
       return {
@@ -207,8 +225,8 @@ export default function ResumePreviewPage() {
         description: item.customizedDescription || proj.description || "",
         technologies: proj.technologies ?? [],
         links,
-        dateRange: `${formatDate(proj.startDate)} - ${
-          proj.endDate ? formatDate(proj.endDate) : "Present"
+        dateRange: `${formatDate(proj.startDate, locale)} - ${
+          proj.endDate ? formatDate(proj.endDate, locale) : t("common.present")
         }`,
       };
     });
@@ -218,11 +236,11 @@ export default function ResumePreviewPage() {
 
       return {
         id: item.id,
-        degreeLine: `${edu.degree ?? ""} in ${edu.field ?? ""}`,
+        degreeLine: [edu.degree, edu.field].filter(Boolean).join(" — "),
         university: edu.university ?? "",
         grade: edu.grade ?? "",
         description: edu.description ?? "",
-        dateRange: `${formatDate(edu.startDate)} - ${formatDate(edu.endDate)}`,
+        dateRange: `${formatDate(edu.startDate, locale)} - ${formatDate(edu.endDate, locale)}`,
       };
     });
 
@@ -233,7 +251,7 @@ export default function ResumePreviewPage() {
         id: item.id,
         name: cert.name ?? "",
         issuer: cert.issuer ?? "",
-        date: formatDate(cert.issueDate),
+        date: formatDate(cert.issueDate, locale),
         credentialId: cert.credentialId ?? "",
         url: cert.credentialUrl ?? "",
       };
@@ -266,7 +284,7 @@ export default function ResumePreviewPage() {
       skills,
       hasContent,
     };
-  }, [profile, resume]);
+  }, [profile, resume, t, locale]);
 
   const fileName = `${sanitizeFileNamePart(profile?.firstName ?? "") || "Your"}_${
     sanitizeFileNamePart(profile?.lastName ?? "") || "CV"
@@ -296,7 +314,7 @@ export default function ResumePreviewPage() {
     } catch (error) {
       setDownloaded(false);
       setDownloadError(
-        getApiErrorMessage(error, "Failed to generate the PDF."),
+        getApiErrorMessage(error, t("resume.preview.pdfFailed")),
       );
     } finally {
       if (objectUrl) {
@@ -305,14 +323,14 @@ export default function ResumePreviewPage() {
 
       setDownloading(false);
     }
-  }, [downloading, resume, fileName]);
+  }, [downloading, resume, fileName, t]);
 
   if (loading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center">
-        <div className="flex items-center gap-3 text-gray-600">
+        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
           <Loader2 size={20} className="animate-spin" />
-          <span>Loading your resume...</span>
+          <span>{t("resume.preview.loading")}</span>
         </div>
       </div>
     );
@@ -323,22 +341,24 @@ export default function ResumePreviewPage() {
       <div className="mx-auto max-w-2xl">
         <PageHeader
           icon={<Eye size={24} />}
-          title="Resume Preview"
-          subtitle="Review your resume before generating the PDF"
+          title={t("resume.preview.title")}
+          subtitle={t("resume.preview.subtitleReview")}
         />
 
         <Card className="flex flex-col items-center gap-4 p-10 text-center">
-          <FileText size={32} className="text-gray-300" />
+          <FileText size={32} className="text-gray-300 dark:text-gray-600" />
 
-          <p className="text-sm text-gray-600">{loadError}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">{loadError}</p>
 
           <div className="flex gap-3">
             <Btn variant="outline" onClick={() => setReloadKey((key) => key + 1)}>
               <RefreshCw size={15} />
-              Try again
+              {t("common.retry")}
             </Btn>
 
-            <Btn onClick={() => router.push("/resume")}>Back to Resume</Btn>
+            <Btn onClick={() => router.push("/resume")}>
+              {t("resume.preview.back")}
+            </Btn>
           </div>
         </Card>
       </div>
@@ -350,23 +370,24 @@ export default function ResumePreviewPage() {
       <div className="mx-auto max-w-2xl">
         <PageHeader
           icon={<Eye size={24} />}
-          title="Resume Preview"
-          subtitle="Review your resume before generating the PDF"
+          title={t("resume.preview.title")}
+          subtitle={t("resume.preview.subtitleReview")}
         />
 
         <Card className="flex flex-col items-center gap-4 p-10 text-center">
-          <FileText size={32} className="text-gray-300" />
+          <FileText size={32} className="text-gray-300 dark:text-gray-600" />
 
-          <p className="font-medium text-gray-900">No resume yet</p>
+          <p className="font-medium text-gray-900 dark:text-gray-100">
+            {t("resume.preview.noResume")}
+          </p>
 
-          <p className="text-sm text-gray-500">
-            Build a resume first, then come back to preview and download it
-            as a PDF.
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("resume.preview.noResumeHint")}
           </p>
 
           <Btn onClick={() => router.push("/resume")}>
-            Build your resume
-            <ArrowLeft size={15} className="rotate-180" />
+            {t("resume.preview.buildResume")}
+            <ArrowLeft size={15} className="rotate-180 rtl-flip" />
           </Btn>
         </Card>
       </div>
@@ -377,73 +398,73 @@ export default function ResumePreviewPage() {
     <div className="mx-auto max-w-3xl">
       <PageHeader
         icon={<Eye size={24} />}
-        title="Resume Preview"
-        subtitle="This is exactly how your resume will look in the generated PDF"
+        title={t("resume.preview.title")}
+        subtitle={t("resume.preview.subtitle")}
       />
 
       {/* Actions */}
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <Btn variant="outline" size="sm" onClick={() => router.push("/resume")}>
-          <ArrowLeft size={14} />
-          Back to Resume
+          <ArrowLeft size={14} className="rtl-flip" />
+          {t("resume.preview.back")}
         </Btn>
 
         <Btn onClick={() => void handleGeneratePdf()} disabled={downloading}>
           {downloading ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Generating PDF...
+              {t("resume.preview.generating")}
             </>
           ) : (
             <>
               <FileDown size={16} />
-              Generate PDF
+              {t("resume.preview.generatePdf")}
             </>
           )}
         </Btn>
       </div>
 
       {downloaded && !downloadError && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
           <span className="flex items-center gap-2">
             <CheckCircle2 size={15} />
-            PDF generated — check your downloads folder.
+            {t("resume.preview.success")}
           </span>
 
           <button
             type="button"
             onClick={() => void handleGeneratePdf()}
             disabled={downloading}
-            className="font-medium underline hover:text-emerald-800 disabled:opacity-50"
+            className="font-medium underline hover:text-emerald-800 disabled:opacity-50 dark:hover:text-emerald-300"
           >
-            Download again
+            {t("resume.preview.downloadAgain")}
           </button>
         </div>
       )}
 
       {downloadError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {downloadError}
         </div>
       )}
 
       {/* Resume sheet */}
-      <Card className="overflow-hidden shadow-xl">
+      <Card className="overflow-hidden shadow-xl dark:bg-gray-900">
         <div className="px-6 py-10 sm:px-10">
           {/* Header */}
           <header className="text-center">
-            <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-[#1a1a1a] sm:text-3xl">
+            <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-[#1a1a1a] sm:text-3xl dark:text-gray-100">
               {cv.fullName}
             </h1>
 
             {cv.title && (
-              <p className="mt-1 text-sm text-[#4a4a4a] sm:text-base">
+              <p className="mt-1 text-sm text-[#4a4a4a] sm:text-base dark:text-gray-300">
                 {cv.title}
               </p>
             )}
 
             {cv.contactItems.length > 0 && (
-              <p className="mt-3 text-xs text-[#555555] sm:text-sm">
+              <p className="mt-3 text-xs text-[#555555] sm:text-sm dark:text-gray-400">
                 {cv.contactItems.join("  •  ")}
               </p>
             )}
@@ -452,33 +473,34 @@ export default function ResumePreviewPage() {
               <p className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
                 {cv.links.map((link, index) => (
                   <span key={`${link.id}-${index}`}>
-                    {index > 0 && <span className="mr-3 text-[#999999]">•</span>}
+                    {index > 0 && (
+                      <span className="mr-3 text-[#999999] dark:text-gray-600">•</span>
+                    )}
                     <a
                       href={safeHref(link.url)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0066cc] underline"
+                      className="text-[#0066cc] underline dark:text-blue-400"
                     >
-                      {formatEnum(link.type)}
+                      {formatEnum(link.type, t)}
                     </a>
                   </span>
                 ))}
               </p>
             )}
 
-            <div className="mt-4 h-[1.5px] w-full bg-[#0066cc]" />
+            <div className="mt-4 h-[1.5px] w-full bg-[#0066cc] dark:bg-blue-400" />
           </header>
 
           {!cv.hasContent ? (
-            <p className="py-12 text-center text-sm text-gray-400">
-              This resume has no content yet. Go back and select what to
-              include.
+            <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+              {t("resume.preview.emptyResume")}
             </p>
           ) : (
-            <div className="mt-5 space-y-6 text-sm text-[#2a2a2a]">
+            <div className="mt-5 space-y-6 text-sm text-[#2a2a2a] dark:text-gray-200">
               {cv.summary && (
                 <section>
-                  <SectionHeader label="Summary" />
+                  <SectionHeader label={t("resume.preview.section.summary")} />
 
                   <p className="text-justify leading-relaxed">{cv.summary}</p>
                 </section>
@@ -486,37 +508,37 @@ export default function ResumePreviewPage() {
 
               {cv.experiences.length > 0 && (
                 <section>
-                  <SectionHeader label="Professional Experience" />
+                  <SectionHeader label={t("resume.preview.section.experience")} />
 
                   <div className="space-y-5">
                     {cv.experiences.map((experience) => (
                       <div key={experience.id}>
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a]">
+                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
                             {experience.jobTitle}
 
                             {experience.company && (
-                              <span className="font-normal text-[#4a4a4a]">
+                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
                                 {" "}
                                 - {experience.company}
                               </span>
                             )}
 
                             {experience.location && (
-                              <span className="font-normal text-[#4a4a4a]">
+                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
                                 {" "}
                                 | {experience.location}
                               </span>
                             )}
                           </p>
 
-                          <div className="text-right">
-                            <p className="text-xs text-[#666666]">
+                          <div className="text-end">
+                            <p className="text-xs text-[#666666] dark:text-gray-400">
                               {experience.dateRange}
                             </p>
 
                             {experience.employmentType && (
-                              <p className="text-[11px] italic text-[#777777]">
+                              <p className="text-[11px] italic text-[#777777] dark:text-gray-500">
                                 {experience.employmentType}
                               </p>
                             )}
@@ -524,7 +546,7 @@ export default function ResumePreviewPage() {
                         </div>
 
                         {experience.bullets.length > 0 && (
-                          <ul className="mt-1.5 list-disc space-y-1 pl-5 leading-relaxed text-[#2a2a2a]">
+                          <ul className="mt-1.5 list-disc space-y-1 ps-5 leading-relaxed text-[#2a2a2a] dark:text-gray-300">
                             {experience.bullets.map((bullet, index) => (
                               <li key={index}>{bullet}</li>
                             ))}
@@ -538,18 +560,18 @@ export default function ResumePreviewPage() {
 
               {cv.projects.length > 0 && (
                 <section>
-                  <SectionHeader label="Projects" />
+                  <SectionHeader label={t("resume.preview.section.projects")} />
 
                   <div className="space-y-5">
                     {cv.projects.map((project) => (
                       <div key={project.id}>
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a]">
+                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
                             {project.title}
 
                             {project.links.map((link, index) => (
                               <span key={link.type}>
-                                <span className="mx-2 text-[#666666]">
+                                <span className="mx-2 text-[#666666] dark:text-gray-400">
                                   {index === 0 ? "-" : "|"}
                                 </span>
 
@@ -557,7 +579,7 @@ export default function ResumePreviewPage() {
                                   href={safeHref(link.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs font-normal text-[#0066cc] underline"
+                                  className="text-xs font-normal text-[#0066cc] underline dark:text-blue-400"
                                 >
                                   {link.type}
                                 </a>
@@ -565,7 +587,7 @@ export default function ResumePreviewPage() {
                             ))}
                           </p>
 
-                          <p className="text-xs text-[#666666]">
+                          <p className="text-xs text-[#666666] dark:text-gray-400">
                             {project.dateRange}
                           </p>
                         </div>
@@ -577,8 +599,10 @@ export default function ResumePreviewPage() {
                         )}
 
                         {project.technologies.length > 0 && (
-                          <p className="mt-1 text-[#0066cc]">
-                            Technologies: {project.technologies.join(", ")}
+                          <p className="mt-1 text-[#0066cc] dark:text-blue-400">
+                            {t("resume.preview.label.technologies", {
+                              list: project.technologies.join(", "),
+                            })}
                           </p>
                         )}
                       </div>
@@ -589,31 +613,33 @@ export default function ResumePreviewPage() {
 
               {cv.education.length > 0 && (
                 <section>
-                  <SectionHeader label="Education" />
+                  <SectionHeader label={t("resume.preview.section.education")} />
 
                   <div className="space-y-4">
                     {cv.education.map((education) => (
                       <div key={education.id}>
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a]">
+                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
                             {education.degreeLine}
 
                             {education.university && (
-                              <span className="font-normal text-[#4a4a4a]">
+                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
                                 {" "}
                                 - {education.university}
                               </span>
                             )}
                           </p>
 
-                          <p className="text-xs text-[#666666]">
+                          <p className="text-xs text-[#666666] dark:text-gray-400">
                             {education.dateRange}
                           </p>
                         </div>
 
                         {education.grade && (
-                          <p className="mt-0.5 text-sm text-[#4a4a4a]">
-                            Grade: {education.grade}
+                          <p className="mt-0.5 text-sm text-[#4a4a4a] dark:text-gray-300">
+                            {t("resume.preview.label.grade", {
+                              grade: education.grade,
+                            })}
                           </p>
                         )}
 
@@ -630,7 +656,7 @@ export default function ResumePreviewPage() {
 
               {cv.certificates.length > 0 && (
                 <section>
-                  <SectionHeader label="Certificates" />
+                  <SectionHeader label={t("resume.preview.section.certificates")} />
 
                   <div className="space-y-4">
                     {cv.certificates.map((certificate) => (
@@ -638,11 +664,11 @@ export default function ResumePreviewPage() {
                         key={certificate.id}
                         className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
                       >
-                        <p className="text-[15px] font-bold text-[#1a1a1a]">
+                        <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
                           {certificate.name}
 
                           {certificate.issuer && (
-                            <span className="font-normal text-[#4a4a4a]">
+                            <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
                               {" "}
                               -{" "}
                               {certificate.url ? (
@@ -650,7 +676,7 @@ export default function ResumePreviewPage() {
                                   href={safeHref(certificate.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[#0066cc] underline"
+                                  className="text-[#0066cc] underline dark:text-blue-400"
                                 >
                                   {certificate.issuer}
                                 </a>
@@ -661,14 +687,16 @@ export default function ResumePreviewPage() {
                           )}
                         </p>
 
-                        <div className="text-right">
-                          <p className="text-xs text-[#666666]">
+                        <div className="text-end">
+                          <p className="text-xs text-[#666666] dark:text-gray-400">
                             {certificate.date}
                           </p>
 
                           {certificate.credentialId && (
-                            <p className="text-[11px] text-[#777777]">
-                              Credential ID: {certificate.credentialId}
+                            <p className="text-[11px] text-[#777777] dark:text-gray-500">
+                              {t("resume.preview.label.credentialId", {
+                                id: certificate.credentialId,
+                              })}
                             </p>
                           )}
                         </div>
@@ -680,7 +708,7 @@ export default function ResumePreviewPage() {
 
               {cv.skills.length > 0 && (
                 <section>
-                  <SectionHeader label="Skills" />
+                  <SectionHeader label={t("resume.preview.section.skills")} />
 
                   <p className="leading-relaxed">{cv.skills.join("  •  ")}</p>
                 </section>

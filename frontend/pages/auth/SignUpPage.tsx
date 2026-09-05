@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -14,13 +14,18 @@ import { GoogleBtn } from "../../components/ui/GoogleBtn";
 import { Input } from "../../components/ui/Input";
 import { register as registerUser } from "../../services/auth/api/auth.service";
 import {
-  registerSchema,
+  makeRegisterSchema,
   type RegisterFormData,
 } from "../../services/auth/schemas/register.schema";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { translateServerMessage } from "@/lib/server-messages";
 
 const SignUpPageComponent = () => {
   const [showPw, setShowPw] = useState(false);
   const router = useRouter();
+  const { t, locale } = useI18n();
+
+  const registerSchema = useMemo(() => makeRegisterSchema(t), [t]);
 
   const {
     register,
@@ -44,7 +49,9 @@ const SignUpPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: response?.message || "Unable to create your account.",
+        message:
+          translateServerMessage(response?.message || "", t) ||
+          t("auth.signUp.unableToCreate"),
       });
     } catch (error: unknown) {
       const message =
@@ -55,19 +62,20 @@ const SignUpPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: message || "Unable to create your account.",
+        message:
+          translateServerMessage(message, t) || t("auth.signUp.unableToCreate"),
       });
     }
   };
 
   return (
     <AuthCard
-      title="Create your account"
-      subtitle="Build your AI-powered CV today"
+      title={t("auth.signUp.title")}
+      subtitle={t("auth.signUp.subtitle")}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-        <GoogleBtn label="Sign up with Google" />
-        <Divider label="or sign up with email" />
+        <GoogleBtn label={t("auth.signUp.google")} />
+        <Divider label={t("auth.signUp.orEmail")} />
 
         {errors.root && (
           <p className="flex items-center gap-1 text-xs text-red-500">
@@ -75,19 +83,19 @@ const SignUpPageComponent = () => {
           </p>
         )}
 
-        <Field label="Full name" error={errors.username?.message}>
+        <Field label={t("auth.signUp.fullName")} error={errors.username?.message}>
           <Input
             {...register("username")}
-            placeholder="Sarah Johnson"
+            placeholder={t("auth.signUp.fullNamePlaceholder")}
             icon={<User size={15} />}
             disabled={isSubmitting}
           />
         </Field>
 
-        <Field label="Email address" error={errors.email?.message}>
+        <Field label={t("auth.signUp.email")} error={errors.email?.message}>
           <Input
             {...register("email")}
-            placeholder="you@company.com"
+            placeholder={t("auth.signUp.emailPlaceholder")}
             type="email"
             icon={<Mail size={15} />}
             disabled={isSubmitting}
@@ -95,14 +103,14 @@ const SignUpPageComponent = () => {
         </Field>
 
         <Field
-          label="Password"
+          label={t("auth.signUp.password")}
           error={errors.password?.message}
-          hint="Minimum 8 characters"
+          hint={t("auth.signUp.passwordHint")}
         >
           <div className="relative">
             <Input
               {...register("password")}
-              placeholder="Create a strong password"
+              placeholder={t("auth.signUp.passwordPlaceholder")}
               type={showPw ? "text" : "password"}
               icon={<Lock size={15} />}
               disabled={isSubmitting}
@@ -110,17 +118,20 @@ const SignUpPageComponent = () => {
             <button
               type="button"
               onClick={() => setShowPw((v) => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
             >
               {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
             </button>
           </div>
         </Field>
 
-        <Field label="Confirm password" error={errors.confirmPassword?.message}>
+        <Field
+          label={t("auth.signUp.confirmPassword")}
+          error={errors.confirmPassword?.message}
+        >
           <Input
             {...register("confirmPassword")}
-            placeholder="Repeat your password"
+            placeholder={t("auth.signUp.confirmPlaceholder")}
             type="password"
             icon={<Lock size={15} />}
             disabled={isSubmitting}
@@ -131,33 +142,35 @@ const SignUpPageComponent = () => {
           {isSubmitting ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Creating account…
+              {t("auth.signUp.submitting")}
             </>
           ) : (
-            "Create account"
+            t("auth.signUp.submit")
           )}
         </Btn>
 
-        <p className="text-center text-xs text-gray-400">
-          By creating an account you agree to our{" "}
-          <a href="#" className="text-blue-700 hover:underline">
-            Terms of Service
+        <p className="text-center text-xs text-gray-400 dark:text-gray-500">
+          {t("auth.signUp.termsPrefix")}{" "}
+          <a href="#" className="text-blue-700 hover:underline dark:text-blue-400">
+            {t("auth.signUp.termsOfService")}
           </a>{" "}
-          and{" "}
-          <a href="#" className="text-blue-700 hover:underline">
-            Privacy Policy
+          {/* Arabic "و" attaches to the following word */}
+          {t("auth.signUp.termsAnd")}
+          {locale === "ar" ? "" : " "}
+          <a href="#" className="text-blue-700 hover:underline dark:text-blue-400">
+            {t("auth.signUp.privacyPolicy")}
           </a>
         </p>
       </form>
 
-      <p className="mt-5 text-center text-sm text-gray-500">
-        Already have an account?{" "}
+      <p className="mt-5 text-center text-sm text-gray-500 dark:text-gray-400">
+        {t("auth.signUp.haveAccount")}{" "}
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="font-medium text-blue-700 hover:underline"
+          className="font-medium text-blue-700 hover:underline dark:text-blue-400"
         >
-          Sign in
+          {t("auth.signUp.signInLink")}
         </button>
       </p>
     </AuthCard>

@@ -24,6 +24,7 @@ import {
   updateCertificate,
 } from "@/services/certificate/api/certificate.service";
 import type { Certificate } from "@/services/certificate/types/certificate";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const EMPTY_FORM = {
   name: "",
@@ -43,7 +44,17 @@ const formatDate = (value?: string | null) => {
   return date.toISOString().slice(0, 10);
 };
 
+const inputClassName =
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20";
+
+const iconInputClassName =
+  "w-full rounded-lg border border-gray-200 bg-white py-2.5 ps-9 pe-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20";
+
+const iconClassName =
+  "absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-gray-500";
+
 export default function CertificatesPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState(EMPTY_FORM);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -84,15 +95,15 @@ export default function CertificatesPage() {
     const nextErrors: Record<string, string> = {};
 
     if (!form.name.trim()) {
-      nextErrors.name = "Certificate name is required";
+      nextErrors.name = t("profile.certificates.nameRequired");
     }
 
     if (!form.organization.trim()) {
-      nextErrors.organization = "Issuing organization is required";
+      nextErrors.organization = t("profile.certificates.organizationRequired");
     }
 
     if (!form.issueDate) {
-      nextErrors.issueDate = "Issue date is required";
+      nextErrors.issueDate = t("profile.certificates.issueDateRequired");
     }
 
     setErrors(nextErrors);
@@ -130,7 +141,7 @@ export default function CertificatesPage() {
 
       setErrors((prev) => ({
         ...prev,
-        root: "Failed to save certificate.",
+        root: t("profile.certificates.saveFailed"),
       }));
     } finally {
       setSubmitting(false);
@@ -175,24 +186,30 @@ export default function CertificatesPage() {
     <div>
       <PageHeader
         icon={<Award size={24} />}
-        title="Certificates"
-        subtitle="Add your certificates to make your CV stronger"
-        tipText="Include credential IDs so recruiters can verify your certificates online."
+        title={t("profile.certificates.title")}
+        subtitle={t("profile.certificates.subtitle")}
+        tipText={t("profile.certificates.tip")}
       />
 
       <div className="grid lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 p-6 h-fit">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 dark:text-gray-200">
             <Award size={15} className="text-blue-500" />
-            {editId ? "Edit Certificate" : "Add New Certificate"}
+            {editId
+              ? t("profile.certificates.editExisting")
+              : t("profile.certificates.addNew")}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Fill in the details of your certificate
+          <p className="text-xs text-gray-400 mb-5 dark:text-gray-500">
+            {t("profile.certificates.formHint")}
           </p>
 
           <div className="flex flex-col gap-4">
-            <Field label="Certificate Name" required error={errors.name}>
+            <Field
+              label={t("profile.certificates.name")}
+              required
+              error={errors.name}
+            >
               <input
                 type="text"
                 value={form.name}
@@ -202,21 +219,18 @@ export default function CertificatesPage() {
                     name: event.target.value,
                   }))
                 }
-                placeholder="e.g. AWS Certified Developer"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder={t("profile.certificates.namePlaceholder")}
+                className={inputClassName}
               />
             </Field>
 
             <Field
-              label="Issuing Organization"
+              label={t("profile.certificates.organization")}
               required
               error={errors.organization}
             >
               <div className="relative">
-                <Building2
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                <Building2 size={14} className={iconClassName} />
 
                 <input
                   type="text"
@@ -227,18 +241,19 @@ export default function CertificatesPage() {
                       organization: event.target.value,
                     }))
                   }
-                  placeholder="e.g. Amazon Web Services"
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder={t("profile.certificates.organizationPlaceholder")}
+                  className={iconInputClassName}
                 />
               </div>
             </Field>
 
-            <Field label="Issue Date" required error={errors.issueDate}>
+            <Field
+              label={t("profile.certificates.issueDate")}
+              required
+              error={errors.issueDate}
+            >
               <div className="relative">
-                <Calendar
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                <Calendar size={14} className={iconClassName} />
 
                 <input
                   type="date"
@@ -249,12 +264,12 @@ export default function CertificatesPage() {
                       issueDate: event.target.value,
                     }))
                   }
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  className={iconInputClassName}
                 />
               </div>
             </Field>
 
-            <Field label="Credential ID (Optional)">
+            <Field label={t("profile.certificates.credentialId")}>
               <input
                 type="text"
                 value={form.credentialId}
@@ -264,20 +279,18 @@ export default function CertificatesPage() {
                     credentialId: event.target.value,
                   }))
                 }
-                placeholder="e.g. AWS-DEV-2024-88291"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder={t("profile.certificates.credentialIdPlaceholder")}
+                className={inputClassName}
               />
             </Field>
 
-            <Field label="Credential URL (Optional)">
+            <Field label={t("profile.certificates.credentialUrl")}>
               <div className="relative">
-                <Link
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                />
+                <Link size={14} className={iconClassName} />
 
                 <input
                   type="url"
+                  dir="ltr"
                   value={form.credentialUrl}
                   onChange={(event) =>
                     setForm((prev) => ({
@@ -285,8 +298,8 @@ export default function CertificatesPage() {
                       credentialUrl: event.target.value,
                     }))
                   }
-                  placeholder="https://..."
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder={t("profile.certificates.credentialUrlPlaceholder")}
+                  className={iconInputClassName}
                 />
               </div>
             </Field>
@@ -302,18 +315,18 @@ export default function CertificatesPage() {
                 disabled={submitting}
               >
                 {submitting ? (
-                  <span>Saving...</span>
+                  <span>{t("common.saving")}</span>
                 ) : (
                   <>
                     {editId ? <Check size={15} /> : <Plus size={15} />}{" "}
-                    {editId ? "Update" : "Save"}
+                    {editId ? t("common.update") : t("common.save")}
                   </>
                 )}
               </Btn>
 
               {editId && (
                 <Btn variant="outline" onClick={handleCancelEdit}>
-                  Cancel
+                  {t("common.cancel")}
                 </Btn>
               )}
             </div>
@@ -322,31 +335,35 @@ export default function CertificatesPage() {
 
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 dark:text-gray-200">
               <Award size={15} className="text-blue-500" />
-              Your Certificates ({certificates.length})
+              {t("profile.certificates.listTitle", {
+                count: certificates.length,
+              })}
             </h3>
 
             {loading ? (
-              <p className="text-sm text-gray-500">Loading certificates...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.certificates.loading")}
+              </p>
             ) : certificates.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">
-                No certificates added yet.
+              <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.certificates.empty")}
               </div>
             ) : (
               <div className="space-y-4">
                 {certificates.map((certificate) => (
                   <div
                     key={certificate.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                    className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
                           {certificate.name}
                         </p>
 
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
                           {certificate.issuer}
                         </p>
                       </div>
@@ -355,7 +372,7 @@ export default function CertificatesPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(certificate)}
-                          className="p-2 text-gray-500 hover:text-blue-700"
+                          className="p-2 text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -363,26 +380,30 @@ export default function CertificatesPage() {
                         <button
                           type="button"
                           onClick={() => void handleDelete(certificate.id)}
-                          className="p-2 text-gray-500 hover:text-red-600"
+                          className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-2 text-xs text-gray-500">
-                      Issued {formatDate(certificate.issueDate)}
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                      {t("profile.certificates.issued", {
+                        date: formatDate(certificate.issueDate),
+                      })}
                     </div>
 
                     {certificate.credentialId && (
-                      <p className="mt-2 text-xs text-gray-600">
-                        Credential ID: {certificate.credentialId}
+                      <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
+                        {t("profile.certificates.credentialIdLabel", {
+                          id: certificate.credentialId,
+                        })}
                       </p>
                     )}
 
                     {certificate.credentialUrl && (
                       <a
-                        className="mt-2 inline-block text-xs text-blue-700 hover:underline"
+                        className="mt-2 inline-block text-xs text-blue-700 hover:underline dark:text-blue-400"
                         href={certificate.credentialUrl}
                         target="_blank"
                         rel="noreferrer"

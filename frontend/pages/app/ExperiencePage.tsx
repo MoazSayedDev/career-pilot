@@ -26,9 +26,9 @@ import {
 
 import {
   EMPLOYMENT_TYPE,
-  EMPLOYMENT_TYPE_LABELS,
   type Experience,
 } from "@/services/experience/types/experience";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const EMPTY_FORM = {
   company: "",
@@ -86,7 +86,7 @@ function LocalInput({
   return (
     <div className="relative w-full">
       {icon && (
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+        <span className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none dark:text-gray-500">
           {icon}
         </span>
       )}
@@ -102,20 +102,27 @@ function LocalInput({
           rounded-lg
           border border-gray-200
           bg-white
+          dark:bg-gray-900
+          dark:border-gray-700
+          dark:text-gray-100
+          dark:placeholder:text-gray-500
           px-3
           py-2.5
           text-sm
           text-gray-800
+          dark:text-gray-100
           placeholder:text-gray-400
           outline-none
           transition
           focus:border-blue-500
           focus:ring-2
           focus:ring-blue-100
+          dark:focus:ring-blue-500/20
           disabled:cursor-not-allowed
           disabled:bg-gray-100
+          dark:disabled:bg-gray-800
           disabled:text-gray-400
-          ${icon ? "pl-9" : ""}
+          ${icon ? "ps-9" : ""}
         `}
       />
     </div>
@@ -154,22 +161,29 @@ function LocalTextarea({
         rounded-lg
         border border-gray-200
         bg-white
+        dark:bg-gray-900
+        dark:border-gray-700
+        dark:text-gray-100
+        dark:placeholder:text-gray-500
         px-3
         py-2.5
         text-sm
         text-gray-800
+        dark:text-gray-100
         placeholder:text-gray-400
         outline-none
         transition
         focus:border-blue-500
         focus:ring-2
         focus:ring-blue-100
+        dark:focus:ring-blue-500/20
       "
     />
   );
 }
 
 export default function ExperiencePage() {
+  const { t } = useI18n();
   const [form, setForm] = useState(EMPTY_FORM);
   const [experiences, setExperiences] = useState<Experience[]>([]);
   const [editId, setEditId] = useState<string | null>(null);
@@ -197,19 +211,19 @@ export default function ExperiencePage() {
     const nextErrors: Record<string, string> = {};
 
     if (!form.company.trim()) {
-      nextErrors.company = "Company name is required";
+      nextErrors.company = t("profile.experience.companyRequired");
     }
 
     if (!form.position.trim()) {
-      nextErrors.position = "Job title is required";
+      nextErrors.position = t("profile.experience.jobTitleRequired");
     }
 
     if (!form.startDate) {
-      nextErrors.startDate = "Start date is required";
+      nextErrors.startDate = t("profile.experience.startDateRequired");
     }
 
     if (!form.description.trim()) {
-      nextErrors.description = "Description is required";
+      nextErrors.description = t("profile.experience.descriptionRequired");
     }
 
     setErrors(nextErrors);
@@ -259,7 +273,7 @@ export default function ExperiencePage() {
 
       setErrors((prev) => ({
         ...prev,
-        root: "Failed to save experience.",
+        root: t("profile.experience.saveFailed"),
       }));
     } finally {
       setSubmitting(false);
@@ -308,35 +322,41 @@ export default function ExperiencePage() {
     () =>
       Object.values(EMPLOYMENT_TYPE).map((value) => ({
         value,
-        label: EMPLOYMENT_TYPE_LABELS[value],
+        label: t(`employmentType.${value}`),
       })),
-    [],
+    [t],
   );
 
   return (
     <div>
       <PageHeader
         icon={<Briefcase size={24} />}
-        title="Experience"
-        subtitle="Add your work experience to showcase your professional journey"
-        tipText="List your relevant work experience in reverse chronological order."
+        title={t("profile.experience.title")}
+        subtitle={t("profile.experience.subtitle")}
+        tipText={t("profile.experience.tip")}
       />
 
       <div className="grid lg:grid-cols-5 gap-6">
         {/* Form */}
         <Card className="lg:col-span-2 p-6 h-fit">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 dark:text-gray-200">
             <Briefcase size={15} className="text-blue-500" />
 
-            {editId ? "Edit Experience" : "Add New Experience"}
+            {editId
+              ? t("profile.experience.editExisting")
+              : t("profile.experience.addNew")}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Fill in the details of your work experience
+          <p className="text-xs text-gray-400 mb-5 dark:text-gray-500">
+            {t("profile.experience.formHint")}
           </p>
 
           <div className="flex flex-col gap-4">
-            <Field label="Job Title" required error={errors.position}>
+            <Field
+              label={t("profile.experience.jobTitle")}
+              required
+              error={errors.position}
+            >
               <LocalInput
                 value={form.position}
                 onChange={(value) =>
@@ -345,11 +365,15 @@ export default function ExperiencePage() {
                     position: value,
                   }))
                 }
-                placeholder="e.g. Frontend Developer"
+                placeholder={t("profile.experience.jobTitlePlaceholder")}
               />
             </Field>
 
-            <Field label="Company Name" required error={errors.company}>
+            <Field
+              label={t("profile.experience.company")}
+              required
+              error={errors.company}
+            >
               <LocalInput
                 value={form.company}
                 onChange={(value) =>
@@ -358,25 +382,29 @@ export default function ExperiencePage() {
                     company: value,
                   }))
                 }
-                placeholder="e.g. Google"
+                placeholder={t("profile.experience.companyPlaceholder")}
               />
             </Field>
 
-            <Field label="Employment Type">
+            <Field label={t("profile.experience.employmentType")}>
               <Select
-                value={form.employmentType}
-                onChange={(value) =>
+                value={t(`employmentType.${form.employmentType}`)}
+                onChange={(label) => {
+                  const match = employmentOptions.find((o) => o.label === label);
+
+                  if (!match) return;
+
                   setForm((prev) => ({
                     ...prev,
-                    employmentType: value as (typeof EMPLOYMENT_TYPE)[number],
-                  }))
-                }
+                    employmentType: match.value,
+                  }));
+                }}
                 options={employmentOptions.map((option) => option.label)}
-                placeholder="Select employment type"
+                placeholder={t("profile.experience.employmentTypePlaceholder")}
               />
             </Field>
 
-            <Field label="Location">
+            <Field label={t("profile.experience.location")}>
               <LocalInput
                 value={form.location}
                 onChange={(value) =>
@@ -385,13 +413,17 @@ export default function ExperiencePage() {
                     location: value,
                   }))
                 }
-                placeholder="e.g. Cairo, Egypt"
+                placeholder={t("profile.experience.locationPlaceholder")}
                 icon={<MapPin size={14} />}
               />
             </Field>
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Start Date" required error={errors.startDate}>
+              <Field
+                label={t("profile.experience.startDate")}
+                required
+                error={errors.startDate}
+              >
                 <LocalInput
                   value={form.startDate}
                   onChange={(value) =>
@@ -405,7 +437,7 @@ export default function ExperiencePage() {
                 />
               </Field>
 
-              <Field label="End Date">
+              <Field label={t("profile.experience.endDate")}>
                 <LocalInput
                   value={form.endDate}
                   onChange={(value) =>
@@ -432,15 +464,15 @@ export default function ExperiencePage() {
                     endDate: event.target.checked ? "" : prev.endDate,
                   }))
                 }
-                className="w-4 h-4 rounded border-gray-300 text-blue-700"
+                className="w-4 h-4 rounded border-gray-300 text-blue-700 dark:border-gray-600 dark:bg-gray-800"
               />
 
-              <span className="text-sm text-gray-600">
-                I currently work here
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {t("profile.experience.currentlyWorking")}
               </span>
             </label>
 
-            <Field label="Technologies">
+            <Field label={t("profile.experience.technologies")}>
               <LocalInput
                 value={form.technologies}
                 onChange={(value) =>
@@ -449,11 +481,15 @@ export default function ExperiencePage() {
                     technologies: value,
                   }))
                 }
-                placeholder="React, TypeScript, Node.js"
+                placeholder={t("profile.experience.technologiesPlaceholder")}
               />
             </Field>
 
-            <Field label="Description" required error={errors.description}>
+            <Field
+              label={t("profile.experience.description")}
+              required
+              error={errors.description}
+            >
               <LocalTextarea
                 value={form.description}
                 onChange={(value) =>
@@ -462,7 +498,7 @@ export default function ExperiencePage() {
                     description: value,
                   }))
                 }
-                placeholder="Describe your responsibilities and achievements..."
+                placeholder={t("profile.experience.descriptionPlaceholder")}
                 rows={4}
               />
             </Field>
@@ -478,19 +514,19 @@ export default function ExperiencePage() {
                 disabled={submitting}
               >
                 {submitting ? (
-                  <span>Saving...</span>
+                  <span>{t("common.saving")}</span>
                 ) : (
                   <>
                     {editId ? <Check size={15} /> : <Plus size={15} />}
 
-                    {editId ? "Update" : "Save"}
+                    {editId ? t("common.update") : t("common.save")}
                   </>
                 )}
               </Btn>
 
               {editId && (
                 <Btn variant="outline" onClick={cancelEdit}>
-                  Cancel
+                  {t("common.cancel")}
                 </Btn>
               )}
             </div>
@@ -500,31 +536,35 @@ export default function ExperiencePage() {
         {/* Experience List */}
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 dark:text-gray-200">
               <Briefcase size={15} className="text-blue-500" />
-              Your Experience ({experiences.length})
+              {t("profile.experience.listTitle", {
+                count: experiences.length,
+              })}
             </h3>
 
             {loading ? (
-              <p className="text-sm text-gray-500">Loading experiences...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.experience.loading")}
+              </p>
             ) : experiences.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">
-                No experience added yet.
+              <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.experience.empty")}
               </div>
             ) : (
               <div className="space-y-4">
                 {experiences.map((experience) => (
                   <div
                     key={experience.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                    className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
                           {experience.position}
                         </p>
 
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
                           {experience.company}
                         </p>
                       </div>
@@ -533,7 +573,7 @@ export default function ExperiencePage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(experience)}
-                          className="p-2 text-gray-500 hover:text-blue-700"
+                          className="p-2 text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -541,34 +581,34 @@ export default function ExperiencePage() {
                         <button
                           type="button"
                           onClick={() => void handleDelete(experience.id)}
-                          className="p-2 text-gray-500 hover:text-red-600"
+                          className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                         >
                           <Trash2 size={14} />
                         </button>
                       </div>
                     </div>
 
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                       {experience.employmentType &&
-                        EMPLOYMENT_TYPE_LABELS[experience.employmentType]}
+                        t(`employmentType.${experience.employmentType}`)}
 
                       {" · "}
 
-                      {experience.location || "Remote"}
+                      {experience.location || t("profile.experience.remote")}
 
                       {" · "}
 
                       {formatDate(experience.startDate)}
 
                       {experience.currentlyWorking
-                        ? " - Present"
+                        ? t("profile.experience.presentSuffix")
                         : experience.endDate
                           ? ` - ${formatDate(experience.endDate)}`
                           : ""}
                     </div>
 
                     {experience.description.length > 0 && (
-                      <ul className="mt-2 list-disc pl-5 text-sm text-gray-600 space-y-1">
+                      <ul className="mt-2 list-disc ps-5 text-sm text-gray-600 space-y-1 dark:text-gray-400">
                         {experience.description.map((item) => (
                           <li key={item}>{item}</li>
                         ))}
@@ -580,7 +620,7 @@ export default function ExperiencePage() {
                         {experience.technologies.map((tech) => (
                           <span
                             key={tech}
-                            className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800"
+                            className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800 dark:bg-blue-500/15 dark:text-blue-300"
                           >
                             {tech}
                           </span>

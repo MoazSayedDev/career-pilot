@@ -1,40 +1,49 @@
 import axios from "axios";
 
 /**
- * Maps an API error to a safe, user-facing message.
+ * Maps an API error to a well-known i18n error key, or null when the
+ * error has no recognizable meaning.
  *
  * Never exposes response bodies, URLs, or tokens — only
- * well-known HTTP status meanings plus a caller-provided
- * fallback.
+ * well-known HTTP status meanings. Callers render the key through
+ * the translator and supply their own localized fallback otherwise.
  */
-export function getApiErrorMessage(error: unknown, fallback: string): string {
+export function getApiErrorKey(error: unknown): string | null {
   if (axios.isAxiosError(error)) {
     const status = error.response?.status;
 
     if (status === 401) {
-      return "Your session has expired. Please sign in again.";
+      return "errors.sessionExpired";
     }
 
     if (status === 403) {
-      return "You do not have permission to perform this action.";
+      return "errors.forbidden";
     }
 
     if (status === 404) {
-      return "The requested item was not found.";
+      return "errors.notFound";
     }
 
     if (status === 429) {
-      return "Too many requests. Please wait a moment and try again.";
+      return "errors.tooManyRequests";
     }
 
     if (status !== undefined && status >= 500) {
-      return "Something went wrong on our side. Please try again.";
+      return "errors.serverError";
     }
 
     if (!error.response) {
-      return "Network error. Please check your connection and try again.";
+      return "errors.networkError";
     }
   }
 
-  return fallback;
+  return null;
+}
+
+/**
+ * Maps an API error to a safe, user-facing message: a localized
+ * well-known status meaning, or the caller's already-localized fallback.
+ */
+export function getApiErrorMessage(error: unknown, fallback: string): string {
+  return getApiErrorKey(error) ?? fallback;
 }

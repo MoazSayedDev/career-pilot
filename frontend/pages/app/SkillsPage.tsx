@@ -18,7 +18,6 @@ import {
 
 import {
   SKILL_LEVELS,
-  SKILL_LEVEL_LABELS,
   type Skill,
 } from "@/services/skill/types/skill";
 
@@ -30,10 +29,10 @@ import {
 
 import {
   LANGUAGE_LEVELS,
-  LANGUAGE_LEVEL_LABELS,
   type Language,
   type LanguageLevel,
 } from "@/services/language/types/language";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const QUICK_SKILLS = [
   "JavaScript",
@@ -62,6 +61,8 @@ const mapLevelToBackend = (value: string): Skill["level"] => {
 };
 
 export default function SkillsPage() {
+  const { t } = useI18n();
+
   /* =========================
      Skills
   ========================= */
@@ -128,7 +129,7 @@ export default function SkillsPage() {
 
   const handleAddSkill = async () => {
     if (!skillName.trim()) {
-      setSkillError("Skill name is required");
+      setSkillError(t("profile.skills.skillNameRequired"));
       return;
     }
 
@@ -148,7 +149,7 @@ export default function SkillsPage() {
       await loadSkills();
     } catch (err) {
       console.error(err);
-      setSkillError("Failed to save skill.");
+      setSkillError(t("profile.skills.saveSkillFailed"));
     } finally {
       setSkillSubmitting(false);
     }
@@ -173,7 +174,7 @@ export default function SkillsPage() {
 
   const handleAddLanguage = async () => {
     if (!languageName.trim()) {
-      setLanguageError("Language name is required");
+      setLanguageError(t("profile.skills.languageNameRequired"));
       return;
     }
 
@@ -192,7 +193,7 @@ export default function SkillsPage() {
       await loadLanguages();
     } catch (err) {
       console.error(err);
-      setLanguageError("Failed to save language.");
+      setLanguageError(t("profile.skills.saveLanguageFailed"));
     } finally {
       setLanguageSubmitting(false);
     }
@@ -215,9 +216,9 @@ export default function SkillsPage() {
     <div>
       <PageHeader
         icon={<Zap size={24} />}
-        title="Skills & Languages"
-        subtitle="Showcase your technical skills and language proficiency"
-        tipText="Add your strongest skills and the languages you speak to make your CV more complete."
+        title={t("profile.skills.title")}
+        subtitle={t("profile.skills.subtitle")}
+        tipText={t("profile.skills.tip")}
       />
 
       <div className="grid lg:grid-cols-2 gap-6">
@@ -226,17 +227,21 @@ export default function SkillsPage() {
         ================================= */}
 
         <Card className="p-6 h-fit">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 dark:text-gray-200">
             <Zap size={15} className="text-blue-500" />
-            Add Skill
+            {t("profile.skills.addSkill")}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Add your technical and professional skills
+          <p className="text-xs text-gray-400 mb-5 dark:text-gray-500">
+            {t("profile.skills.addSkillHint")}
           </p>
 
           <div className="flex flex-col gap-4">
-            <Field label="Skill Name" required error={skillError}>
+            <Field
+              label={t("profile.skills.skillName")}
+              required
+              error={skillError}
+            >
               <input
                 type="text"
                 value={skillName}
@@ -244,19 +249,23 @@ export default function SkillsPage() {
                   setSkillName(e.target.value);
                   setSkillError("");
                 }}
-                placeholder="e.g. React, Figma, Python..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder={t("profile.skills.skillNamePlaceholder")}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20"
               />
             </Field>
 
-            <Field label="Proficiency Level">
+            <Field label={t("profile.skills.proficiencyLevel")}>
               <Select
-                value={skillLevel}
-                onChange={setSkillLevel}
-                options={SKILL_LEVELS.map(
-                  (skillLevel) => SKILL_LEVEL_LABELS[skillLevel],
-                )}
-                placeholder="Select level"
+                value={t(`skillLevel.${skillLevel}`)}
+                onChange={(label) => {
+                  const match = SKILL_LEVELS.find(
+                    (level) => t(`skillLevel.${level}`) === label,
+                  );
+
+                  if (match) setSkillLevel(match);
+                }}
+                options={SKILL_LEVELS.map((level) => t(`skillLevel.${level}`))}
+                placeholder={t("profile.skills.levelPlaceholder")}
               />
             </Field>
 
@@ -265,15 +274,15 @@ export default function SkillsPage() {
               disabled={skillSubmitting}
             >
               <Plus size={15} />
-              {skillSubmitting ? "Saving..." : "Add Skill"}
+              {skillSubmitting ? t("common.saving") : t("profile.skills.addSkill")}
             </Btn>
           </div>
 
           {/* Quick Add */}
 
-          <div className="mt-6 pt-5 border-t border-gray-100">
-            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-              Quick Add
+          <div className="mt-6 pt-5 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 dark:text-gray-400">
+              {t("profile.skills.quickAdd")}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -285,7 +294,7 @@ export default function SkillsPage() {
                     setSkillName(skill);
                     setSkillError("");
                   }}
-                  className="text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition-colors dark:border-gray-700 dark:text-gray-400 dark:hover:border-blue-500 dark:hover:text-blue-400 dark:hover:bg-blue-500/10"
                 >
                   + {skill}
                 </button>
@@ -299,17 +308,21 @@ export default function SkillsPage() {
         ================================= */}
 
         <Card className="p-6 h-fit">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 dark:text-gray-200">
             <Languages size={15} className="text-blue-500" />
-            Add Language
+            {t("profile.skills.addLanguage")}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Add the languages you speak and your proficiency level
+          <p className="text-xs text-gray-400 mb-5 dark:text-gray-500">
+            {t("profile.skills.addLanguageHint")}
           </p>
 
           <div className="flex flex-col gap-4">
-            <Field label="Language" required error={languageError}>
+            <Field
+              label={t("profile.skills.languageName")}
+              required
+              error={languageError}
+            >
               <input
                 type="text"
                 value={languageName}
@@ -317,19 +330,25 @@ export default function SkillsPage() {
                   setLanguageName(e.target.value);
                   setLanguageError("");
                 }}
-                placeholder="e.g. English, Arabic, French..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                placeholder={t("profile.skills.languageNamePlaceholder")}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20"
               />
             </Field>
 
-            <Field label="Proficiency Level">
+            <Field label={t("profile.skills.proficiencyLevel")}>
               <Select
-                value={languageLevel}
-                onChange={(value) => setLanguageLevel(value as LanguageLevel)}
-                options={LANGUAGE_LEVELS.map(
-                  (level) => LANGUAGE_LEVEL_LABELS[level],
+                value={t(`languageLevel.${languageLevel}`)}
+                onChange={(label) => {
+                  const match = LANGUAGE_LEVELS.find(
+                    (level) => t(`languageLevel.${level}`) === label,
+                  );
+
+                  if (match) setLanguageLevel(match);
+                }}
+                options={LANGUAGE_LEVELS.map((level) =>
+                  t(`languageLevel.${level}`),
                 )}
-                placeholder="Select proficiency"
+                placeholder={t("profile.skills.proficiencyPlaceholder")}
               />
             </Field>
 
@@ -338,7 +357,9 @@ export default function SkillsPage() {
               disabled={languageSubmitting}
             >
               <Plus size={15} />
-              {languageSubmitting ? "Saving..." : "Add Language"}
+              {languageSubmitting
+                ? t("common.saving")
+                : t("profile.skills.addLanguage")}
             </Btn>
           </div>
         </Card>
@@ -349,23 +370,27 @@ export default function SkillsPage() {
       ================================= */}
 
       <Card className="mt-6 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 dark:text-gray-200">
           <Zap size={15} className="text-blue-500" />
-          Your Skills ({skills.length})
+          {t("profile.skills.skillsListTitle", { count: skills.length })}
         </h3>
 
         {skillsLoading ? (
-          <p className="text-sm text-gray-500">Loading skills...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("profile.skills.loadingSkills")}
+          </p>
         ) : skills.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
-              <Zap size={22} className="text-gray-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3 dark:bg-gray-800">
+              <Zap size={22} className="text-gray-400 dark:text-gray-500" />
             </div>
 
-            <p className="font-medium text-gray-600">No skills added yet</p>
+            <p className="font-medium text-gray-600 dark:text-gray-300">
+              {t("profile.skills.noSkills")}
+            </p>
 
-            <p className="text-sm text-gray-400">
-              Add your first skill using the form above.
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              {t("profile.skills.noSkillsHint")}
             </p>
           </div>
         ) : (
@@ -373,17 +398,19 @@ export default function SkillsPage() {
             {skills.map((skill) => (
               <div
                 key={skill.id}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 group"
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-700 group dark:border-gray-700 dark:bg-gray-800/60 dark:text-gray-300"
               >
                 <span>{skill.name}</span>
 
-                <SkillLevelBadge level={SKILL_LEVEL_LABELS[skill.level]} />
+                <SkillLevelBadge level={skill.level} />
 
                 <button
                   type="button"
                   onClick={() => void handleDeleteSkill(skill.id)}
-                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all ml-1"
-                  aria-label={`Delete ${skill.name}`}
+                  className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all ms-1"
+                  aria-label={t("profile.skills.deleteSkill", {
+                    name: skill.name,
+                  })}
                 >
                   <X size={12} />
                 </button>
@@ -398,23 +425,29 @@ export default function SkillsPage() {
       ================================= */}
 
       <Card className="mt-6 p-6">
-        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 dark:text-gray-200">
           <Languages size={15} className="text-blue-500" />
-          Your Languages ({languages.length})
+          {t("profile.skills.languagesListTitle", {
+            count: languages.length,
+          })}
         </h3>
 
         {languagesLoading ? (
-          <p className="text-sm text-gray-500">Loading languages...</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("profile.skills.loadingLanguages")}
+          </p>
         ) : languages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 text-center">
-            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
-              <Languages size={22} className="text-gray-400" />
+            <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center mb-3 dark:bg-gray-800">
+              <Languages size={22} className="text-gray-400 dark:text-gray-500" />
             </div>
 
-            <p className="font-medium text-gray-600">No languages added yet</p>
+            <p className="font-medium text-gray-600 dark:text-gray-300">
+              {t("profile.skills.noLanguages")}
+            </p>
 
-            <p className="text-sm text-gray-400">
-              Add your first language using the form above.
+            <p className="text-sm text-gray-400 dark:text-gray-500">
+              {t("profile.skills.noLanguagesHint")}
             </p>
           </div>
         ) : (
@@ -422,15 +455,15 @@ export default function SkillsPage() {
             {languages.map((language) => (
               <div
                 key={language.id}
-                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 group"
+                className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 group dark:border-gray-700 dark:bg-gray-800/60"
               >
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                     {language.language}
                   </p>
 
-                  <p className="text-xs text-blue-700 mt-0.5">
-                    {LANGUAGE_LEVEL_LABELS[language.level]}
+                  <p className="text-xs text-blue-700 mt-0.5 dark:text-blue-400">
+                    {t(`languageLevel.${language.level}`)}
                   </p>
                 </div>
 
@@ -438,7 +471,9 @@ export default function SkillsPage() {
                   type="button"
                   onClick={() => void handleDeleteLanguage(language.id)}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
-                  aria-label={`Delete ${language.language}`}
+                  aria-label={t("profile.skills.deleteLanguage", {
+                    name: language.language,
+                  })}
                 >
                   <X size={14} />
                 </button>

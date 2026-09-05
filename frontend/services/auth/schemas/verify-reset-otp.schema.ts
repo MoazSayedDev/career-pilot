@@ -1,10 +1,17 @@
 import { z } from "zod";
 
-export const verifyResetOtpSchema = z.object({
-  otp: z
-    .string()
-    .length(6, "OTP must be 6 digits")
-    .regex(/^\d+$/, "OTP must contain only numbers"),
-});
+/**
+ * Schema factory: validation messages are resolved through the i18n
+ * translator so they render in the active language.
+ */
+export const makeVerifyResetOtpSchema = (t: (key: string) => string) =>
+  z.object({
+    otp: z
+      .string()
+      .length(6, t("validation.otpLength"))
+      .regex(/^\d+$/, t("validation.otpDigits")),
+  });
 
-export type VerifyResetOtpFormData = z.infer<typeof verifyResetOtpSchema>;
+export type VerifyResetOtpFormData = z.infer<
+  ReturnType<typeof makeVerifyResetOtpSchema>
+>;
