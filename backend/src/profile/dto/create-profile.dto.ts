@@ -1,3 +1,4 @@
+import { Transform } from 'class-transformer';
 import {
   IsOptional,
   IsString,
@@ -27,8 +28,13 @@ export class CreateProfileDto {
   @MaxLength(1000)
   bio?: string;
 
-  // @IsUrl({ protocols: ['http', 'https'] })
+  // Treat an empty string as "no image" so clients submitting blank
+  // form fields do not trip URL validation.
+  @Transform(({ value }) =>
+    typeof value === 'string' && value.trim() === '' ? undefined : value,
+  )
   @IsOptional()
-  @IsUrl()
+  @IsUrl({ protocols: ['http', 'https'] })
+  @MaxLength(500)
   image?: string;
 }

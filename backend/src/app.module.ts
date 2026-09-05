@@ -52,8 +52,11 @@ import { AiService } from './ai/ai.service';
       throttlers: [
         {
           name: 'default',
-          ttl: parseInt(process.env.THROTTLE_TTL || '3600000', 10),
-          limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
+          // Default: 200 requests/minute — generous enough for normal
+          // dashboard browsing while still blunting abuse. Auth routes
+          // override this with stricter per-route limits.
+          ttl: parseInt(process.env.THROTTLE_TTL || '60000', 10),
+          limit: parseInt(process.env.THROTTLE_LIMIT || '200', 10),
         },
       ],
     }),
