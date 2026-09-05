@@ -294,6 +294,27 @@ api.interceptors.response.use(
       clearAccessToken();
 
       /**
+       * The session is unrecoverable: send the user to the login page
+       * when the failure happened on a protected route. Auth pages stay
+       * untouched so inline errors (wrong OTP, etc.) keep rendering.
+       */
+      if (typeof window !== "undefined") {
+        const path = window.location.pathname;
+        const onAuthPage =
+          path === "/login" ||
+          path === "/register" ||
+          path === "/forget-password" ||
+          path === "/verify-email" ||
+          path === "/reset-password";
+
+        if (!onAuthPage) {
+          window.location.replace(
+            `/login?redirect=${encodeURIComponent(path + window.location.search)}`,
+          );
+        }
+      }
+
+      /**
        * Reject with the original request error.
        *
        * The refresh failure is an internal
