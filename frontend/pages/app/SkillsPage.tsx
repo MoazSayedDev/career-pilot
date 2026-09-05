@@ -227,7 +227,7 @@ export default function SkillsPage() {
 
         <Card className="p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <Zap size={15} className="text-violet-500" />
+            <Zap size={15} className="text-blue-500" />
             Add Skill
           </h3>
 
@@ -245,7 +245,7 @@ export default function SkillsPage() {
                   setSkillError("");
                 }}
                 placeholder="e.g. React, Figma, Python..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -285,7 +285,7 @@ export default function SkillsPage() {
                     setSkillName(skill);
                     setSkillError("");
                   }}
-                  className="text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-violet-400 hover:text-violet-600 hover:bg-violet-50 transition-colors"
+                  className="text-xs px-2.5 py-1 rounded-full border border-gray-200 text-gray-600 hover:border-blue-400 hover:text-blue-700 hover:bg-blue-50 transition-colors"
                 >
                   + {skill}
                 </button>
@@ -300,7 +300,7 @@ export default function SkillsPage() {
 
         <Card className="p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <Languages size={15} className="text-violet-500" />
+            <Languages size={15} className="text-blue-500" />
             Add Language
           </h3>
 
@@ -318,7 +318,7 @@ export default function SkillsPage() {
                   setLanguageError("");
                 }}
                 placeholder="e.g. English, Arabic, French..."
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -350,7 +350,7 @@ export default function SkillsPage() {
 
       <Card className="mt-6 p-6">
         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Zap size={15} className="text-violet-500" />
+          <Zap size={15} className="text-blue-500" />
           Your Skills ({skills.length})
         </h3>
 
@@ -399,7 +399,7 @@ export default function SkillsPage() {
 
       <Card className="mt-6 p-6">
         <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-          <Languages size={15} className="text-violet-500" />
+          <Languages size={15} className="text-blue-500" />
           Your Languages ({languages.length})
         </h3>
 
@@ -429,7 +429,7 @@ export default function SkillsPage() {
                     {language.language}
                   </p>
 
-                  <p className="text-xs text-violet-600 mt-0.5">
+                  <p className="text-xs text-blue-700 mt-0.5">
                     {LANGUAGE_LEVEL_LABELS[language.level]}
                   </p>
                 </div>

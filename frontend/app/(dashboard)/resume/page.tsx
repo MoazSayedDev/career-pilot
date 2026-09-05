@@ -240,7 +240,7 @@ export default function StartBuildingPage() {
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-violet-600">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
             <Sparkles size={22} />
           </div>
 
@@ -293,7 +293,7 @@ export default function StartBuildingPage() {
                   }
                 }}
                 placeholder="e.g. Backend Developer Resume"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               />
             </div>
 
@@ -310,7 +310,7 @@ export default function StartBuildingPage() {
                 id="resume-template"
                 value={template}
                 onChange={(event) => setTemplate(event.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
               >
                 <option value="MODERN">Modern</option>
                 <option value="CLASSIC">Classic</option>
@@ -728,7 +728,7 @@ function SelectionSection({
         className="flex w-full items-center justify-between p-5 text-left"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-50 text-violet-600">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
             {icon}
           </div>
 
@@ -760,7 +760,7 @@ function SelectionSection({
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="text-xs font-medium text-violet-600 hover:text-violet-700"
+                className="text-xs font-medium text-blue-700 hover:text-blue-800"
               >
                 {allSelected ? "Remove all" : "Select all"}
               </button>
@@ -789,14 +789,14 @@ function SelectableCard({
       onClick={onClick}
       className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
         selected
-          ? "border-violet-300 bg-violet-50"
+          ? "border-blue-300 bg-blue-50"
           : "border-gray-200 bg-white hover:border-gray-300"
       }`}
     >
       <span
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
           selected
-            ? "border-violet-600 bg-violet-600 text-white"
+            ? "border-blue-700 bg-blue-700 text-white"
             : "border-gray-300 bg-white"
         }`}
       >

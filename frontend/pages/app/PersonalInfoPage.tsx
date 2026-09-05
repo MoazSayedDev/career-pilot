@@ -75,10 +75,10 @@ interface PersonalInfo {
 }
 
 const inputClassName =
-  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors";
+  "w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors";
 
 const iconInputClassName =
-  "w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors";
+  "w-full rounded-lg border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors";
 
 export default function PersonalInfoPage() {
   const [personalInfoPreview, setPersonalInfoPreview] =
@@ -363,7 +363,7 @@ export default function PersonalInfoPage() {
       <div className="grid lg:grid-cols-2 gap-6">
         <Card className="p-6">
           <h3 className="font-semibold text-gray-800 mb-5 flex items-center gap-2">
-            <User size={16} className="text-violet-500" />
+            <User size={16} className="text-blue-500" />
             Basic Information
           </h3>
 
@@ -669,7 +669,7 @@ export default function PersonalInfoPage() {
             </p>
 
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+              <div className="w-16 h-16 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
                 {personalInfoPreview.firstName?.[0] || "?"}
                 {personalInfoPreview.lastName?.[0] || ""}
               </div>
@@ -680,7 +680,7 @@ export default function PersonalInfoPage() {
                   {personalInfoPreview.lastName || "Last"}
                 </h2>
 
-                <p className="text-violet-600 font-medium text-sm">
+                <p className="text-blue-700 font-medium text-sm">
                   {personalInfoPreview.title || "Professional Title"}
                 </p>
 

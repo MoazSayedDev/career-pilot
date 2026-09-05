@@ -109,9 +109,9 @@ function LocalInput({
           placeholder:text-gray-400
           outline-none
           transition
-          focus:border-violet-500
+          focus:border-blue-500
           focus:ring-2
-          focus:ring-violet-100
+          focus:ring-blue-100
           disabled:cursor-not-allowed
           disabled:bg-gray-100
           disabled:text-gray-400
@@ -161,9 +161,9 @@ function LocalTextarea({
         placeholder:text-gray-400
         outline-none
         transition
-        focus:border-violet-500
+        focus:border-blue-500
         focus:ring-2
-        focus:ring-violet-100
+        focus:ring-blue-100
       "
     />
   );
@@ -326,7 +326,7 @@ export default function ExperiencePage() {
         {/* Form */}
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <Briefcase size={15} className="text-violet-500" />
+            <Briefcase size={15} className="text-blue-500" />
 
             {editId ? "Edit Experience" : "Add New Experience"}
           </h3>
@@ -432,7 +432,7 @@ export default function ExperiencePage() {
                     endDate: event.target.checked ? "" : prev.endDate,
                   }))
                 }
-                className="w-4 h-4 rounded border-gray-300 text-violet-600"
+                className="w-4 h-4 rounded border-gray-300 text-blue-700"
               />
 
               <span className="text-sm text-gray-600">
@@ -501,7 +501,7 @@ export default function ExperiencePage() {
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Briefcase size={15} className="text-violet-500" />
+              <Briefcase size={15} className="text-blue-500" />
               Your Experience ({experiences.length})
             </h3>
 
@@ -524,7 +524,7 @@ export default function ExperiencePage() {
                           {experience.position}
                         </p>
 
-                        <p className="text-sm text-violet-600">
+                        <p className="text-sm text-blue-700">
                           {experience.company}
                         </p>
                       </div>
@@ -533,7 +533,7 @@ export default function ExperiencePage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(experience)}
-                          className="p-2 text-gray-500 hover:text-violet-600"
+                          className="p-2 text-gray-500 hover:text-blue-700"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -580,7 +580,7 @@ export default function ExperiencePage() {
                         {experience.technologies.map((tech) => (
                           <span
                             key={tech}
-                            className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-medium text-violet-700"
+                            className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800"
                           >
                             {tech}
                           </span>

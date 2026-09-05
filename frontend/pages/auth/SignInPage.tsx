@@ -145,7 +145,7 @@ const SignInPageComponent = () => {
               checked={remember}
               onChange={(event) => setRemember(event.target.checked)}
               disabled={isSubmitting}
-              className="h-4 w-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+              className="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-500"
             />
 
             <span className="text-sm text-gray-600">Remember me</span>
@@ -155,7 +155,7 @@ const SignInPageComponent = () => {
             type="button"
             onClick={() => router.push("/forget-password")}
             disabled={isSubmitting}
-            className="text-sm text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            className="text-sm text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
             Forgot password?
           </button>
@@ -174,7 +174,7 @@ const SignInPageComponent = () => {
           type="button"
           onClick={() => router.push("/register")}
           disabled={isSubmitting}
-          className="font-medium text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          className="font-medium text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
         >
           Create one
         </button>

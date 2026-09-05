@@ -73,7 +73,7 @@ const EducationInput = ({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
     />
   );
 };
@@ -266,7 +266,7 @@ export default function EducationPage() {
 
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <GraduationCap size={15} className="text-violet-500" />
+            <GraduationCap size={15} className="text-blue-500" />
 
             {editId ? "Edit Education" : "Add New Education"}
           </h3>
@@ -339,7 +339,7 @@ export default function EducationPage() {
                     }
                   }}
                   placeholder="e.g. Al-Azhar University"
-                  className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -412,7 +412,7 @@ export default function EducationPage() {
                     endDate: event.target.checked ? "" : prev.endDate,
                   }))
                 }
-                className="w-4 h-4 rounded border-gray-300 text-violet-600 focus:ring-violet-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-700 focus:ring-blue-500"
               />
 
               <span className="text-sm text-gray-600">
@@ -477,7 +477,7 @@ export default function EducationPage() {
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <GraduationCap size={15} className="text-violet-500" />
+              <GraduationCap size={15} className="text-blue-500" />
               Your Education ({education.length})
             </h3>
 
@@ -506,7 +506,7 @@ export default function EducationPage() {
                           {item.degree}
                         </p>
 
-                        <p className="text-sm text-violet-600">
+                        <p className="text-sm text-blue-700">
                           {item.university}
                         </p>
                       </div>
@@ -517,7 +517,7 @@ export default function EducationPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(item)}
-                          className="p-2 text-gray-500 hover:text-violet-600"
+                          className="p-2 text-gray-500 hover:text-blue-700"
                           aria-label={`Edit ${item.degree}`}
                         >
                           <Edit2 size={14} />

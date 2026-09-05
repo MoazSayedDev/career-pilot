@@ -183,7 +183,7 @@ export default function CertificatesPage() {
       <div className="grid lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <Award size={15} className="text-violet-500" />
+            <Award size={15} className="text-blue-500" />
             {editId ? "Edit Certificate" : "Add New Certificate"}
           </h3>
 
@@ -203,7 +203,7 @@ export default function CertificatesPage() {
                   }))
                 }
                 placeholder="e.g. AWS Certified Developer"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -228,7 +228,7 @@ export default function CertificatesPage() {
                     }))
                   }
                   placeholder="e.g. Amazon Web Services"
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -249,7 +249,7 @@ export default function CertificatesPage() {
                       issueDate: event.target.value,
                     }))
                   }
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -265,7 +265,7 @@ export default function CertificatesPage() {
                   }))
                 }
                 placeholder="e.g. AWS-DEV-2024-88291"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -286,7 +286,7 @@ export default function CertificatesPage() {
                     }))
                   }
                   placeholder="https://..."
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -323,7 +323,7 @@ export default function CertificatesPage() {
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <Award size={15} className="text-violet-500" />
+              <Award size={15} className="text-blue-500" />
               Your Certificates ({certificates.length})
             </h3>
 
@@ -346,7 +346,7 @@ export default function CertificatesPage() {
                           {certificate.name}
                         </p>
 
-                        <p className="text-sm text-violet-600">
+                        <p className="text-sm text-blue-700">
                           {certificate.issuer}
                         </p>
                       </div>
@@ -355,7 +355,7 @@ export default function CertificatesPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(certificate)}
-                          className="p-2 text-gray-500 hover:text-violet-600"
+                          className="p-2 text-gray-500 hover:text-blue-700"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -382,7 +382,7 @@ export default function CertificatesPage() {
 
                     {certificate.credentialUrl && (
                       <a
-                        className="mt-2 inline-block text-xs text-violet-600 hover:underline"
+                        className="mt-2 inline-block text-xs text-blue-700 hover:underline"
                         href={certificate.credentialUrl}
                         target="_blank"
                         rel="noreferrer"

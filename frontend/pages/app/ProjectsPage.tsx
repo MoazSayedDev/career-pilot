@@ -205,7 +205,7 @@ export default function ProjectsPage() {
       <div className="grid lg:grid-cols-5 gap-6">
         <Card className="lg:col-span-2 p-6 h-fit">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <FolderOpen size={15} className="text-violet-500" />
+            <FolderOpen size={15} className="text-blue-500" />
             {editId ? "Edit Project" : "Add New Project"}
           </h3>
 
@@ -222,7 +222,7 @@ export default function ProjectsPage() {
                 value={form.name}
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="e.g. E-commerce Platform"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -235,7 +235,7 @@ export default function ProjectsPage() {
                 placeholder="Describe what you built and your key contributions..."
                 rows={4}
                 maxLength={400}
-                className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full resize-none rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -247,7 +247,7 @@ export default function ProjectsPage() {
                   updateField("technologies", event.target.value)
                 }
                 placeholder="e.g. React, Node.js, PostgreSQL"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
               />
             </Field>
 
@@ -263,7 +263,7 @@ export default function ProjectsPage() {
                   value={form.url}
                   onChange={(event) => updateField("url", event.target.value)}
                   placeholder="https://project.com"
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -282,7 +282,7 @@ export default function ProjectsPage() {
                     updateField("githubUrl", event.target.value)
                   }
                   placeholder="https://github.com/username/project"
-                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                  className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                 />
               </div>
             </Field>
@@ -301,7 +301,7 @@ export default function ProjectsPage() {
                     onChange={(event) =>
                       updateField("startDate", event.target.value)
                     }
-                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </Field>
@@ -319,7 +319,7 @@ export default function ProjectsPage() {
                     onChange={(event) =>
                       updateField("endDate", event.target.value)
                     }
-                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-violet-500 focus:ring-2 focus:ring-violet-100"
+                    className="w-full rounded-lg border border-gray-200 bg-white py-2.5 pl-9 pr-3 text-sm text-gray-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </div>
               </Field>
@@ -357,7 +357,7 @@ export default function ProjectsPage() {
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
             <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
-              <FolderOpen size={15} className="text-violet-500" />
+              <FolderOpen size={15} className="text-blue-500" />
               Your Projects ({projects.length})
             </h3>
 
@@ -394,7 +394,7 @@ export default function ProjectsPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(project)}
-                          className="p-2 text-gray-500 hover:text-violet-600"
+                          className="p-2 text-gray-500 hover:text-blue-700"
                         >
                           <Edit2 size={14} />
                         </button>
@@ -418,7 +418,7 @@ export default function ProjectsPage() {
                         {project.technologies.map((tech) => (
                           <span
                             key={tech}
-                            className="rounded-full bg-violet-100 px-2 py-1 text-[10px] font-medium text-violet-700"
+                            className="rounded-full bg-blue-100 px-2 py-1 text-[10px] font-medium text-blue-800"
                           >
                             {tech}
                           </span>
@@ -431,7 +431,7 @@ export default function ProjectsPage() {
                         href={project.liveDemo ?? project.github ?? "#"}
                         target="_blank"
                         rel="noreferrer"
-                        className="mt-3 inline-block text-xs text-violet-600 hover:underline"
+                        className="mt-3 inline-block text-xs text-blue-700 hover:underline"
                       >
                         {project.liveDemo ?? project.github}
                       </a>

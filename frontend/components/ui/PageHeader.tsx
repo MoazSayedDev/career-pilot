@@ -11,7 +11,7 @@ export function PageHeader({ icon, title, subtitle, tipText }: PageHeaderProps) 
   return (
     <div className="flex items-start justify-between mb-6">
       <div className="flex items-center gap-4">
-        <div className="w-14 h-14 rounded-2xl bg-violet-100 flex items-center justify-center text-violet-600 flex-shrink-0">
+        <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-700 flex-shrink-0">
           {icon}
         </div>
         <div>

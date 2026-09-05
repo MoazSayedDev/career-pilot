@@ -38,14 +38,14 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           type="button"
           aria-label="Open navigation menu"
           onClick={onMenuClick}
-          className="md:hidden -ml-1 p-1 text-gray-600 hover:text-violet-600 transition-colors"
+          className="md:hidden -ml-1 p-1 text-gray-600 hover:text-blue-700 transition-colors"
         >
           <Menu size={18} />
         </button>
 
         <button
           onClick={() => router.push("/dashboard")}
-          className="hover:text-violet-600 transition-colors"
+          className="hover:text-blue-700 transition-colors"
         >
           Dashboard
         </button>
@@ -63,7 +63,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
 
       {/* User */}
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+        <div className="w-8 h-8 rounded-full bg-brand-gradient flex items-center justify-center text-white text-xs font-bold">
           {loading ? "" : initials || "?"}
         </div>
 

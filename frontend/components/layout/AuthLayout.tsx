@@ -1,4 +1,4 @@
-import { FileText } from "lucide-react";
+import { LogoMark } from "@/components/ui/Logo";
 
 import { Card } from "@/components/ui/Card";
 
@@ -14,9 +14,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="mb-6 inline-flex items-center gap-2.5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-200">
-              <FileText size={18} className="text-white" />
-            </div>
+            <LogoMark size={40} />
             <span className="text-xl font-bold text-gray-900">CareerPilot</span>
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
