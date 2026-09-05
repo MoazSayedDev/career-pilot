@@ -1,9 +1,11 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { OptimizeResumeDto } from './dto/optimize-resume.dto';
 import { CurrentUser } from 'src/auth/decorators/current-user.decorator';
 import type { JwtAccessPayload } from 'src/auth/interfaces/jwt-payload.interface';
 
+@UseGuards(JwtAuthGuard)
 @Controller('ai')
 export class AiController {
   constructor(private readonly aiService: AiService) {}
@@ -13,6 +15,6 @@ export class AiController {
     @CurrentUser() user: JwtAccessPayload,
     @Body() dto: OptimizeResumeDto,
   ) {
-    return this.aiService.optimizeResume(dto.jobDescription, user.sub);
+    return this.aiService.optimizeResume(user.sub, dto.jobDescription);
   }
 }

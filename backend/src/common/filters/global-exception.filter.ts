@@ -42,13 +42,21 @@ export class GlobalExceptionFilter implements ExceptionFilter {
       } else {
         message = exceptionResponse as string;
       }
+
+      // Rate limiter leaks its internal class name in the message
+      // ("ThrottlerException: ...") — replace it with a client-safe one.
+      if (status === HttpStatus.TOO_MANY_REQUESTS) {
+        message = 'Too many requests. Please try again later.';
+        error = 'Too Many Requests';
+      }
     }
     // Handle Prisma unique constraint violations
     else if (exception instanceof PrismaClientKnownRequestError) {
       if (exception.code === 'P2002') {
         status = HttpStatus.CONFLICT;
-        const field = (exception.meta?.target as string[])?.[0];
-        message = `${field} already exists`;
+        // Composite targets include ownership columns (e.g. profileId) that
+        // mean nothing to the client — surface a generic, safe message.
+        message = 'A record with these details already exists.';
         error = 'Conflict';
       } else {
         this.logger.error('Prisma error:', exception);

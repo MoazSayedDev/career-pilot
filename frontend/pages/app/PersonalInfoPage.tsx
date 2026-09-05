@@ -228,11 +228,18 @@ export default function PersonalInfoPage() {
       const profileValues = profileForm.getValues();
       const contactValues = contactForm.getValues();
 
+      // An empty image input must be omitted, not sent as "" — the API
+      // validates image as a URL when the key is present.
+      const profilePayload = {
+        ...profileValues,
+        image: profileValues.image?.trim() ? profileValues.image.trim() : undefined,
+      };
+
       try {
-        await updateProfile(profileValues);
+        await updateProfile(profilePayload);
       } catch (error) {
         if (axios.isAxiosError(error) && error.response?.status === 404) {
-          await createProfile(profileValues);
+          await createProfile(profilePayload);
         } else {
           throw error;
         }
