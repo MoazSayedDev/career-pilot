@@ -152,7 +152,7 @@ export default function DashboardPage() {
       }
 
       setGenerateError(
-        getApiErrorMessage(error, t("dashboard.aiForm.failed")),
+        getApiErrorMessage(error, t("dashboard.aiForm.failed"), t),
       );
     } finally {
       setGenerating(false);

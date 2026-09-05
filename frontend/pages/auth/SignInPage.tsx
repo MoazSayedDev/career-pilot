@@ -47,7 +47,7 @@ const SignInPageComponent = () => {
 
       // Return the user to the protected page that sent them here, but
       // only allow in-app destinations (open-redirect protection).
-      const requested = searchParams.get("redirect");
+      const requested = searchParams?.get("redirect");
       const target =
         requested && requested.startsWith("/") && !requested.startsWith("//")
           ? requested

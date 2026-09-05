@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -65,6 +65,7 @@ export default function StartBuildingPage() {
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const creatingRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -140,6 +141,8 @@ export default function StartBuildingPage() {
     selectedLanguages.length;
 
   const handleCreateResume = async () => {
+    if (creatingRef.current) return;
+
     // Validate title
     if (!title.trim()) {
       setError(t("resume.build.titleRequired"));
@@ -152,6 +155,7 @@ export default function StartBuildingPage() {
       return;
     }
 
+    creatingRef.current = true;
     setCreating(true);
     setError(null);
 
@@ -175,6 +179,7 @@ export default function StartBuildingPage() {
       setError(t("resume.build.createFailed"));
     } finally {
       setCreating(false);
+      creatingRef.current = false;
     }
   };
 
@@ -648,7 +653,16 @@ export default function StartBuildingPage() {
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="font-medium text-gray-900 dark:text-gray-100">
-                {t("resume.build.selectedCount", { count: selectedCount })}
+                {t(
+                  selectedCount === 1
+                    ? "resume.build.selectedOne"
+                    : selectedCount === 2
+                      ? "resume.build.selectedTwo"
+                      : selectedCount <= 10
+                        ? "resume.build.selectedFew"
+                        : "resume.build.selectedMany",
+                  { count: selectedCount },
+                )}
               </p>
 
               <p className="text-xs text-gray-500 dark:text-gray-400">

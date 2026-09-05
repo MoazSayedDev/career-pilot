@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   GraduationCap,
   Calendar,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Textarea } from "@/components/ui/Textarea";
@@ -31,7 +32,6 @@ const EMPTY_FORM = {
   degree: "",
   field: "",
   school: "",
-  location: "",
   startDate: "",
   endDate: "",
   current: false,
@@ -92,6 +92,8 @@ export default function EducationPage() {
   const [loading, setLoading] = useState(true);
 
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
 
   /* =========================================
      Load Education
@@ -143,10 +145,13 @@ export default function EducationPage() {
   ========================================= */
 
   const handleSave = async () => {
+    if (submittingRef.current) return;
+
     if (!validate()) {
       return;
     }
 
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -189,6 +194,7 @@ export default function EducationPage() {
       }));
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -204,7 +210,6 @@ export default function EducationPage() {
 
       school: item.university,
 
-      location: "",
 
       startDate: formatDate(item.startDate),
 
@@ -543,7 +548,12 @@ export default function EducationPage() {
 
                         <button
                           type="button"
-                          onClick={() => void handleDelete(item.id)}
+                          onClick={() =>
+                            setPendingDelete({
+                              id: item.id,
+                              label: item.degree,
+                            })
+                          }
                           className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                           aria-label={t("profile.education.deleteItem", {
                             name: item.degree,
@@ -577,6 +587,22 @@ export default function EducationPage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={t("common.deleteTitle")}
+        message={
+          pendingDelete
+            ? t("profile.education.deleteItem", { name: pendingDelete.label })
+            : ""
+        }
+        confirmLabel={t("profile.education.deleteConfirm")}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

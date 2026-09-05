@@ -22,7 +22,8 @@
     "present": "حتى الآن",
     "characters": "حرف",
     "or": "أو",
-    "guest": "زائر"
+    "guest": "زائر",
+    "deleteTitle": "تأكيد الحذف"
   },
   "theme": {
     "toggle": "تبديل نمط الألوان",
@@ -209,7 +210,8 @@
       "success": "تمت إعادة تعيين كلمة المرور بنجاح!",
       "successCta": "سجّل الدخول بكلمة المرور الجديدة",
       "missingSession": "جلسة الاستعادة مفقودة. يرجى طلب إعادة تعيين كلمة المرور من جديد.",
-      "failed": "تعذر إعادة تعيين كلمة المرور."
+      "failed": "تعذر إعادة تعيين كلمة المرور.",
+      "tryAgain": "طلب رابط جديد"
     }
   },
   "dashboard": {
@@ -328,7 +330,10 @@
       "jobTitleRequired": "المسمى الوظيفي مطلوب",
       "startDateRequired": "تاريخ البدء مطلوب",
       "descriptionRequired": "الوصف مطلوب",
-      "saveFailed": "فشل حفظ الخبرة."
+      "saveFailed": "فشل حفظ الخبرة.",
+      "deleteConfirm": "نعم، احذف",
+      "editItem": "تعديل {name}",
+      "deleteItem": "حذف {name}"
     },
     "education": {
       "title": "التعليم",
@@ -356,7 +361,8 @@
       "startDateRequired": "تاريخ البدء مطلوب",
       "saveFailed": "فشل حفظ التعليم.",
       "editItem": "تعديل {name}",
-      "deleteItem": "حذف {name}"
+      "deleteItem": "حذف {name}",
+      "deleteConfirm": "نعم، احذف"
     },
     "skills": {
       "title": "المهارات واللغات",
@@ -387,7 +393,9 @@
       "saveSkillFailed": "فشل حفظ المهارة.",
       "saveLanguageFailed": "فشل حفظ اللغة.",
       "deleteSkill": "حذف {name}",
-      "deleteLanguage": "حذف {name}"
+      "deleteLanguage": "حذف {name}",
+      "alreadyExists": "هذه المهارة مضافة بالفعل.",
+      "yearsExperience": "سنوات الخبرة"
     },
     "projects": {
       "title": "المشاريع",
@@ -415,7 +423,10 @@
       "empty": "لم تُضف أي مشاريع بعد.",
       "nameRequired": "اسم المشروع مطلوب",
       "descriptionRequired": "وصف المشروع مطلوب",
-      "saveFailed": "فشل حفظ المشروع."
+      "saveFailed": "فشل حفظ المشروع.",
+      "deleteConfirm": "نعم، احذف",
+      "editItem": "تعديل {name}",
+      "deleteItem": "حذف {name}"
     },
     "certificates": {
       "title": "الشهادات",
@@ -441,7 +452,10 @@
       "nameRequired": "اسم الشهادة مطلوب",
       "organizationRequired": "الجهة المانحة مطلوبة",
       "issueDateRequired": "تاريخ الإصدار مطلوب",
-      "saveFailed": "فشل حفظ الشهادة."
+      "saveFailed": "فشل حفظ الشهادة.",
+      "deleteConfirm": "نعم، احذف",
+      "editItem": "تعديل {name}",
+      "deleteItem": "حذف {name}"
     }
   },
   "resume": {
@@ -462,7 +476,6 @@
       "titleRequired": "يرجى إدخال عنوان لسيرتك الذاتية.",
       "selectRequired": "يرجى اختيار عنصر واحد على الأقل لسيرتك الذاتية.",
       "createFailed": "فشل إنشاء سيرتك الذاتية. يرجى المحاولة مرة أخرى.",
-      "selectedCount": "تم اختيار {count} عنصر",
       "selectedHint": "يمكنك تغيير اختياراتك قبل إنشاء السيرة الذاتية.",
       "preview": "معاينة",
       "create": "إنشاء السيرة الذاتية",
@@ -491,7 +504,11 @@
       "education": "التعليم",
       "certificates": "الشهادات",
       "projects": "المشاريع",
-      "languages": "اللغات"
+      "languages": "اللغات",
+      "selectedOne": "تم اختيار عنصر واحد",
+      "selectedTwo": "تم اختيار عنصرين",
+      "selectedFew": "تم اختيار {count} عناصر",
+      "selectedMany": "تم اختيار {count} عنصرًا"
     },
     "preview": {
       "title": "معاينة السيرة الذاتية",
@@ -551,7 +568,9 @@
     "notFound": "العنصر المطلوب غير موجود.",
     "tooManyRequests": "عدد كبير من الطلبات. يرجى الانتظار قليلًا والمحاولة مرة أخرى.",
     "serverError": "حدث خطأ ما في خدماتنا. يرجى المحاولة مرة أخرى.",
-    "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى."
+    "networkError": "خطأ في الشبكة. يرجى التحقق من اتصالك والمحاولة مرة أخرى.",
+    "duplicateRecord": "هذا العنصر موجود بالفعل.",
+    "aiUnavailable": "خدمة الذكاء الاصطناعي غير متاحة حاليًا. حاول لاحقًا."
   },
   "validation": {
     "emailInvalid": "يرجى إدخال بريد إلكتروني صحيح.",
@@ -572,7 +591,7 @@
     "lastNameMin": "يجب أن يتكون اسم العائلة من حرفين على الأقل",
     "headlineMax": "يجب ألا يتجاوز المسمى المهني 100 حرف",
     "bioMax": "يجب ألا تتجاوز النبذة التعريفية 1000 حرف",
-    "imageInvalid": "رابط الصورة غير صحيح",
+    "imageInvalid": "رابط الصورة غير صالح.",
     "phoneMax": "يجب ألا يتجاوز الهاتف 20 رقمًا",
     "emailMax": "يجب ألا يتجاوز البريد الإلكتروني 100 حرف",
     "urlInvalid": "الرابط غير صحيح",
@@ -679,5 +698,7 @@
       "privacy": "طلبات الخصوصية",
       "security": "بلاغات أمنية"
     }
-  }
+  },
+  "auth.signIn.emailNotVerified": "لم يتم تفعيل بريدك الإلكتروني. يرجى تفعيله أولًا.",
+  "auth.signIn.accountLocked": "تم قفل الحساب مؤقتًا بسبب محاولات دخول خاطئة متكررة. حاول بعد قليل."
 }

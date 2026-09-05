@@ -24,6 +24,18 @@ const ResetPasswordPageComponent = () => {
   const router = useRouter();
   const { t } = useI18n();
 
+  // Detect a missing/already-consumed reset session up front so the user
+  // sees the problem immediately instead of after filling the form.
+  const [missingContext] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const params = new URLSearchParams(window.location.search);
+    const hasEmail =
+      params.get("email") || localStorage.getItem("careerpilot_reset_email");
+    const hasToken =
+      params.get("token") || localStorage.getItem("careerpilot_reset_token");
+    return !hasEmail || !hasToken;
+  });
+
   const resetPasswordSchema = useMemo(
     () => makeResetPasswordSchema(t),
     [t],
@@ -105,6 +117,16 @@ const ResetPasswordPageComponent = () => {
           </p>
           <Btn type="button" className="w-full" onClick={() => router.push("/login")}>
             {t("auth.reset.successCta")}
+          </Btn>
+        </div>
+      ) : missingContext ? (
+        <div className="flex flex-col items-center gap-4 py-4 text-center">
+          <p className="flex items-center gap-1 text-sm text-red-500">
+            <AlertCircle size={14} />
+            {t("auth.reset.missingSession")}
+          </p>
+          <Btn type="button" className="w-full" onClick={() => router.push("/forget-password")}>
+            {t("auth.reset.tryAgain")}
           </Btn>
         </div>
       ) : (

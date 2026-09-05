@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Award,
   Calendar,
@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -61,6 +62,8 @@ export default function CertificatesPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
   const refresh = () => setReloadKey((key) => key + 1);
@@ -112,8 +115,11 @@ export default function CertificatesPage() {
   };
 
   const handleSave = async () => {
+    if (submittingRef.current) return;
+
     if (!validate()) return;
 
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -145,6 +151,7 @@ export default function CertificatesPage() {
       }));
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -372,6 +379,9 @@ export default function CertificatesPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(certificate)}
+                          aria-label={t("profile.certificates.editItem", {
+                            name: certificate.name,
+                          })}
                           className="p-2 text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400"
                         >
                           <Edit2 size={14} />
@@ -379,7 +389,15 @@ export default function CertificatesPage() {
 
                         <button
                           type="button"
-                          onClick={() => void handleDelete(certificate.id)}
+                          onClick={() =>
+                            setPendingDelete({
+                              id: certificate.id,
+                              label: certificate.name,
+                            })
+                          }
+                          aria-label={t("profile.certificates.deleteItem", {
+                            name: certificate.name,
+                          })}
                           className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                         >
                           <Trash2 size={14} />
@@ -418,6 +436,22 @@ export default function CertificatesPage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={t("common.deleteTitle")}
+        message={
+          pendingDelete
+            ? t("profile.certificates.deleteItem", { name: pendingDelete.label })
+            : ""
+        }
+        confirmLabel={t("profile.certificates.deleteConfirm")}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }

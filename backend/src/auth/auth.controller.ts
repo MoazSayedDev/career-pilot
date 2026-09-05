@@ -138,11 +138,13 @@ export class AuthController {
    * POST /auth/refresh
    * Refresh access token with rotation
    *
-   * Rate limit: 30 per hour per user
+   * Rate limit: 100 per hour per user (the in-memory access token makes
+   * every page load in every tab fire a refresh — 30/h broke multi-tab
+   * sessions and dead-locked them into redirects)
    * Response: 200 OK
    */
   @Post('refresh')
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @Throttle({ default: { limit: 100, ttl: 3600000 } })
   @HttpCode(HttpStatus.OK)
   async refresh(
     @Req() req: Request,

@@ -22,7 +22,8 @@
     "present": "Present",
     "characters": "characters",
     "or": "or",
-    "guest": "Guest"
+    "guest": "Guest",
+    "deleteTitle": "Confirm deletion"
   },
   "theme": {
     "toggle": "Toggle color theme",
@@ -209,7 +210,8 @@
       "success": "Password reset successfully!",
       "successCta": "Sign in with new password",
       "missingSession": "Missing reset session. Please request a new password reset.",
-      "failed": "Unable to reset your password."
+      "failed": "Unable to reset your password.",
+      "tryAgain": "Request a new link"
     }
   },
   "dashboard": {
@@ -328,7 +330,10 @@
       "jobTitleRequired": "Job title is required",
       "startDateRequired": "Start date is required",
       "descriptionRequired": "Description is required",
-      "saveFailed": "Failed to save experience."
+      "saveFailed": "Failed to save experience.",
+      "deleteConfirm": "Yes, delete",
+      "editItem": "Edit {name}",
+      "deleteItem": "Delete {name}"
     },
     "education": {
       "title": "Education",
@@ -356,7 +361,8 @@
       "startDateRequired": "Start date is required",
       "saveFailed": "Failed to save education.",
       "editItem": "Edit {name}",
-      "deleteItem": "Delete {name}"
+      "deleteItem": "Delete {name}",
+      "deleteConfirm": "Yes, delete"
     },
     "skills": {
       "title": "Skills & Languages",
@@ -387,7 +393,9 @@
       "saveSkillFailed": "Failed to save skill.",
       "saveLanguageFailed": "Failed to save language.",
       "deleteSkill": "Delete {name}",
-      "deleteLanguage": "Delete {name}"
+      "deleteLanguage": "Delete {name}",
+      "alreadyExists": "This skill is already added.",
+      "yearsExperience": "Years of experience"
     },
     "projects": {
       "title": "Projects",
@@ -415,7 +423,10 @@
       "empty": "No projects added yet.",
       "nameRequired": "Project name is required",
       "descriptionRequired": "Project description is required",
-      "saveFailed": "Failed to save project."
+      "saveFailed": "Failed to save project.",
+      "deleteConfirm": "Yes, delete",
+      "editItem": "Edit {name}",
+      "deleteItem": "Delete {name}"
     },
     "certificates": {
       "title": "Certificates",
@@ -441,7 +452,10 @@
       "nameRequired": "Certificate name is required",
       "organizationRequired": "Issuing organization is required",
       "issueDateRequired": "Issue date is required",
-      "saveFailed": "Failed to save certificate."
+      "saveFailed": "Failed to save certificate.",
+      "deleteConfirm": "Yes, delete",
+      "editItem": "Edit {name}",
+      "deleteItem": "Delete {name}"
     }
   },
   "resume": {
@@ -462,7 +476,6 @@
       "titleRequired": "Please enter a title for your resume.",
       "selectRequired": "Please select at least one item for your resume.",
       "createFailed": "Failed to create your resume. Please try again.",
-      "selectedCount": "{count} items selected",
       "selectedHint": "You can change your selections before creating the resume.",
       "preview": "Preview",
       "create": "Create Resume",
@@ -491,7 +504,11 @@
       "education": "Education",
       "certificates": "Certificates",
       "projects": "Projects",
-      "languages": "Languages"
+      "languages": "Languages",
+      "selectedOne": "1 item selected",
+      "selectedTwo": "2 items selected",
+      "selectedFew": "{count} items selected",
+      "selectedMany": "{count} items selected"
     },
     "preview": {
       "title": "Resume Preview",
@@ -551,7 +568,9 @@
     "notFound": "The requested item was not found.",
     "tooManyRequests": "Too many requests. Please wait a moment and try again.",
     "serverError": "Something went wrong on our side. Please try again.",
-    "networkError": "Network error. Please check your connection and try again."
+    "networkError": "Network error. Please check your connection and try again.",
+    "duplicateRecord": "This item already exists.",
+    "aiUnavailable": "The AI service is currently unavailable. Please try again later."
   },
   "validation": {
     "emailInvalid": "Please enter a valid email address.",
@@ -572,7 +591,7 @@
     "lastNameMin": "Last name must be at least 2 characters",
     "headlineMax": "Headline must not exceed 100 characters",
     "bioMax": "Bio must not exceed 1000 characters",
-    "imageInvalid": "Invalid image URL",
+    "imageInvalid": "The image URL is invalid.",
     "phoneMax": "Phone must not exceed 20 characters",
     "emailMax": "Email must not exceed 100 characters",
     "urlInvalid": "Invalid URL",
@@ -679,5 +698,7 @@
       "privacy": "Privacy requests",
       "security": "Security reports"
     }
-  }
+  },
+  "auth.signIn.emailNotVerified": "Your email is not verified. Please verify it first.",
+  "auth.signIn.accountLocked": "Account temporarily locked after repeated failed sign-ins. Try again shortly."
 }
