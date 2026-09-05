@@ -24,7 +24,7 @@ const OTPPageComponent = () => {
   const searchParams = useSearchParams();
   const [isResending, setIsResending] = useState(false);
   const [resendMessage, setResendMessage] = useState<string | null>(null);
-  const flow = searchParams.get("mode") ?? "verify-email";
+  const flow = searchParams?.get("mode") ?? "verify-email";
   const isResetPasswordFlow = flow === "reset-password";
 
   const {
@@ -64,7 +64,7 @@ const OTPPageComponent = () => {
 
   const getEmailFromContext = () => {
     return (
-      searchParams.get("email") ||
+      searchParams?.get("email") ||
       (isResetPasswordFlow
         ? localStorage.getItem("careerpilot_reset_email")
         : localStorage.getItem("careerpilot_verification_email")) ||

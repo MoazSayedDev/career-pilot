@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import type { Dispatch, ReactNode, SetStateAction } from "react";
+import { useRouter } from "next/navigation";
 import {
   Award,
   Briefcase,
   Check,
   ChevronDown,
+  Eye,
   FileText,
   FolderGit2,
   GraduationCap,
@@ -23,73 +25,7 @@ import { createResume } from "@/services/resume/api/resume.service";
 import { getProfile } from "@/services/profile/api/profile.service";
 
 import type { CreateResumeDto } from "@/services/resume/types/resume";
-
-interface Skill {
-  id: string;
-  name: string;
-  level: string;
-  yearsOfExperience: number;
-}
-
-interface Experience {
-  id: string;
-  company: string;
-  position: string;
-  employmentType: string;
-  location: string;
-  startDate: string;
-  endDate: string | null;
-  currentlyWorking: boolean;
-  description: string[];
-  technologies: string[];
-}
-
-interface Education {
-  id: string;
-  university: string;
-  degree: string;
-  field: string;
-  grade: string | null;
-  startDate: string;
-  endDate: string | null;
-  description: string | null;
-}
-
-interface Certificate {
-  id: string;
-  name: string;
-  issuer: string;
-  issueDate: string;
-  expirationDate: string | null;
-  credentialId: string | null;
-  credentialUrl: string | null;
-}
-
-interface Project {
-  id: string;
-  name: string;
-  description: string;
-  github: string | null;
-  liveDemo: string | null;
-  technologies: string[];
-  startDate: string | null;
-  endDate: string | null;
-}
-
-interface Language {
-  id: string;
-  language: string;
-  level: string;
-}
-
-interface Profile {
-  skills: Skill[];
-  experiences: Experience[];
-  educations: Education[];
-  certificates: Certificate[];
-  projects: Project[];
-  languages: Language[];
-}
+import type { ProfileResponse } from "@/services/profile/types/profile";
 
 type SectionKey =
   | "skills"
@@ -135,7 +71,9 @@ const SECTION_INFO: Record<
 };
 
 export default function StartBuildingPage() {
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const router = useRouter();
+
+  const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
   const [title, setTitle] = useState("");
   const [template, setTemplate] = useState("MODERN");
@@ -169,33 +107,31 @@ export default function StartBuildingPage() {
         setError(null);
 
         // One request only
-        const response = await getProfile();
-
-        const data = response.data ?? response;
+        const data = await getProfile();
 
         setProfile(data);
 
         // Select everything by default
-        setSelectedSkills(data.skills?.map((item: Skill) => item.id) ?? []);
+        setSelectedSkills(data.skills?.map((item) => item.id) ?? []);
 
         setSelectedExperiences(
-          data.experiences?.map((item: Experience) => item.id) ?? [],
+          data.experiences?.map((item) => item.id) ?? [],
         );
 
         setSelectedEducations(
-          data.educations?.map((item: Education) => item.id) ?? [],
+          data.educations?.map((item) => item.id) ?? [],
         );
 
         setSelectedCertificates(
-          data.certificates?.map((item: Certificate) => item.id) ?? [],
+          data.certificates?.map((item) => item.id) ?? [],
         );
 
         setSelectedProjects(
-          data.projects?.map((item: Project) => item.id) ?? [],
+          data.projects?.map((item) => item.id) ?? [],
         );
 
         setSelectedLanguages(
-          data.languages?.map((item: Language) => item.id) ?? [],
+          data.languages?.map((item) => item.id) ?? [],
         );
       } catch (err) {
         console.error("Failed to load profile:", err);
@@ -264,16 +200,10 @@ export default function StartBuildingPage() {
         languageIds: selectedLanguages,
       };
 
-      console.log("Creating resume:", payload);
-
       const resume = await createResume(payload);
 
-      console.log("Resume created:", resume);
-
-      // Navigate to resume editor after creation
-      // router.push(`/resume/${resume.id}`);
-    } catch (err) {
-      console.error("Failed to create resume:", err);
+      router.push(`/resume/preview?id=${resume.id}`);
+    } catch {
       setError("Failed to create your resume. Please try again.");
     } finally {
       setCreating(false);
@@ -298,7 +228,7 @@ export default function StartBuildingPage() {
           <FileText size={32} className="mx-auto mb-3 text-gray-300" />
 
           <p className="text-sm text-gray-500">
-            We couldn't load your profile.
+            We couldn&apos;t load your profile.
           </p>
         </div>
       </main>
@@ -735,19 +665,30 @@ export default function StartBuildingPage() {
               </p>
             </div>
 
-            <Btn onClick={handleCreateResume} disabled={creating}>
-              {creating ? (
-                <>
-                  <Loader2 size={16} className="animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  Create Resume
-                  <Plus size={16} />
-                </>
-              )}
-            </Btn>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Btn
+                variant="outline"
+                onClick={handleCreateResume}
+                disabled={creating}
+              >
+                <Eye size={16} />
+                Preview
+              </Btn>
+
+              <Btn onClick={handleCreateResume} disabled={creating}>
+                {creating ? (
+                  <>
+                    <Loader2 size={16} className="animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  <>
+                    Create Resume
+                    <Plus size={16} />
+                  </>
+                )}
+              </Btn>
+            </div>
           </div>
         </Card>
       </div>

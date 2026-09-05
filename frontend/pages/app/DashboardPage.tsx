@@ -5,26 +5,25 @@ import {
   Wand2,
   Pencil,
   ArrowRight,
-  Sparkles,
   Briefcase,
   GraduationCap,
   Zap,
   Award,
   Check,
-  Download,
   Eye,
   Layers,
   Target,
+  Loader2,
 } from "lucide-react";
 
+import axios from "axios";
 import { useRouter } from "next/navigation";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Field } from "@/components/ui/Field";
-import { cn } from "@/utils";
+
+import { getApiErrorMessage } from "@/lib/api-error";
 
 import { getProfile } from "@/services/profile/api/profile.service";
 import type { Profile } from "@/services/profile/types/profile";
@@ -38,6 +37,7 @@ import { getProjects } from "@/services/project/api/project.service";
 import type { Project } from "@/services/project/types/project";
 import { getCertificates } from "@/services/certificate/api/certificate.service";
 import type { Certificate } from "@/services/certificate/types/certificate";
+import { createResumeByJobDescription } from "@/services/resume/api/resume.service";
 
 const ALL_SECTIONS = [
   { id: "personal-info", label: "Personal Info", icon: <Pencil size={14} />, href: "/profile" },
@@ -46,14 +46,18 @@ const ALL_SECTIONS = [
   { id: "skills", label: "Skills", icon: <Zap size={14} />, href: "/profile/skill" },
   { id: "projects", label: "Projects", icon: <Layers size={14} />, href: "/profile/projects" },
   { id: "certificates", label: "Certificates", icon: <Award size={14} />, href: "/profile/certificates" },
-  { id: "ai-summary", label: "Summary", icon: <Sparkles size={14} />, href: "/resume/ai-summary" },
 ];
+
+/** Mirrors the backend's 4000-character limit on the job description. */
+const JOB_DESCRIPTION_MAX_LENGTH = 4000;
+const JOB_DESCRIPTION_MIN_LENGTH = 30;
 
 export default function DashboardPage() {
   const router = useRouter();
   const [mode, setMode] = useState<null | "ai" | "manual">(null);
-  const [aiJobDesc, setAiJobDesc] = useState("");
-  const [aiRole, setAiRole] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
   const [manualSections, setManualSections] = useState<string[]>(["personal-info", "experience", "education", "skills"]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [experiences, setExperiences] = useState<Experience[]>([]);
@@ -80,8 +84,8 @@ export default function DashboardPage() {
         setSkills(skillsData);
         setProjects(projectsData);
         setCertificates(certificatesData);
-      } catch (error) {
-        console.error(error);
+      } catch {
+        // Completion stats simply stay at zero when loading fails.
       }
     };
 
@@ -107,8 +111,53 @@ export default function DashboardPage() {
     setManualSections((prev) => (prev.includes(id) ? prev.filter((section) => section !== id) : [...prev, id]));
   };
 
-  const handleGenerate = () => {
-    router.push("/resume/ai-summary");
+  const trimmedJobDescription = jobDescription.trim();
+
+  const jobDescriptionError = useMemo(() => {
+    if (!trimmedJobDescription) return null;
+
+    if (trimmedJobDescription.length < JOB_DESCRIPTION_MIN_LENGTH) {
+      return "The job description is too short. Paste the full posting for a better result.";
+    }
+
+    return null;
+  }, [trimmedJobDescription]);
+
+  const canGenerate =
+    !generating &&
+    trimmedJobDescription.length >= JOB_DESCRIPTION_MIN_LENGTH &&
+    trimmedJobDescription.length <= JOB_DESCRIPTION_MAX_LENGTH;
+
+  const handleGenerate = async () => {
+    if (!canGenerate) return;
+
+    setGenerating(true);
+    setGenerateError(null);
+
+    try {
+      const result = await createResumeByJobDescription({
+        jobDescription: trimmedJobDescription,
+      });
+
+      setMode(null);
+      setJobDescription("");
+
+      router.push(`/resume/preview?id=${result.id}`);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 401) {
+        router.push("/login");
+        return;
+      }
+
+      setGenerateError(
+        getApiErrorMessage(
+          error,
+          "Failed to generate a CV from this job description. Please try again.",
+        ),
+      );
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const handleManualStart = () => {
@@ -132,10 +181,6 @@ export default function DashboardPage() {
             <Eye size={14} />
             Preview CV
           </Btn>
-          <Btn size="sm" onClick={() => router.push("/resume/download")}>
-            <Download size={14} />
-            Download PDF
-          </Btn>
         </div>
       </div>
 
@@ -154,7 +199,7 @@ export default function DashboardPage() {
 
         <div className="flex flex-wrap gap-2 mt-4">
           {completionSections.map((section) => (
-            <span key={section.label} className={cn("flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium", section.done ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500")}>
+            <span key={section.label} className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${section.done ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
               {section.done ? <Check size={11} /> : <div className="w-2.5 h-2.5 rounded-full border-2 border-current opacity-40" />}
               {section.label}
             </span>
@@ -168,8 +213,8 @@ export default function DashboardPage() {
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4">
               <Wand2 size={22} />
             </div>
-            <h3 className="text-xl font-bold mb-2">Generate CV with AI</h3>
-            <p className="text-violet-200 text-sm leading-relaxed mb-4">Create a tailored, high-impact CV summary based on your profile and target role.</p>
+            <h3 className="text-xl font-bold mb-2">Generate CV by Job Description</h3>
+            <p className="text-violet-200 text-sm leading-relaxed mb-4">Paste a job description and we will build a tailored CV from your profile.</p>
             <div className="flex items-center gap-2 text-sm font-medium text-violet-100">
               Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </div>
@@ -182,7 +227,7 @@ export default function DashboardPage() {
             <h3 className="text-xl font-bold text-gray-900 mb-2">Build your CV manually</h3>
             <p className="text-gray-500 text-sm leading-relaxed mb-4">Update each section yourself and keep your CV aligned with the latest information.</p>
             <div className="flex items-center gap-2 text-sm font-medium text-violet-600">
-              Continue <ArrowRight size={16} />
+              Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </div>
           </div>
         </div>
@@ -190,24 +235,62 @@ export default function DashboardPage() {
 
       {mode === "ai" && (
         <Card className="p-6 mb-6">
-          <h3 className="font-semibold text-gray-800 mb-5 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
             <Target size={16} className="text-violet-500" />
-            AI CV Assistant
+            Generate CV by Job Description
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            <Field label="Target Role">
-              <Input value={aiRole} onChange={setAiRole} placeholder="Senior Frontend Developer" />
-            </Field>
-            <Field label="Job Description">
-              <Textarea value={aiJobDesc} onChange={setAiJobDesc} rows={5} placeholder="Paste the job description here..." />
-            </Field>
-          </div>
-          <div className="flex gap-3 mt-5">
-            <Btn onClick={handleGenerate}>
-              <Wand2 size={15} />
-              Generate Summary
-            </Btn>
-            <Btn variant="outline" onClick={() => setMode(null)}>Back</Btn>
+
+          <p className="text-xs text-gray-400 mb-5">
+            Paste the job posting you are targeting. We will match your profile to it and build the CV.
+          </p>
+
+          <div className="flex flex-col gap-2">
+            <label htmlFor="job-description" className="text-sm font-medium text-gray-700">
+              Job Description <span className="text-red-500">*</span>
+            </label>
+
+            <Textarea
+              value={jobDescription}
+              onChange={(value) => {
+                setJobDescription(value);
+                if (generateError) setGenerateError(null);
+              }}
+              placeholder="Paste the full job description here..."
+              rows={7}
+              maxLength={JOB_DESCRIPTION_MAX_LENGTH}
+            />
+
+            <p className="text-xs text-gray-400">
+              {jobDescription.length}/{JOB_DESCRIPTION_MAX_LENGTH} characters
+            </p>
+
+            {jobDescriptionError && !generating && (
+              <p className="text-xs text-red-500">{jobDescriptionError}</p>
+            )}
+
+            {generateError && (
+              <p className="text-sm text-red-500">{generateError}</p>
+            )}
+
+            <div className="flex gap-3 mt-3">
+              <Btn onClick={() => void handleGenerate()} disabled={!canGenerate}>
+                {generating ? (
+                  <>
+                    <Loader2 size={15} className="animate-spin" />
+                    Generating your CV...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 size={15} />
+                    Generate CV
+                  </>
+                )}
+              </Btn>
+
+              <Btn variant="outline" onClick={() => setMode(null)} disabled={generating}>
+                Back
+              </Btn>
+            </div>
           </div>
         </Card>
       )}

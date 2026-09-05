@@ -3,6 +3,7 @@ export enum ResumeTemplate {
   CLASSIC = "CLASSIC",
   MINIMAL = "MINIMAL",
 }
+
 export interface ResumeSkill {
   id: string;
   skillId: string;
@@ -18,11 +19,15 @@ export interface ResumeExperience {
   customDescription: string[];
   experience: {
     id: string;
-    jobTitle: string;
     company: string;
-    startDate?: string | null;
-    endDate?: string | null;
-    description?: string | null;
+    position: string;
+    employmentType: string;
+    location: string | null;
+    startDate: string;
+    endDate: string | null;
+    currentlyWorking: boolean;
+    description: string[];
+    technologies: string[];
   };
 }
 
@@ -34,11 +39,11 @@ export interface ResumeProject {
     id: string;
     name: string;
     description: string;
+    github: string | null;
+    liveDemo: string | null;
     technologies: string[];
-    github?: string | null;
-    liveDemo?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
+    startDate: string | null;
+    endDate: string | null;
   };
 }
 
@@ -47,11 +52,13 @@ export interface ResumeEducation {
   educationId: string;
   education: {
     id: string;
-    degree?: string | null;
-    fieldOfStudy?: string | null;
-    institution?: string | null;
-    startDate?: string | null;
-    endDate?: string | null;
+    university: string;
+    degree: string;
+    field: string;
+    grade: string | null;
+    startDate: string;
+    endDate: string | null;
+    description: string | null;
   };
 }
 
@@ -60,9 +67,12 @@ export interface ResumeCertificate {
   certificateId: string;
   certificate: {
     id: string;
-    name?: string | null;
-    issuer?: string | null;
-    issueDate?: string | null;
+    name: string;
+    issuer: string;
+    issueDate: string;
+    expirationDate: string | null;
+    credentialId: string | null;
+    credentialUrl: string | null;
   };
 }
 
@@ -71,8 +81,8 @@ export interface ResumeLanguage {
   languageId: string;
   language: {
     id: string;
-    name: string;
-    level?: string | null;
+    language: string;
+    level: string | null;
   };
 }
 
@@ -101,32 +111,19 @@ export interface CreateResumeDto {
   title: string;
   template: string;
 
-  generatedSummary?: string;
-
-  skillIds: string[];
-  experienceIds: string[];
-  projectIds: string[];
-  languageIds: string[];
-  educationIds: string[];
-  certificateIds?: string[];
-}
-
-export type UpdateResumeDto = Partial<CreateResumeDto>;
-
-export interface ResumeFormData {
-  title: string;
-  template: ResumeTemplate;
-
-  jobDescription: string;
-  generatedSummary: string;
-
   skillIds: string[];
   experienceIds: string[];
   educationIds: string[];
   projectIds: string[];
   certificateIds: string[];
   languageIds: string[];
+}
 
-  experienceDescriptions: Record<string, string[]>;
-  projectDescriptions: Record<string, string>;
+export interface CreateResumeByJobDescriptionDto {
+  jobDescription: string;
+}
+
+export interface CreateResumeResponse {
+  message: string;
+  id: string;
 }

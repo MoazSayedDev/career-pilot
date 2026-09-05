@@ -7,12 +7,9 @@ import {
   GraduationCap,
   Zap,
   FolderOpen,
-  Settings,
   LogOut,
   FileText,
   Award,
-  LayoutTemplate,
-  Globe,
 } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
@@ -61,28 +58,29 @@ const NAV_ITEMS = [
     label: "Resume",
     icon: FileText,
   },
-  {
-    href: "/resume/templates",
-    label: "Templates",
-    icon: LayoutTemplate,
-  },
-  {
-    href: "/profile/language",
-    label: "Languages",
-    icon: Globe,
-  },
 ];
 
-export function Sidebar() {
+export function Sidebar({
+  onNavigate,
+}: {
+  /** Called after any navigation so mobile overlays can close themselves. */
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname() ?? "/";
   const router = useRouter();
+
+  const go = (href: string) => {
+    onNavigate?.();
+    router.push(href);
+  };
 
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (error) {
-      console.error("Logout failed:", error);
+    } catch {
+      // Proceed to the login page even if the server call fails.
     } finally {
+      onNavigate?.();
       router.push("/login");
     }
   };
@@ -117,7 +115,7 @@ export function Sidebar() {
           return (
             <button
               key={href}
-              onClick={() => router.push(href)}
+              onClick={() => go(href)}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full text-left",
                 active
@@ -134,19 +132,6 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="p-3 border-t border-gray-100 flex flex-col gap-0.5">
-        <button
-          onClick={() => router.push("/dashboard/settings")}
-          className={cn(
-            "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all w-full text-left",
-            pathname.startsWith("/dashboard/settings")
-              ? "bg-violet-600 text-white"
-              : "text-gray-600 hover:bg-gray-50",
-          )}
-        >
-          <Settings size={16} />
-          <span>Settings</span>
-        </button>
-
         <button
           onClick={handleLogout}
           className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 transition-all w-full text-left"

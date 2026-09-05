@@ -57,21 +57,35 @@ export default function ProjectsPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const loadProjects = async () => {
-    try {
-      const data = await getProjects();
-      setProjects(data);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refresh = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadProjects = async () => {
+      try {
+        const data = await getProjects();
+
+        if (!cancelled) {
+          setProjects(data);
+        }
+      } catch (error) {
+        console.error(error);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     void loadProjects();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   const updateField = (key: keyof typeof INITIAL_FORM, value: string) => {
     setForm((prev) => ({
@@ -137,7 +151,7 @@ export default function ProjectsPage() {
       }
 
       resetForm();
-      await loadProjects();
+      refresh();
     } catch (error) {
       console.error(error);
 
@@ -173,7 +187,7 @@ export default function ProjectsPage() {
         resetForm();
       }
 
-      await loadProjects();
+      refresh();
     } catch (error) {
       console.error(error);
     }
