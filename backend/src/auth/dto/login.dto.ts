@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
  * DTO for user login
@@ -12,4 +12,12 @@ export class LoginDto {
   @IsNotEmpty()
   @IsString()
   password: string;
+
+  /**
+   * When false the refresh cookie becomes a browser-session cookie
+   * (no maxAge) so it disappears when the browser closes.
+   */
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
 }

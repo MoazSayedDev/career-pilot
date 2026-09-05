@@ -8,9 +8,7 @@ import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
-import { GoogleBtn } from "../../components/ui/GoogleBtn";
 import { Input } from "../../components/ui/Input";
 import { register as registerUser } from "../../services/auth/api/auth.service";
 import {
@@ -74,9 +72,6 @@ const SignUpPageComponent = () => {
       subtitle={t("auth.signUp.subtitle")}
     >
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
-        <GoogleBtn label={t("auth.signUp.google")} />
-        <Divider label={t("auth.signUp.orEmail")} />
-
         {errors.root && (
           <p className="flex items-center gap-1 text-xs text-red-500">
             {errors.root.message}

@@ -2,16 +2,14 @@
 
 import axios from "axios";
 import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
-import { GoogleBtn } from "../../components/ui/GoogleBtn";
 import { Input } from "../../components/ui/Input";
 
 import { login } from "../../services/auth/api/auth.service";
@@ -24,6 +22,7 @@ import { translateServerMessage } from "@/lib/server-messages";
 
 const SignInPageComponent = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { t } = useI18n();
   const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
@@ -42,15 +41,18 @@ const SignInPageComponent = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data);
+      // "Remember me" controls the refresh-cookie lifetime server-side;
+      // unchecked logins end when the browser session ends.
+      await login({ ...data, rememberMe: remember });
 
-      if (remember) {
-        localStorage.setItem("careerpilot_remember_me", "true");
-      } else {
-        localStorage.removeItem("careerpilot_remember_me");
-      }
-
-      router.push("/dashboard");
+      // Return the user to the protected page that sent them here, but
+      // only allow in-app destinations (open-redirect protection).
+      const requested = searchParams.get("redirect");
+      const target =
+        requested && requested.startsWith("/") && !requested.startsWith("//")
+          ? requested
+          : "/dashboard";
+      router.push(target);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
         const message = error.response?.data?.message;
@@ -82,10 +84,6 @@ const SignInPageComponent = () => {
       title={t("auth.signIn.title")}
       subtitle={t("auth.signIn.subtitle")}
     >
-      <GoogleBtn label={t("auth.signIn.google")} />
-
-      <Divider label={t("auth.signIn.orEmail")} />
-
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4"

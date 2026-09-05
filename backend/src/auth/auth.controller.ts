@@ -113,14 +113,15 @@ export class AuthController {
   }> {
     const result = await this.authService.login(dto);
 
-    // Optional: Set refresh token in HttpOnly cookie
-    // This is more secure for web apps, but this implementation returns in body
-    // If cookie preference is chosen, configure CORS and uncomment:
+    // "Remember me" (default true) keeps a 7-day persistent cookie;
+    // unchecked logins get a browser-session cookie instead.
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      ...(dto.rememberMe === false
+        ? {}
+        : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
     });
 
     return {
