@@ -146,13 +146,13 @@ const SignUpPageComponent = () => {
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-500">
           {t("auth.signUp.termsPrefix")}{" "}
-          <a href="#" className="text-blue-700 hover:underline dark:text-blue-400">
+          <a href="/terms" className="text-blue-700 hover:underline dark:text-blue-400">
             {t("auth.signUp.termsOfService")}
           </a>{" "}
           {/* Arabic "و" attaches to the following word */}
           {t("auth.signUp.termsAnd")}
           {locale === "ar" ? "" : " "}
-          <a href="#" className="text-blue-700 hover:underline dark:text-blue-400">
+          <a href="/privacy" className="text-blue-700 hover:underline dark:text-blue-400">
             {t("auth.signUp.privacyPolicy")}
           </a>
         </p>
