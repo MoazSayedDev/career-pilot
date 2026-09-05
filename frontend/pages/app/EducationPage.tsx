@@ -25,6 +25,7 @@ import {
 } from "@/services/education/api/education.service";
 
 import type { Education } from "@/services/education/types/education";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 const EMPTY_FORM = {
   degree: "",
@@ -73,12 +74,13 @@ const EducationInput = ({
       onChange={(event) => onChange(event.target.value)}
       placeholder={placeholder}
       disabled={disabled}
-      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+      className="w-full h-10 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20 dark:disabled:bg-gray-800"
     />
   );
 };
 
 export default function EducationPage() {
+  const { t } = useI18n();
   const [form, setForm] = useState(EMPTY_FORM);
 
   const [education, setEducation] = useState<Education[]>([]);
@@ -120,15 +122,15 @@ export default function EducationPage() {
     const nextErrors: Record<string, string> = {};
 
     if (!form.degree.trim()) {
-      nextErrors.degree = "Degree / qualification is required";
+      nextErrors.degree = t("profile.education.degreeRequired");
     }
 
     if (!form.school.trim()) {
-      nextErrors.school = "School / university is required";
+      nextErrors.school = t("profile.education.schoolRequired");
     }
 
     if (!form.startDate) {
-      nextErrors.startDate = "Start date is required";
+      nextErrors.startDate = t("profile.education.startDateRequired");
     }
 
     setErrors(nextErrors);
@@ -183,7 +185,7 @@ export default function EducationPage() {
 
       setErrors((prev) => ({
         ...prev,
-        root: "Failed to save education.",
+        root: t("profile.education.saveFailed"),
       }));
     } finally {
       setSubmitting(false);
@@ -254,9 +256,9 @@ export default function EducationPage() {
     <div>
       <PageHeader
         icon={<GraduationCap size={24} />}
-        title="Education"
-        subtitle="Add your educational background"
-        tipText="Add your highest degree first. Include relevant details to make your CV stand out."
+        title={t("profile.education.title")}
+        subtitle={t("profile.education.subtitle")}
+        tipText={t("profile.education.tip")}
       />
 
       <div className="grid lg:grid-cols-5 gap-6">
@@ -265,21 +267,23 @@ export default function EducationPage() {
         ===================================== */}
 
         <Card className="lg:col-span-2 p-6 h-fit">
-          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
+          <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2 dark:text-gray-200">
             <GraduationCap size={15} className="text-blue-500" />
 
-            {editId ? "Edit Education" : "Add New Education"}
+            {editId
+              ? t("profile.education.editExisting")
+              : t("profile.education.addNew")}
           </h3>
 
-          <p className="text-xs text-gray-400 mb-5">
-            Fill in the details of your education
+          <p className="text-xs text-gray-400 mb-5 dark:text-gray-500">
+            {t("profile.education.formHint")}
           </p>
 
           <div className="flex flex-col gap-4">
             {/* Degree */}
 
             <Field
-              label="Degree / Qualification"
+              label={t("profile.education.degree")}
               required
               error={errors.degree}
             >
@@ -291,13 +295,13 @@ export default function EducationPage() {
                     degree: value,
                   }))
                 }
-                placeholder="e.g. Bachelor of Science"
+                placeholder={t("profile.education.degreePlaceholder")}
               />
             </Field>
 
             {/* Field */}
 
-            <Field label="Field of Study" required>
+            <Field label={t("profile.education.fieldOfStudy")} required>
               <EducationInput
                 value={form.field}
                 onChange={(value) =>
@@ -306,17 +310,21 @@ export default function EducationPage() {
                     field: value,
                   }))
                 }
-                placeholder="e.g. Computer Science"
+                placeholder={t("profile.education.fieldPlaceholder")}
               />
             </Field>
 
             {/* University */}
 
-            <Field label="School / University" required error={errors.school}>
+            <Field
+              label={t("profile.education.school")}
+              required
+              error={errors.school}
+            >
               <div className="relative">
                 <Building2
                   size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  className="absolute start-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none dark:text-gray-500"
                 />
 
                 <input
@@ -338,8 +346,8 @@ export default function EducationPage() {
                       });
                     }
                   }}
-                  placeholder="e.g. Al-Azhar University"
-                  className="w-full h-10 rounded-lg border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                  placeholder={t("profile.education.schoolPlaceholder")}
+                  className="w-full h-10 rounded-lg border border-gray-200 bg-white ps-9 pe-3 text-sm text-gray-800 outline-none transition-all placeholder:text-gray-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:ring-blue-500/20"
                 />
               </div>
             </Field>
@@ -347,7 +355,11 @@ export default function EducationPage() {
             {/* Dates */}
 
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Start Date" required error={errors.startDate}>
+              <Field
+                label={t("profile.education.startDate")}
+                required
+                error={errors.startDate}
+              >
                 <div className="relative">
                   <EducationInput
                     value={form.startDate}
@@ -372,12 +384,12 @@ export default function EducationPage() {
 
                   <Calendar
                     size={14}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none dark:text-gray-500"
                   />
                 </div>
               </Field>
 
-              <Field label="End Date">
+              <Field label={t("profile.education.endDate")}>
                 <div className="relative">
                   <EducationInput
                     value={form.endDate}
@@ -393,7 +405,7 @@ export default function EducationPage() {
 
                   <Calendar
                     size={14}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none dark:text-gray-500"
                   />
                 </div>
               </Field>
@@ -412,17 +424,17 @@ export default function EducationPage() {
                     endDate: event.target.checked ? "" : prev.endDate,
                   }))
                 }
-                className="w-4 h-4 rounded border-gray-300 text-blue-700 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-gray-300 text-blue-700 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800"
               />
 
-              <span className="text-sm text-gray-600">
-                I currently study here
+              <span className="text-sm text-gray-600 dark:text-gray-300">
+                {t("profile.education.currentlyStudying")}
               </span>
             </label>
 
             {/* Description */}
 
-            <Field label="Additional Notes">
+            <Field label={t("profile.education.notes")}>
               <Textarea
                 value={form.description}
                 onChange={(value) =>
@@ -431,7 +443,7 @@ export default function EducationPage() {
                     description: value,
                   }))
                 }
-                placeholder="Add details about coursework, achievements, or honors..."
+                placeholder={t("profile.education.notesPlaceholder")}
                 rows={4}
               />
             </Field>
@@ -451,19 +463,19 @@ export default function EducationPage() {
                 disabled={submitting}
               >
                 {submitting ? (
-                  <span>Saving...</span>
+                  <span>{t("common.saving")}</span>
                 ) : (
                   <>
                     {editId ? <Check size={15} /> : <Plus size={15} />}
 
-                    {editId ? "Update" : "Save"}
+                    {editId ? t("common.update") : t("common.save")}
                   </>
                 )}
               </Btn>
 
               {editId && (
                 <Btn variant="outline" onClick={handleCancelEdit}>
-                  Cancel
+                  {t("common.cancel")}
                 </Btn>
               )}
             </div>
@@ -476,20 +488,22 @@ export default function EducationPage() {
 
         <div className="lg:col-span-3 flex flex-col gap-5">
           <Card className="p-6">
-            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+            <h3 className="font-semibold text-gray-800 mb-4 flex items-center gap-2 dark:text-gray-200">
               <GraduationCap size={15} className="text-blue-500" />
-              Your Education ({education.length})
+              {t("profile.education.listTitle", { count: education.length })}
             </h3>
 
             {/* Loading */}
 
             {loading ? (
-              <p className="text-sm text-gray-500">Loading education...</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.education.loading")}
+              </p>
             ) : education.length === 0 ? (
               /* Empty */
 
-              <div className="py-8 text-center text-sm text-gray-500">
-                No education added yet.
+              <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                {t("profile.education.empty")}
               </div>
             ) : (
               /* List */
@@ -498,15 +512,15 @@ export default function EducationPage() {
                 {education.map((item) => (
                   <div
                     key={item.id}
-                    className="rounded-xl border border-gray-200 bg-gray-50 p-4"
+                    className="rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800/60"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div>
-                        <p className="font-semibold text-gray-900">
+                        <p className="font-semibold text-gray-900 dark:text-gray-100">
                           {item.degree}
                         </p>
 
-                        <p className="text-sm text-blue-700">
+                        <p className="text-sm text-blue-700 dark:text-blue-400">
                           {item.university}
                         </p>
                       </div>
@@ -517,8 +531,10 @@ export default function EducationPage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(item)}
-                          className="p-2 text-gray-500 hover:text-blue-700"
-                          aria-label={`Edit ${item.degree}`}
+                          className="p-2 text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400"
+                          aria-label={t("profile.education.editItem", {
+                            name: item.degree,
+                          })}
                         >
                           <Edit2 size={14} />
                         </button>
@@ -528,8 +544,10 @@ export default function EducationPage() {
                         <button
                           type="button"
                           onClick={() => void handleDelete(item.id)}
-                          className="p-2 text-gray-500 hover:text-red-600"
-                          aria-label={`Delete ${item.degree}`}
+                          className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
+                          aria-label={t("profile.education.deleteItem", {
+                            name: item.degree,
+                          })}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -538,17 +556,17 @@ export default function EducationPage() {
 
                     {/* Education Info */}
 
-                    <div className="mt-2 text-xs text-gray-500">
+                    <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                       {item.field} · {formatDate(item.startDate)}{" "}
                       {item.endDate
                         ? `- ${formatDate(item.endDate)}`
-                        : "- Present"}
+                        : `- ${t("common.present")}`}
                     </div>
 
                     {/* Description */}
 
                     {item.description && (
-                      <p className="mt-2 text-sm text-gray-600">
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                         {item.description}
                       </p>
                     )}

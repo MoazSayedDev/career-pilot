@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -12,14 +12,22 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { resetPassword } from "../../services/auth/api/auth.service";
 import {
-  resetPasswordSchema,
+  makeResetPasswordSchema,
   type ResetPasswordFormData,
 } from "../../services/auth/schemas/reset-password.schema";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { translateServerMessage } from "@/lib/server-messages";
 
 const ResetPasswordPageComponent = () => {
   const [showPw, setShowPw] = useState(false);
   const [done, setDone] = useState(false);
   const router = useRouter();
+  const { t } = useI18n();
+
+  const resetPasswordSchema = useMemo(
+    () => makeResetPasswordSchema(t),
+    [t],
+  );
 
   const {
     register,
@@ -44,7 +52,7 @@ const ResetPasswordPageComponent = () => {
     if (!email || !resetToken) {
       setError("root", {
         type: "server",
-        message: "Missing reset session. Please request a new password reset.",
+        message: t("auth.reset.missingSession"),
       });
       return;
     }
@@ -64,7 +72,9 @@ const ResetPasswordPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: response?.message || "Unable to reset your password.",
+        message:
+          translateServerMessage(response?.message || "", t) ||
+          t("auth.reset.failed"),
       });
     } catch (error: unknown) {
       const message =
@@ -75,26 +85,26 @@ const ResetPasswordPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: message || "Unable to reset your password.",
+        message: translateServerMessage(message, t) || t("auth.reset.failed"),
       });
     }
   };
 
   return (
     <AuthCard
-      title="Reset your password"
-      subtitle="Choose a new password for your account"
+      title={t("auth.reset.title")}
+      subtitle={t("auth.reset.subtitle")}
     >
       {done ? (
         <div className="flex flex-col items-center gap-4 py-4">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-500/15">
             <CheckCircle size={32} className="text-emerald-500" />
           </div>
-          <p className="text-center text-sm text-gray-600">
-            Password reset successfully!
+          <p className="text-center text-sm text-gray-600 dark:text-gray-300">
+            {t("auth.reset.success")}
           </p>
           <Btn type="button" className="w-full" onClick={() => router.push("/login")}>
-            Sign in with new password
+            {t("auth.reset.successCta")}
           </Btn>
         </div>
       ) : (
@@ -107,14 +117,14 @@ const ResetPasswordPageComponent = () => {
           )}
 
           <Field
-            label="New password"
+            label={t("auth.reset.newPassword")}
             error={errors.password?.message}
-            hint="Minimum 8 characters"
+            hint={t("auth.signUp.passwordHint")}
           >
             <div className="relative">
               <Input
                 {...register("password")}
-                placeholder="New password"
+                placeholder={t("auth.reset.newPasswordPlaceholder")}
                 type={showPw ? "text" : "password"}
                 icon={<Lock size={15} />}
                 disabled={isSubmitting}
@@ -122,17 +132,20 @@ const ResetPasswordPageComponent = () => {
               <button
                 type="button"
                 onClick={() => setShowPw((v) => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
               >
                 {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
               </button>
             </div>
           </Field>
 
-          <Field label="Confirm new password" error={errors.confirmPassword?.message}>
+          <Field
+            label={t("auth.reset.confirmNewPassword")}
+            error={errors.confirmPassword?.message}
+          >
             <Input
               {...register("confirmPassword")}
-              placeholder="Repeat new password"
+              placeholder={t("auth.reset.confirmPlaceholder")}
               type={showPw ? "text" : "password"}
               icon={<Lock size={15} />}
               disabled={isSubmitting}
@@ -143,10 +156,10 @@ const ResetPasswordPageComponent = () => {
             {isSubmitting ? (
               <>
                 <Loader2 size={16} className="animate-spin" />
-                Resetting…
+                {t("auth.reset.submitting")}
               </>
             ) : (
-              "Reset password"
+              t("auth.reset.submit")
             )}
           </Btn>
         </form>

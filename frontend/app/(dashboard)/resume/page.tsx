@@ -26,6 +26,7 @@ import { getProfile } from "@/services/profile/api/profile.service";
 
 import type { CreateResumeDto } from "@/services/resume/types/resume";
 import type { ProfileResponse } from "@/services/profile/types/profile";
+import { useI18n } from "@/lib/i18n/I18nProvider";
 
 type SectionKey =
   | "skills"
@@ -35,43 +36,9 @@ type SectionKey =
   | "projects"
   | "languages";
 
-const SECTION_INFO: Record<
-  SectionKey,
-  {
-    title: string;
-    description: string;
-  }
-> = {
-  skills: {
-    title: "Skills",
-    description: "Choose the skills you want to include in your resume.",
-  },
-  experience: {
-    title: "Experience",
-    description:
-      "Choose the work experience you want to include in your resume.",
-  },
-  education: {
-    title: "Education",
-    description:
-      "Choose the education entries you want to include in your resume.",
-  },
-  certificates: {
-    title: "Certificates",
-    description: "Choose the certificates you want to include in your resume.",
-  },
-  projects: {
-    title: "Projects",
-    description: "Choose the projects you want to include in your resume.",
-  },
-  languages: {
-    title: "Languages",
-    description: "Choose the languages you want to include in your resume.",
-  },
-};
-
 export default function StartBuildingPage() {
   const router = useRouter();
+  const { t, locale } = useI18n();
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
@@ -135,13 +102,14 @@ export default function StartBuildingPage() {
         );
       } catch (err) {
         console.error("Failed to load profile:", err);
-        setError("Failed to load your profile. Please try again.");
+        setError(t("resume.build.loadFailed"));
       } finally {
         setLoading(false);
       }
     };
 
     void loadProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const toggleItem = (
@@ -174,13 +142,13 @@ export default function StartBuildingPage() {
   const handleCreateResume = async () => {
     // Validate title
     if (!title.trim()) {
-      setError("Please enter a title for your resume.");
+      setError(t("resume.build.titleRequired"));
       return;
     }
 
     // Validate selected items
     if (selectedCount === 0) {
-      setError("Please select at least one item for your resume.");
+      setError(t("resume.build.selectRequired"));
       return;
     }
 
@@ -204,7 +172,7 @@ export default function StartBuildingPage() {
 
       router.push(`/resume/preview?id=${resume.id}`);
     } catch {
-      setError("Failed to create your resume. Please try again.");
+      setError(t("resume.build.createFailed"));
     } finally {
       setCreating(false);
     }
@@ -212,10 +180,10 @@ export default function StartBuildingPage() {
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="flex items-center gap-3 text-gray-600">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 dark:bg-gray-950">
+        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
           <Loader2 size={20} className="animate-spin" />
-          <span>Loading your profile...</span>
+          <span>{t("resume.build.loadingProfile")}</span>
         </div>
       </main>
     );
@@ -223,12 +191,12 @@ export default function StartBuildingPage() {
 
   if (!profile) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-gray-950">
         <div className="text-center">
-          <FileText size={32} className="mx-auto mb-3 text-gray-300" />
+          <FileText size={32} className="mx-auto mb-3 text-gray-300 dark:text-gray-600" />
 
-          <p className="text-sm text-gray-500">
-            We couldn&apos;t load your profile.
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {t("resume.build.profileError")}
           </p>
         </div>
       </main>
@@ -236,27 +204,26 @@ export default function StartBuildingPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 py-10">
+    <main className="min-h-screen bg-gray-50 px-4 py-10 dark:bg-gray-950">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
             <Sparkles size={22} />
           </div>
 
-          <h1 className="text-3xl font-bold text-gray-900">
-            Build Your Resume
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+            {t("resume.build.title")}
           </h1>
 
-          <p className="mx-auto mt-2 max-w-2xl text-sm text-gray-500">
-            Select the information you want to include in your resume.
-            Everything comes from your profile.
+          <p className="mx-auto mt-2 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+            {t("resume.build.subtitle")}
           </p>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <div className="mb-5 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
             {error}
           </div>
         )}
@@ -264,10 +231,12 @@ export default function StartBuildingPage() {
         {/* Resume Details */}
         <Card className="mb-5 p-5">
           <div className="mb-5">
-            <h2 className="font-semibold text-gray-900">Resume Details</h2>
+            <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+              {t("resume.build.details")}
+            </h2>
 
-            <p className="mt-1 text-xs text-gray-500">
-              Give your resume a name and choose a template.
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {t("resume.build.detailsHint")}
             </p>
           </div>
 
@@ -276,9 +245,9 @@ export default function StartBuildingPage() {
             <div>
               <label
                 htmlFor="resume-title"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Resume Title
+                {t("resume.build.resumeTitle")}
               </label>
 
               <input
@@ -292,8 +261,8 @@ export default function StartBuildingPage() {
                     setError(null);
                   }
                 }}
-                placeholder="e.g. Backend Developer Resume"
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                placeholder={t("resume.build.titlePlaceholder")}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:placeholder:text-gray-500"
               />
             </div>
 
@@ -301,20 +270,20 @@ export default function StartBuildingPage() {
             <div>
               <label
                 htmlFor="resume-template"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
               >
-                Resume Template
+                {t("resume.build.template")}
               </label>
 
               <select
                 id="resume-template"
                 value={template}
                 onChange={(event) => setTemplate(event.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
               >
-                <option value="MODERN">Modern</option>
-                <option value="CLASSIC">Classic</option>
-                <option value="MINIMAL">Minimal</option>
+                <option value="MODERN">{t("resume.build.templateModern")}</option>
+                <option value="CLASSIC">{t("resume.build.templateClassic")}</option>
+                <option value="MINIMAL">{t("resume.build.templateMinimal")}</option>
               </select>
             </div>
           </div>
@@ -323,8 +292,8 @@ export default function StartBuildingPage() {
         {/* Skills */}
         <SelectionSection
           icon={<Sparkles size={18} />}
-          title={SECTION_INFO.skills.title}
-          description={SECTION_INFO.skills.description}
+          title={t("resume.build.skills")}
+          description={t("resume.build.selectHint.skills")}
           open={openSections.includes("skills")}
           onToggle={() => toggleSection("skills")}
           selectedCount={selectedSkills.length}
@@ -342,7 +311,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.skills.length === 0 ? (
-            <EmptyState text="No skills found in your profile." />
+            <EmptyState text={t("resume.build.empty.skills")} />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {profile.skills.map((skill) => (
@@ -352,14 +321,22 @@ export default function StartBuildingPage() {
                   onClick={() => toggleItem(skill.id, setSelectedSkills)}
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{skill.name}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {skill.name}
+                    </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      {formatEnum(skill.level)}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {t(`skillLevel.${skill.level}`)}
 
                       {skill.yearsOfExperience
-                        ? ` • ${skill.yearsOfExperience} ${
-                            skill.yearsOfExperience === 1 ? "year" : "years"
+                        ? ` • ${
+                            skill.yearsOfExperience === 1
+                              ? t("resume.build.yearsOne", {
+                                  count: skill.yearsOfExperience,
+                                })
+                              : t("resume.build.yearsMany", {
+                                  count: skill.yearsOfExperience,
+                                })
                           }`
                         : ""}
                     </p>
@@ -373,8 +350,8 @@ export default function StartBuildingPage() {
         {/* Experience */}
         <SelectionSection
           icon={<Briefcase size={18} />}
-          title={SECTION_INFO.experience.title}
-          description={SECTION_INFO.experience.description}
+          title={t("resume.build.experience")}
+          description={t("resume.build.selectHint.experience")}
           open={openSections.includes("experience")}
           onToggle={() => toggleSection("experience")}
           selectedCount={selectedExperiences.length}
@@ -392,7 +369,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.experiences.length === 0 ? (
-            <EmptyState text="No experience found in your profile." />
+            <EmptyState text={t("resume.build.empty.experience")} />
           ) : (
             <div className="space-y-3">
               {profile.experiences.map((experience) => (
@@ -404,21 +381,25 @@ export default function StartBuildingPage() {
                   }
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {experience.position}
                     </p>
 
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {experience.company}
 
                       {experience.location ? ` • ${experience.location}` : ""}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      {formatDate(experience.startDate)} —{" "}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {formatDate(experience.startDate, locale)} —{" "}
                       {experience.currentlyWorking
-                        ? "Present"
-                        : formatDate(experience.endDate)}
+                        ? t("common.present")
+                        : formatDate(
+                            experience.endDate,
+                            locale,
+                            t("common.present"),
+                          )}
                     </p>
 
                     {experience.technologies?.length > 0 && (
@@ -426,7 +407,7 @@ export default function StartBuildingPage() {
                         {experience.technologies.map((technology) => (
                           <span
                             key={technology}
-                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600"
+                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                           >
                             {technology}
                           </span>
@@ -443,8 +424,8 @@ export default function StartBuildingPage() {
         {/* Education */}
         <SelectionSection
           icon={<GraduationCap size={18} />}
-          title={SECTION_INFO.education.title}
-          description={SECTION_INFO.education.description}
+          title={t("resume.build.education")}
+          description={t("resume.build.selectHint.education")}
           open={openSections.includes("education")}
           onToggle={() => toggleSection("education")}
           selectedCount={selectedEducations.length}
@@ -462,7 +443,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.educations.length === 0 ? (
-            <EmptyState text="No education found in your profile." />
+            <EmptyState text={t("resume.build.empty.education")} />
           ) : (
             <div className="space-y-3">
               {profile.educations.map((education) => (
@@ -474,21 +455,25 @@ export default function StartBuildingPage() {
                   }
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {education.degree}
                     </p>
 
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {education.university}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       {education.field}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-400">
-                      {formatDate(education.startDate)} —{" "}
-                      {formatDate(education.endDate)}
+                    <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                      {formatDate(education.startDate, locale)} —{" "}
+                      {formatDate(
+                        education.endDate,
+                        locale,
+                        t("common.present"),
+                      )}
                     </p>
                   </div>
                 </SelectableCard>
@@ -500,8 +485,8 @@ export default function StartBuildingPage() {
         {/* Certificates */}
         <SelectionSection
           icon={<Award size={18} />}
-          title={SECTION_INFO.certificates.title}
-          description={SECTION_INFO.certificates.description}
+          title={t("resume.build.certificates")}
+          description={t("resume.build.selectHint.certificates")}
           open={openSections.includes("certificates")}
           onToggle={() => toggleSection("certificates")}
           selectedCount={selectedCertificates.length}
@@ -519,7 +504,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.certificates.length === 0 ? (
-            <EmptyState text="No certificates found in your profile." />
+            <EmptyState text={t("resume.build.empty.certificates")} />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {profile.certificates.map((certificate) => (
@@ -531,16 +516,18 @@ export default function StartBuildingPage() {
                   }
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {certificate.name}
                     </p>
 
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
                       {certificate.issuer}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      Issued {formatDate(certificate.issueDate)}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {t("resume.build.issued", {
+                        date: formatDate(certificate.issueDate, locale),
+                      })}
                     </p>
                   </div>
                 </SelectableCard>
@@ -552,8 +539,8 @@ export default function StartBuildingPage() {
         {/* Projects */}
         <SelectionSection
           icon={<FolderGit2 size={18} />}
-          title={SECTION_INFO.projects.title}
-          description={SECTION_INFO.projects.description}
+          title={t("resume.build.projects")}
+          description={t("resume.build.selectHint.projects")}
           open={openSections.includes("projects")}
           onToggle={() => toggleSection("projects")}
           selectedCount={selectedProjects.length}
@@ -571,7 +558,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.projects.length === 0 ? (
-            <EmptyState text="No projects found in your profile." />
+            <EmptyState text={t("resume.build.empty.projects")} />
           ) : (
             <div className="space-y-3">
               {profile.projects.map((project) => (
@@ -581,9 +568,11 @@ export default function StartBuildingPage() {
                   onClick={() => toggleItem(project.id, setSelectedProjects)}
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{project.name}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
+                      {project.name}
+                    </p>
 
-                    <p className="mt-1 line-clamp-2 text-sm text-gray-600">
+                    <p className="mt-1 line-clamp-2 text-sm text-gray-600 dark:text-gray-400">
                       {project.description}
                     </p>
 
@@ -592,7 +581,7 @@ export default function StartBuildingPage() {
                         {project.technologies.map((technology) => (
                           <span
                             key={technology}
-                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600"
+                            className="rounded-md bg-gray-100 px-2 py-1 text-[11px] text-gray-600 dark:bg-gray-800 dark:text-gray-300"
                           >
                             {technology}
                           </span>
@@ -609,8 +598,8 @@ export default function StartBuildingPage() {
         {/* Languages */}
         <SelectionSection
           icon={<Languages size={18} />}
-          title={SECTION_INFO.languages.title}
-          description={SECTION_INFO.languages.description}
+          title={t("resume.build.languages")}
+          description={t("resume.build.selectHint.languages")}
           open={openSections.includes("languages")}
           onToggle={() => toggleSection("languages")}
           selectedCount={selectedLanguages.length}
@@ -628,7 +617,7 @@ export default function StartBuildingPage() {
           }
         >
           {profile.languages.length === 0 ? (
-            <EmptyState text="No languages found in your profile." />
+            <EmptyState text={t("resume.build.empty.languages")} />
           ) : (
             <div className="grid gap-3 sm:grid-cols-2">
               {profile.languages.map((language) => (
@@ -638,12 +627,14 @@ export default function StartBuildingPage() {
                   onClick={() => toggleItem(language.id, setSelectedLanguages)}
                 >
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">
+                    <p className="font-medium text-gray-900 dark:text-gray-100">
                       {language.language}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      {formatEnum(language.level)}
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                      {language.level
+                        ? t(`languageLevel.${language.level}`)
+                        : ""}
                     </p>
                   </div>
                 </SelectableCard>
@@ -653,15 +644,15 @@ export default function StartBuildingPage() {
         </SelectionSection>
 
         {/* Bottom Action */}
-        <Card className="sticky bottom-4 mt-6 p-4 shadow-lg">
+        <Card className="sticky bottom-4 mt-6 p-4 shadow-lg dark:shadow-black/40">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="font-medium text-gray-900">
-                {selectedCount} items selected
+              <p className="font-medium text-gray-900 dark:text-gray-100">
+                {t("resume.build.selectedCount", { count: selectedCount })}
               </p>
 
-              <p className="text-xs text-gray-500">
-                You can change your selections before creating the resume.
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                {t("resume.build.selectedHint")}
               </p>
             </div>
 
@@ -672,18 +663,18 @@ export default function StartBuildingPage() {
                 disabled={creating}
               >
                 <Eye size={16} />
-                Preview
+                {t("resume.build.preview")}
               </Btn>
 
               <Btn onClick={handleCreateResume} disabled={creating}>
                 {creating ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    Creating...
+                    {t("resume.build.creating")}
                   </>
                 ) : (
                   <>
-                    Create Resume
+                    {t("resume.build.create")}
                     <Plus size={16} />
                   </>
                 )}
@@ -719,50 +710,56 @@ function SelectionSection({
   allSelected: boolean;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
+
   return (
     <Card className="mb-5 overflow-hidden">
       {/* Section Header */}
       <button
         type="button"
         onClick={onToggle}
-        className="flex w-full items-center justify-between p-5 text-left"
+        className="flex w-full items-center justify-between p-5 text-start"
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-700 dark:bg-blue-500/15 dark:text-blue-300">
             {icon}
           </div>
 
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="font-semibold text-gray-900">{title}</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                {title}
+              </h2>
 
-              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">
+              <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
                 {selectedCount}/{totalCount}
               </span>
             </div>
 
-            <p className="mt-0.5 text-xs text-gray-500">{description}</p>
+            <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {description}
+            </p>
           </div>
         </div>
 
         <ChevronDown
           size={18}
-          className={`text-gray-400 transition-transform ${
+          className={`text-gray-400 transition-transform dark:text-gray-500 ${
             open ? "rotate-180" : ""
           }`}
         />
       </button>
 
       {open && (
-        <div className="border-t border-gray-100 px-5 pb-5 pt-4">
+        <div className="border-t border-gray-100 px-5 pb-5 pt-4 dark:border-gray-800">
           {totalCount > 0 && (
             <div className="mb-4 flex justify-end">
               <button
                 type="button"
                 onClick={onSelectAll}
-                className="text-xs font-medium text-blue-700 hover:text-blue-800"
+                className="text-xs font-medium text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
               >
-                {allSelected ? "Remove all" : "Select all"}
+                {allSelected ? t("common.removeAll") : t("common.selectAll")}
               </button>
             </div>
           )}
@@ -787,17 +784,17 @@ function SelectableCard({
     <button
       type="button"
       onClick={onClick}
-      className={`flex w-full items-center gap-3 rounded-xl border p-4 text-left transition-colors ${
+      className={`flex w-full items-center gap-3 rounded-xl border p-4 text-start transition-colors ${
         selected
-          ? "border-blue-300 bg-blue-50"
-          : "border-gray-200 bg-white hover:border-gray-300"
+          ? "border-blue-300 bg-blue-50 dark:border-blue-500/40 dark:bg-blue-500/10"
+          : "border-gray-200 bg-white hover:border-gray-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-gray-600"
       }`}
     >
       <span
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${
           selected
-            ? "border-blue-700 bg-blue-700 text-white"
-            : "border-gray-300 bg-white"
+            ? "border-blue-700 bg-blue-700 text-white dark:border-blue-500 dark:bg-blue-500"
+            : "border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-800"
         }`}
       >
         {selected && <Check size={13} />}
@@ -810,27 +807,23 @@ function SelectableCard({
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center">
-      <FileText size={24} className="mx-auto text-gray-300" />
+    <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50 p-8 text-center dark:border-gray-700 dark:bg-gray-800/60">
+      <FileText size={24} className="mx-auto text-gray-300 dark:text-gray-600" />
 
-      <p className="mt-2 text-sm text-gray-500">{text}</p>
+      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{text}</p>
     </div>
   );
 }
 
-function formatDate(date: string | null | undefined) {
-  if (!date) return "Present";
+function formatDate(
+  date: string | null | undefined,
+  locale: string,
+  presentLabel = "",
+): string {
+  if (!date) return presentLabel;
 
-  return new Date(date).toLocaleDateString("en-US", {
+  return new Date(date).toLocaleDateString(locale === "ar" ? "ar" : "en-US", {
     month: "short",
     year: "numeric",
   });
-}
-
-function formatEnum(value: string) {
-  return value
-    .toLowerCase()
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
 }

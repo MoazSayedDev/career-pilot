@@ -4,37 +4,46 @@ import { LinkType } from "../types/contact-info";
 const optionalString = (schema: z.ZodString) =>
   schema.optional().or(z.literal(""));
 
-const profileLinkSchema = z.object({
-  type: z.nativeEnum(LinkType, {
-    message: "Invalid link type",
-  }),
-  url: z
-    .string()
-    .trim()
-    .url("Invalid URL")
-    .max(500, "URL must not exceed 500 characters"),
-});
-export const contactInfoSchema = z.object({
-  phone: optionalString(
-    z.string().max(20, "Phone must not exceed 20 characters"),
-  ),
-
-  email: optionalString(
-    z
+/**
+ * Schema factory: validation messages are resolved through the i18n
+ * translator so they render in the active language.
+ */
+export const makeContactInfoSchema = (t: (key: string) => string) => {
+  const profileLinkSchema = z.object({
+    type: z.nativeEnum(LinkType, {
+      message: t("validation.linkTypeInvalid"),
+    }),
+    url: z
       .string()
-      .email("Invalid email")
-      .max(100, "Email must not exceed 100 characters"),
-  ),
+      .trim()
+      .url(t("validation.urlInvalid"))
+      .max(500, t("validation.urlMax")),
+  });
 
-  country: optionalString(
-    z.string().max(100, "Country must not exceed 100 characters"),
-  ),
+  return z.object({
+    phone: optionalString(
+      z.string().max(20, t("validation.phoneMax")),
+    ),
 
-  city: optionalString(
-    z.string().max(100, "City must not exceed 100 characters"),
-  ),
+    email: optionalString(
+      z
+        .string()
+        .email(t("validation.emailInvalid"))
+        .max(100, t("validation.emailMax")),
+    ),
 
-  links: z.array(profileLinkSchema).optional(),
-});
+    country: optionalString(
+      z.string().max(100, t("validation.countryMax")),
+    ),
 
-export type ContactInfoFormData = z.infer<typeof contactInfoSchema>;
+    city: optionalString(
+      z.string().max(100, t("validation.cityMax")),
+    ),
+
+    links: z.array(profileLinkSchema).optional(),
+  });
+};
+
+export type ContactInfoFormData = z.infer<
+  ReturnType<typeof makeContactInfoSchema>
+>;

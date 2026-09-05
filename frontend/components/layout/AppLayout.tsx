@@ -9,7 +9,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] font-sans">
+    <div className="flex h-screen bg-[#f8fafc] font-sans dark:bg-gray-950">
       {/* Desktop sidebar */}
       <div className="hidden md:flex flex-shrink-0">
         <Sidebar />
@@ -23,7 +23,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
             onClick={() => setMobileNavOpen(false)}
           />
 
-          <div className="absolute left-0 top-0 h-full">
+          <div className="absolute start-0 top-0 h-full">
             <Sidebar onNavigate={() => setMobileNavOpen(false)} />
           </div>
         </div>

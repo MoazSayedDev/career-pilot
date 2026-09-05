@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowLeft, Loader2, Mail } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -11,12 +12,20 @@ import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
 import { forgotPassword } from "../../services/auth/api/auth.service";
 import {
-  forgotPasswordSchema,
+  makeForgotPasswordSchema,
   type ForgotPasswordFormData,
 } from "../../services/auth/schemas/forgot-password.schema";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { translateServerMessage } from "@/lib/server-messages";
 
 const ForgotPasswordPageComponent = () => {
   const router = useRouter();
+  const { t } = useI18n();
+
+  const forgotPasswordSchema = useMemo(
+    () => makeForgotPasswordSchema(t),
+    [t],
+  );
 
   const {
     register,
@@ -42,7 +51,9 @@ const ForgotPasswordPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: response?.message || "Unable to send reset instructions.",
+        message:
+          translateServerMessage(response?.message || "", t) ||
+          t("auth.forgot.unableToSend"),
       });
     } catch (error: unknown) {
       const message =
@@ -53,15 +64,16 @@ const ForgotPasswordPageComponent = () => {
 
       setError("root", {
         type: "server",
-        message: message || "Unable to send reset instructions.",
+        message:
+          translateServerMessage(message, t) || t("auth.forgot.unableToSend"),
       });
     }
   };
 
   return (
     <AuthCard
-      title="Forgot your password?"
-      subtitle="Enter your email and we'll send you a reset link"
+      title={t("auth.forgot.title")}
+      subtitle={t("auth.forgot.subtitle")}
     >
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -72,10 +84,10 @@ const ForgotPasswordPageComponent = () => {
           <p className="text-xs text-red-500">{errors.root.message}</p>
         )}
 
-        <Field label="Email address" error={errors.email?.message}>
+        <Field label={t("auth.forgot.email")} error={errors.email?.message}>
           <Input
             {...register("email")}
-            placeholder="you@company.com"
+            placeholder={t("auth.forgot.emailPlaceholder")}
             type="email"
             icon={<Mail size={15} />}
             disabled={isSubmitting}
@@ -86,20 +98,20 @@ const ForgotPasswordPageComponent = () => {
           {isSubmitting ? (
             <>
               <Loader2 size={16} className="animate-spin" />
-              Sending…
+              {t("auth.forgot.submitting")}
             </>
           ) : (
-            "Send reset link"
+            t("auth.forgot.submit")
           )}
         </Btn>
 
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="flex items-center justify-center gap-1 text-center text-sm text-gray-500 hover:text-gray-700"
+          className="flex items-center justify-center gap-1 text-center text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
         >
-          <ArrowLeft size={14} />
-          Back to sign in
+          <ArrowLeft size={14} className="rtl-flip" />
+          {t("auth.forgot.backToSignIn")}
         </button>
       </form>
     </AuthCard>

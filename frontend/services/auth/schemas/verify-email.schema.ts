@@ -1,10 +1,17 @@
 import { z } from "zod";
 
-export const verifyEmailSchema = z.object({
-  otp: z
-    .string()
-    .length(6, "OTP must be 6 digits")
-    .regex(/^\d+$/, "OTP must contain only numbers"),
-});
+/**
+ * Schema factory: validation messages are resolved through the i18n
+ * translator so they render in the active language.
+ */
+export const makeVerifyEmailSchema = (t: (key: string) => string) =>
+  z.object({
+    otp: z
+      .string()
+      .length(6, t("validation.otpLength"))
+      .regex(/^\d+$/, t("validation.otpDigits")),
+  });
 
-export type VerifyEmailFormData = z.infer<typeof verifyEmailSchema>;
+export type VerifyEmailFormData = z.infer<
+  ReturnType<typeof makeVerifyEmailSchema>
+>;

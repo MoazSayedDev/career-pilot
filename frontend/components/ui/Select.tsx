@@ -13,7 +13,7 @@ export function Select({ value, onChange, options, placeholder }: SelectProps) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
       >
         {placeholder && <option value="">{placeholder}</option>}
         {options.map((o) => (
@@ -24,7 +24,7 @@ export function Select({ value, onChange, options, placeholder }: SelectProps) {
       </select>
       <ChevronDown
         size={14}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+        className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none dark:text-gray-500"
       />
     </div>
   );
