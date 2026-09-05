@@ -43,7 +43,17 @@ export function getApiErrorKey(error: unknown): string | null {
 /**
  * Maps an API error to a safe, user-facing message: a localized
  * well-known status meaning, or the caller's already-localized fallback.
+ * Pass `t` so returned i18n keys (e.g. "errors.serverError") are
+ * translated instead of leaking the raw key into the UI.
  */
-export function getApiErrorMessage(error: unknown, fallback: string): string {
-  return getApiErrorKey(error) ?? fallback;
+export function getApiErrorMessage(
+  error: unknown,
+  fallback: string,
+  t?: (key: string) => string,
+): string {
+  const key = getApiErrorKey(error);
+
+  if (!key) return fallback;
+
+  return t ? t(key) : key;
 }

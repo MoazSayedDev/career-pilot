@@ -155,7 +155,7 @@ export default function ResumePreviewPage() {
       } catch (error) {
         if (!cancelled) {
           setResume(null);
-          setLoadError(getApiErrorMessage(error, t("resume.preview.loadFailed")));
+          setLoadError(getApiErrorMessage(error, t("resume.preview.loadFailed"), t));
         }
       } finally {
         if (!cancelled) {
@@ -314,7 +314,7 @@ export default function ResumePreviewPage() {
     } catch (error) {
       setDownloaded(false);
       setDownloadError(
-        getApiErrorMessage(error, t("resume.preview.pdfFailed")),
+        getApiErrorMessage(error, t("resume.preview.pdfFailed"), t),
       );
     } finally {
       if (objectUrl) {

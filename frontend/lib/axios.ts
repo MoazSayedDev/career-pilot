@@ -294,11 +294,17 @@ api.interceptors.response.use(
       clearAccessToken();
 
       /**
-       * The session is unrecoverable: send the user to the login page
-       * when the failure happened on a protected route. Auth pages stay
-       * untouched so inline errors (wrong OTP, etc.) keep rendering.
+       * The session is unrecoverable — but only say so definitively when
+       * the refresh endpoint itself rejected the token (401). A throttled
+       * refresh (429) is temporary: stay on the page and let the user
+       * retry instead of bouncing them into the proxy's auth-page
+       * redirect loop.
        */
-      if (typeof window !== "undefined") {
+      const refreshStatus = axios.isAxiosError(refreshError)
+        ? refreshError.response?.status
+        : undefined;
+
+      if (typeof window !== "undefined" && refreshStatus === 401) {
         const path = window.location.pathname;
         const onAuthPage =
           path === "/login" ||
@@ -309,7 +315,9 @@ api.interceptors.response.use(
 
         if (!onAuthPage) {
           window.location.replace(
-            `/login?redirect=${encodeURIComponent(path + window.location.search)}`,
+            `/login?redirect=${encodeURIComponent(
+              path + window.location.search,
+            )}&session=expired`,
           );
         }
       }

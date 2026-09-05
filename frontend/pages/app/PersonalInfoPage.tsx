@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   User,
   Mail,
@@ -39,6 +39,7 @@ import {
   makeContactInfoSchema,
   ContactInfoFormData,
 } from "@/services/contact-info/schemas/contact-info.schema";
+import { translateServerMessage } from "@/lib/server-messages";
 
 import {
   LinkType,
@@ -91,6 +92,7 @@ export default function PersonalInfoPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -213,6 +215,10 @@ export default function PersonalInfoPage() {
   }, []);
 
   const onSubmit = async () => {
+    // Synchronous guard: React state updates are async, so rapid clicks
+    // can re-enter before `saving` reaches the disabled attribute.
+    if (savingRef.current) return;
+    savingRef.current = true;
     setSaving(true);
     setError(null);
 
@@ -222,6 +228,8 @@ export default function PersonalInfoPage() {
 
       if (!profileValid || !contactValid) {
         setSaving(false);
+      savingRef.current = false;
+        savingRef.current = false;
         return;
       }
 
@@ -319,20 +327,19 @@ export default function PersonalInfoPage() {
         setSaved(false);
       }, 1800);
     } catch (error) {
-      console.error("Save profile error:", error);
-
       if (axios.isAxiosError(error)) {
-        console.error("Backend response:", error.response?.data);
-
         setError(
-          error.response?.data?.message ||
-            t("profile.personalInfo.saveFailed"),
+          translateServerMessage(
+            error.response?.data?.message,
+            t,
+          ) || t("profile.personalInfo.saveFailed"),
         );
       } else {
         setError(t("profile.personalInfo.saveFailed"));
       }
     } finally {
       setSaving(false);
+      savingRef.current = false;
     }
   };
 
@@ -627,6 +634,7 @@ export default function PersonalInfoPage() {
             <Field
               label={t("profile.personalInfo.summary")}
               hint={t("profile.personalInfo.summaryHint")}
+              error={profileForm.formState.errors.bio?.message}
             >
               <Textarea
                 value={profileForm.watch("bio") ?? ""}

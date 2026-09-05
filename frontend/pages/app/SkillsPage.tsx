@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Zap, Languages, Plus, X } from "lucide-react";
+import axios from "axios";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
@@ -9,6 +10,8 @@ import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
 import { SkillLevelBadge } from "@/components/ui/Badge";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { translateServerMessage } from "@/lib/server-messages";
 
 import {
   createSkill,
@@ -70,9 +73,12 @@ export default function SkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
   const [skillName, setSkillName] = useState("");
   const [skillLevel, setSkillLevel] = useState("INTERMEDIATE");
+  const [skillYears, setSkillYears] = useState("1");
   const [skillError, setSkillError] = useState("");
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [skillSubmitting, setSkillSubmitting] = useState(false);
+  const skillSubmittingRef = useRef(false);
+  const [pendingSkillDelete, setPendingSkillDelete] = useState<Skill | null>(null);
 
   /* =========================
      Languages
@@ -86,6 +92,8 @@ export default function SkillsPage() {
   const [languageError, setLanguageError] = useState("");
   const [languagesLoading, setLanguagesLoading] = useState(true);
   const [languageSubmitting, setLanguageSubmitting] = useState(false);
+  const languageSubmittingRef = useRef(false);
+  const [pendingLanguageDelete, setPendingLanguageDelete] = useState<Language | null>(null);
 
   /* =========================
      Load Skills
@@ -96,7 +104,10 @@ export default function SkillsPage() {
       const data = await getSkills();
       setSkills(data);
     } catch (err) {
-      console.error(err);
+      // A missing profile means empty lists — expected for new users.
+      if (!axios.isAxiosError(err) || ![401, 404].includes(err.response?.status ?? 0)) {
+        console.error(err);
+      }
     } finally {
       setSkillsLoading(false);
     }
@@ -111,7 +122,10 @@ export default function SkillsPage() {
       const data = await getLanguages();
       setLanguages(data);
     } catch (err) {
-      console.error(err);
+      // A missing profile means empty lists — expected for new users.
+      if (!axios.isAxiosError(err) || ![401, 404].includes(err.response?.status ?? 0)) {
+        console.error(err);
+      }
     } finally {
       setLanguagesLoading(false);
     }
@@ -128,30 +142,38 @@ export default function SkillsPage() {
   ========================= */
 
   const handleAddSkill = async () => {
+    if (skillSubmittingRef.current) return;
+
     if (!skillName.trim()) {
       setSkillError(t("profile.skills.skillNameRequired"));
       return;
     }
 
+    skillSubmittingRef.current = true;
     setSkillSubmitting(true);
 
     try {
       await createSkill({
         name: skillName.trim(),
         level: mapLevelToBackend(skillLevel),
-        yearsOfExperience: 1,
+        yearsOfExperience: Math.min(Math.max(parseInt(skillYears, 10) || 1, 0), 50),
       });
 
       setSkillName("");
       setSkillLevel("INTERMEDIATE");
+      setSkillYears("1");
       setSkillError("");
 
       await loadSkills();
     } catch (err) {
-      console.error(err);
-      setSkillError(t("profile.skills.saveSkillFailed"));
+      const serverMessage =
+        axios.isAxiosError(err)
+          ? translateServerMessage(err.response?.data?.message, t)
+          : "";
+      setSkillError(serverMessage || t("profile.skills.saveSkillFailed"));
     } finally {
       setSkillSubmitting(false);
+      skillSubmittingRef.current = false;
     }
   };
 
@@ -173,11 +195,14 @@ export default function SkillsPage() {
   ========================= */
 
   const handleAddLanguage = async () => {
+    if (languageSubmittingRef.current) return;
+
     if (!languageName.trim()) {
       setLanguageError(t("profile.skills.languageNameRequired"));
       return;
     }
 
+    languageSubmittingRef.current = true;
     setLanguageSubmitting(true);
 
     try {
@@ -196,6 +221,7 @@ export default function SkillsPage() {
       setLanguageError(t("profile.skills.saveLanguageFailed"));
     } finally {
       setLanguageSubmitting(false);
+      languageSubmittingRef.current = false;
     }
   };
 
@@ -266,6 +292,17 @@ export default function SkillsPage() {
                 }}
                 options={SKILL_LEVELS.map((level) => t(`skillLevel.${level}`))}
                 placeholder={t("profile.skills.levelPlaceholder")}
+              />
+            </Field>
+
+            <Field label={t("profile.skills.yearsExperience")}>
+              <input
+                type="number"
+                min={0}
+                max={50}
+                value={skillYears}
+                onChange={(e) => setSkillYears(e.target.value)}
+                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:focus:ring-blue-500/20"
               />
             </Field>
 
@@ -406,7 +443,7 @@ export default function SkillsPage() {
 
                 <button
                   type="button"
-                  onClick={() => void handleDeleteSkill(skill.id)}
+                  onClick={() => setPendingSkillDelete(skill)}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all ms-1"
                   aria-label={t("profile.skills.deleteSkill", {
                     name: skill.name,
@@ -469,7 +506,7 @@ export default function SkillsPage() {
 
                 <button
                   type="button"
-                  onClick={() => void handleDeleteLanguage(language.id)}
+                  onClick={() => setPendingLanguageDelete(language)}
                   className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 transition-all"
                   aria-label={t("profile.skills.deleteLanguage", {
                     name: language.language,
@@ -482,6 +519,38 @@ export default function SkillsPage() {
           </div>
         )}
       </Card>
+
+      <ConfirmDialog
+        open={pendingSkillDelete !== null}
+        title={t("common.deleteTitle")}
+        message={
+          pendingSkillDelete
+            ? t("profile.skills.deleteSkill", { name: pendingSkillDelete.name })
+            : ""
+        }
+        confirmLabel={t("profile.skills.deleteSkill", { name: pendingSkillDelete?.name ?? "" })}
+        onConfirm={() => {
+          if (pendingSkillDelete) void handleDeleteSkill(pendingSkillDelete.id);
+          setPendingSkillDelete(null);
+        }}
+        onCancel={() => setPendingSkillDelete(null)}
+      />
+
+      <ConfirmDialog
+        open={pendingLanguageDelete !== null}
+        title={t("common.deleteTitle")}
+        message={
+          pendingLanguageDelete
+            ? t("profile.skills.deleteLanguage", { name: pendingLanguageDelete.language })
+            : ""
+        }
+        confirmLabel={t("profile.skills.deleteLanguage", { name: pendingLanguageDelete?.language ?? "" })}
+        onConfirm={() => {
+          if (pendingLanguageDelete) void handleDeleteLanguage(pendingLanguageDelete.id);
+          setPendingLanguageDelete(null);
+        }}
+        onCancel={() => setPendingLanguageDelete(null)}
+      />
     </div>
   );
 }

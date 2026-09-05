@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Briefcase,
   MapPin,
@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { Card } from "@/components/ui/Card";
 import { Field } from "@/components/ui/Field";
 import { Select } from "@/components/ui/Select";
@@ -190,6 +191,8 @@ export default function ExperiencePage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const submittingRef = useRef(false);
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; label: string } | null>(null);
 
   const loadExperiences = async () => {
     try {
@@ -232,8 +235,11 @@ export default function ExperiencePage() {
   };
 
   const handleSave = async () => {
+    if (submittingRef.current) return;
+
     if (!validate()) return;
 
+    submittingRef.current = true;
     setSubmitting(true);
 
     try {
@@ -277,6 +283,7 @@ export default function ExperiencePage() {
       }));
     } finally {
       setSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
@@ -573,6 +580,9 @@ export default function ExperiencePage() {
                         <button
                           type="button"
                           onClick={() => handleEdit(experience)}
+                          aria-label={t("profile.experience.editItem", {
+                            name: experience.position,
+                          })}
                           className="p-2 text-gray-500 hover:text-blue-700 dark:text-gray-400 dark:hover:text-blue-400"
                         >
                           <Edit2 size={14} />
@@ -580,7 +590,15 @@ export default function ExperiencePage() {
 
                         <button
                           type="button"
-                          onClick={() => void handleDelete(experience.id)}
+                          onClick={() =>
+                            setPendingDelete({
+                              id: experience.id,
+                              label: experience.position,
+                            })
+                          }
+                          aria-label={t("profile.experience.deleteItem", {
+                            name: experience.position,
+                          })}
                           className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400"
                         >
                           <Trash2 size={14} />
@@ -634,6 +652,22 @@ export default function ExperiencePage() {
           </Card>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        title={t("common.deleteTitle")}
+        message={
+          pendingDelete
+            ? t("profile.experience.deleteItem", { name: pendingDelete.label })
+            : ""
+        }
+        confirmLabel={t("profile.experience.deleteConfirm")}
+        onConfirm={() => {
+          if (pendingDelete) void handleDelete(pendingDelete.id);
+          setPendingDelete(null);
+        }}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 }
