@@ -117,6 +117,12 @@
       "privacy": "Privacy",
       "terms": "Terms",
       "contact": "Contact"
+    },
+    "templates": {
+      "title": "Professional, ATS-ready templates",
+      "subtitle": "Eight single-column templates built around what recruiters and parsing systems actually read. Pick one, switch anytime — your content never changes.",
+      "atsSafe": "ATS-safe structure",
+      "cta": "Start with a template"
     }
   },
   "auth": {
@@ -574,5 +580,104 @@
     "cityMax": "City must not exceed 100 characters",
     "countryMax": "Country must not exceed 100 characters",
     "linkTypeInvalid": "Invalid link type"
+  },
+  "pages": {
+    "notFound": {
+      "message": "The page you are looking for does not exist or has been moved. Check the address or head back to safety.",
+      "home": "Back to home",
+      "dashboard": "Go to dashboard"
+    },
+    "privacy": {
+      "title": "Privacy Policy",
+      "updated": "Last updated: September 2026",
+      "s1": {
+        "heading": "1. Information we collect",
+        "body1": "When you register we store your username, email address and a bcrypt hash of your password — never the password itself. Your CV content (profile, experiences, education, skills, projects, certificates, languages and resumes) is stored to let you build and download your documents.",
+        "body2": "We collect the minimum data required to run the service. We do not ask for government IDs, payment details, or sensitive categories of data."
+      },
+      "s2": {
+        "heading": "2. How we use your data",
+        "body1": "Your data is used solely to operate CareerPilot: authenticating you, storing your CV content, generating AI-assisted resumes you explicitly request, and producing the PDF files you download.",
+        "body2": "We do not sell, rent, or share your personal data with advertisers or data brokers."
+      },
+      "s3": {
+        "heading": "3. AI processing",
+        "body1": "When you use AI resume generation, the content of your profile and the job description you paste are sent to our AI provider (Google Gemini) solely to produce your tailored resume. This only happens when you explicitly trigger it.",
+        "body2": "We do not use your CV content to train models."
+      },
+      "s4": {
+        "heading": "4. Email communication",
+        "body1": "We send transactional emails only: verification codes and password-reset codes. Each code expires within 10 minutes. We do not send marketing emails without your explicit opt-in.",
+        "body2": ""
+      },
+      "s5": {
+        "heading": "5. Data security",
+        "body1": "Passwords are hashed with bcrypt, one-time codes are stored hashed, sessions use short-lived access tokens and HttpOnly refresh cookies, and all traffic is encrypted in transit. Access to production data is restricted and logged.",
+        "body2": "No system is perfectly secure; if a breach affecting your data occurs we will notify you without undue delay."
+      },
+      "s6": {
+        "heading": "6. Your rights",
+        "body1": "You can access, correct, export, or delete your data at any time from your dashboard. Deleting your account removes your profile and all CV content permanently.",
+        "body2": "For privacy requests contact privacy@careerpilot.com."
+      },
+      "s7": {
+        "heading": "7. Changes to this policy",
+        "body1": "If we make material changes we will announce them in the app before they take effect. Continuing to use CareerPilot after an announcement means you accept the updated policy.",
+        "body2": ""
+      }
+    },
+    "terms": {
+      "title": "Terms of Service",
+      "updated": "Last updated: September 2026",
+      "s1": {
+        "heading": "1. Acceptance",
+        "body1": "By creating an account or using CareerPilot you agree to these terms. If you do not agree, please do not use the service.",
+        "body2": ""
+      },
+      "s2": {
+        "heading": "2. Your account",
+        "body1": "You must provide accurate registration information and keep your credentials confidential. You are responsible for activity under your account. You must be at least 16 years old to use the service.",
+        "body2": "We may suspend accounts that abuse the service or violate these terms."
+      },
+      "s3": {
+        "heading": "3. Acceptable use",
+        "body1": "Do not use CareerPilot to create fraudulent documents, misrepresent qualifications you do not hold, upload unlawful content, or attempt to attack or reverse-engineer the platform.",
+        "body2": "Automated scraping or abuse of the AI features outside the product UI is prohibited."
+      },
+      "s4": {
+        "heading": "4. Your content & ownership",
+        "body1": "You own your CV content. By using the service you grant us the limited licence needed to store, process and display it for you — nothing more. You can delete it at any time.",
+        "body2": ""
+      },
+      "s5": {
+        "heading": "5. AI-generated output",
+        "body1": "AI-generated summaries and selections are suggestions. You are responsible for reviewing every CV before sending it to an employer — verify that all statements are accurate and yours.",
+        "body2": ""
+      },
+      "s6": {
+        "heading": "6. Disclaimers & liability",
+        "body1": "CareerPilot is provided \"as is\". We do not guarantee job interviews, hiring outcomes, or uninterrupted availability. To the maximum extent permitted by law our liability is limited to the amount you paid us in the last 12 months (currently zero — the service is free).",
+        "body2": ""
+      },
+      "s7": {
+        "heading": "7. Termination & changes",
+        "body1": "You may stop using the service and delete your account at any time. We may update these terms; material changes will be announced in the app beforehand.",
+        "body2": ""
+      }
+    },
+    "contact": {
+      "title": "Contact Us",
+      "s1": {
+        "heading": "Talk to a human",
+        "body1": "Pick the channel that fits your question — we read everything."
+      },
+      "s2": {
+        "heading": "Response times",
+        "body1": "Support replies within one business day. Security reports are triaged within 24 hours and handled confidentially."
+      },
+      "support": "General support",
+      "privacy": "Privacy requests",
+      "security": "Security reports"
+    }
   }
 }
