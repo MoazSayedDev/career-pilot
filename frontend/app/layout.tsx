@@ -8,11 +8,16 @@ import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
+  // Without this, next/font injects an Arial-backed fallback face that
+  // claims every codepoint — it steals Arabic glyphs in EN mode before
+  // Tajawal (next in the stack) is ever reached.
+  adjustFontFallback: false,
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  adjustFontFallback: false,
 });
 
 // Arabic UI font (same family used on gathern.co). Geist renders Latin
@@ -34,7 +39,7 @@ export const metadata: Metadata = {
  */
 const themeBootstrap = `(function(){try{var t=localStorage.getItem("careerpilot_theme");var d=t==="dark"||(t!=="light"&&window.matchMedia("(prefers-color-scheme: dark)").matches);if(d)document.documentElement.classList.add("dark");}catch(e){}})();`;
 
-const localeBootstrap = `(function(){try{var l=localStorage.getItem("careerpilot_lang");if(l!=="en"&&l!=="ar")l="ar";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";}catch(e){document.documentElement.lang="ar";document.documentElement.dir="rtl";}})();`;
+const localeBootstrap = `(function(){try{var l=localStorage.getItem("careerpilot_lang");if(l!=="en"&&l!=="ar")l="ar";document.documentElement.lang=l;document.documentElement.dir=l==="ar"?"rtl":"ltr";if(l==="en"){var r=document.documentElement;var g=getComputedStyle(r).getPropertyValue("--font-geist-sans").trim();var a=getComputedStyle(r).getPropertyValue("--font-arabic").trim();var p=g.split(",")[0];if(p&&a)r.style.setProperty("--font-geist-sans",p+", "+a);}}catch(e){document.documentElement.lang="ar";document.documentElement.dir="rtl";}})();`;
 
 export default function RootLayout({
   children,
