@@ -1,10 +1,35 @@
 import axios from "@/lib/axios";
-import { CreateResumeDto, Resume, ResumeDetails, UpdateResumeDto } from "../types/resume";
+import {
+  CreateResumeByJobDescriptionDto,
+  CreateResumeDto,
+  CreateResumeResponse,
+  Resume,
+  ResumeDetails,
+} from "../types/resume";
 
 const BASE_URL = "/resume";
 
-export const createResume = async (data: CreateResumeDto): Promise<Resume> => {
+/**
+ * AI resume generation can take a while (the backend calls
+ * Gemini synchronously), so it gets a dedicated timeout instead
+ * of hanging until an infrastructure-level timeout kicks in.
+ */
+const AI_TIMEOUT_MS = 120_000;
+const PDF_TIMEOUT_MS = 60_000;
+
+export const createResume = async (
+  data: CreateResumeDto,
+): Promise<CreateResumeResponse> => {
   const response = await axios.post(BASE_URL, data);
+  return response.data.data;
+};
+
+export const createResumeByJobDescription = async (
+  data: CreateResumeByJobDescriptionDto,
+): Promise<CreateResumeResponse> => {
+  const response = await axios.post(`${BASE_URL}/by-job-description`, data, {
+    timeout: AI_TIMEOUT_MS,
+  });
   return response.data.data;
 };
 
@@ -18,22 +43,21 @@ export const getResume = async (id: string): Promise<ResumeDetails> => {
   return response.data.data;
 };
 
-export const updateResume = async (
-  id: string,
-  data: UpdateResumeDto,
-): Promise<ResumeDetails> => {
-  const response = await axios.patch(`${BASE_URL}/${id}`, data);
-  return response.data.data;
-};
-
-export const deleteResume = async (id: string): Promise<void> => {
-  await axios.delete(`${BASE_URL}/${id}`);
-};
-
 export const downloadResumePdf = async (resumeId: string): Promise<Blob> => {
-  const response = await axios.get(`${BASE_URL}/pdf/${resumeId}`, {
+  const response = await axios.get(`/pdf/${resumeId}`, {
     responseType: "blob",
+    timeout: PDF_TIMEOUT_MS,
   });
 
-  return response.data as Blob;
+  const blob = response.data as Blob;
+
+  if (!(blob instanceof Blob) || blob.size === 0) {
+    throw new Error("The server returned an empty PDF file.");
+  }
+
+  if (blob.type && !blob.type.includes("application/pdf")) {
+    throw new Error("The server returned an unexpected file type.");
+  }
+
+  return blob;
 };

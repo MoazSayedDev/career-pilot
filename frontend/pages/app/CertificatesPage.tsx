@@ -50,21 +50,35 @@ export default function CertificatesPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
-  const loadCertificates = async () => {
-    try {
-      const data = await getCertificates();
-      setCertificates(data);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const refresh = () => setReloadKey((key) => key + 1);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadCertificates = async () => {
+      try {
+        const data = await getCertificates();
+
+        if (!cancelled) {
+          setCertificates(data);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    };
+
     void loadCertificates();
-  }, []);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   const validate = () => {
     const nextErrors: Record<string, string> = {};
@@ -110,7 +124,7 @@ export default function CertificatesPage() {
       setEditId(null);
       setErrors({});
 
-      await loadCertificates();
+      refresh();
     } catch (err) {
       console.error(err);
 
@@ -145,7 +159,7 @@ export default function CertificatesPage() {
         setForm(EMPTY_FORM);
       }
 
-      await loadCertificates();
+      refresh();
     } catch (err) {
       console.error(err);
     }

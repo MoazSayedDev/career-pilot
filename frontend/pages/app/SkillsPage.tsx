@@ -32,6 +32,7 @@ import {
   LANGUAGE_LEVELS,
   LANGUAGE_LEVEL_LABELS,
   type Language,
+  type LanguageLevel,
 } from "@/services/language/types/language";
 
 const QUICK_SKILLS = [
@@ -78,7 +79,9 @@ export default function SkillsPage() {
 
   const [languages, setLanguages] = useState<Language[]>([]);
   const [languageName, setLanguageName] = useState("");
-  const [languageLevel, setLanguageLevel] = useState(LANGUAGE_LEVELS[0]);
+  const [languageLevel, setLanguageLevel] = useState<LanguageLevel>(
+    LANGUAGE_LEVELS[0],
+  );
   const [languageError, setLanguageError] = useState("");
   const [languagesLoading, setLanguagesLoading] = useState(true);
   const [languageSubmitting, setLanguageSubmitting] = useState(false);
@@ -322,7 +325,7 @@ export default function SkillsPage() {
             <Field label="Proficiency Level">
               <Select
                 value={languageLevel}
-                onChange={setLanguageLevel}
+                onChange={(value) => setLanguageLevel(value as LanguageLevel)}
                 options={LANGUAGE_LEVELS.map(
                   (level) => LANGUAGE_LEVEL_LABELS[level],
                 )}
