@@ -56,6 +56,32 @@ const resolve = (tree: Record<string, unknown>, key: string): unknown => {
   return current;
 };
 
+/**
+ * In EN mode the Geist stack still contains the Arial-backed automatic
+ * fallback face injected by next/font. That face claims every codepoint,
+ * so Arabic glyphs never reach Tajawal. Rewriting the variable to
+ * `primary-Geist-family + Arabic stack` (names resolved at runtime, so
+ * hashed production font names stay valid) lets Arabic fall through to
+ * Tajawal while Latin keeps rendering in Geist.
+ */
+const applyLatinFirstFontStack = (locale: Locale) => {
+  const root = document.documentElement;
+
+  if (locale !== "en") {
+    root.style.removeProperty("--font-geist-sans");
+    return;
+  }
+
+  const computed = getComputedStyle(root);
+  const geistStack = computed.getPropertyValue("--font-geist-sans").trim();
+  const arabicStack = computed.getPropertyValue("--font-arabic").trim();
+  const primary = geistStack.split(",")[0]?.trim();
+
+  if (primary && arabicStack) {
+    root.style.setProperty("--font-geist-sans", `${primary}, ${arabicStack}`);
+  }
+};
+
 export interface I18n {
   locale: Locale;
   /** "rtl" for Arabic, "ltr" for English. */
@@ -98,6 +124,8 @@ export function I18nProvider({
 
     document.documentElement.lang = next;
     document.documentElement.dir = dir;
+
+    applyLatinFirstFontStack(next);
 
     window.localStorage.setItem(LOCALE_STORAGE_KEY, next);
   }, []);
