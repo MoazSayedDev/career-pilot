@@ -15,6 +15,7 @@ import {
 import { usePathname, useRouter } from "next/navigation";
 
 import { logout } from "@/services/auth/api/auth.service";
+import { LogoMark } from "@/components/ui/Logo";
 import { cn } from "@/utils";
 
 const NAV_ITEMS = [
@@ -90,9 +91,7 @@ export function Sidebar({
       {/* Logo */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center flex-shrink-0 shadow-md shadow-violet-200">
-            <FileText size={15} className="text-white" />
-          </div>
+          <LogoMark size={32} className="flex-shrink-0" />
 
           <div>
             <p className="text-sm font-bold text-gray-900 leading-none">
@@ -119,7 +118,7 @@ export function Sidebar({
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 w-full text-left",
                 active
-                  ? "bg-violet-600 text-white shadow-sm shadow-violet-200"
+                  ? "bg-blue-700 text-white shadow-sm shadow-blue-200"
                   : "text-gray-600 hover:bg-gray-50 hover:text-gray-900",
               )}
             >

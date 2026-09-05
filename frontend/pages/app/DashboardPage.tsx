@@ -190,11 +190,11 @@ export default function DashboardPage() {
             <p className="font-semibold text-gray-800">CV Completion</p>
             <p className="text-xs text-gray-400 mt-0.5">{completed} of {completionSections.length} sections filled</p>
           </div>
-          <span className="text-2xl font-bold text-violet-600">{pct}%</span>
+          <span className="text-2xl font-bold text-blue-700">{pct}%</span>
         </div>
 
         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-          <div className="h-full bg-gradient-to-r from-violet-500 to-purple-600 rounded-full transition-all" style={{ width: `${pct}%` }} />
+          <div className="h-full bg-gradient-to-r from-blue-500 to-blue-700 rounded-full transition-all" style={{ width: `${pct}%` }} />
         </div>
 
         <div className="flex flex-wrap gap-2 mt-4">
@@ -209,24 +209,24 @@ export default function DashboardPage() {
 
       {!mode && (
         <div className="grid md:grid-cols-2 gap-5 mb-6">
-          <div onClick={() => setMode("ai")} className="bg-gradient-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white cursor-pointer hover:shadow-xl hover:shadow-violet-200 hover:-translate-y-0.5 transition-all group">
+          <div onClick={() => setMode("ai")} className="bg-gradient-to-br from-[#12264F] to-[#1E40AF] rounded-2xl p-6 text-white cursor-pointer hover:shadow-xl hover:shadow-blue-200 hover:-translate-y-0.5 transition-all group">
             <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center mb-4">
               <Wand2 size={22} />
             </div>
             <h3 className="text-xl font-bold mb-2">Generate CV by Job Description</h3>
-            <p className="text-violet-200 text-sm leading-relaxed mb-4">Paste a job description and we will build a tailored CV from your profile.</p>
-            <div className="flex items-center gap-2 text-sm font-medium text-violet-100">
+            <p className="text-blue-200 text-sm leading-relaxed mb-4">Paste a job description and we will build a tailored CV from your profile.</p>
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-100">
               Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </div>
           </div>
 
           <div onClick={() => setMode("manual")} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer">
-            <div className="w-12 h-12 rounded-xl bg-violet-50 flex items-center justify-center mb-4 text-violet-600">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4 text-blue-700">
               <Pencil size={22} />
             </div>
             <h3 className="text-xl font-bold text-gray-900 mb-2">Build your CV manually</h3>
             <p className="text-gray-500 text-sm leading-relaxed mb-4">Update each section yourself and keep your CV aligned with the latest information.</p>
-            <div className="flex items-center gap-2 text-sm font-medium text-violet-600">
+            <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
               Continue <ArrowRight size={16} className="transition-transform group-hover:translate-x-1" />
             </div>
           </div>
@@ -236,7 +236,7 @@ export default function DashboardPage() {
       {mode === "ai" && (
         <Card className="p-6 mb-6">
           <h3 className="font-semibold text-gray-800 mb-1 flex items-center gap-2">
-            <Target size={16} className="text-violet-500" />
+            <Target size={16} className="text-blue-500" />
             Generate CV by Job Description
           </h3>
 
@@ -300,12 +300,12 @@ export default function DashboardPage() {
           <h3 className="font-semibold text-gray-800 mb-5">Choose the section to start with</h3>
           <div className="grid md:grid-cols-2 gap-3">
             {ALL_SECTIONS.map((section) => (
-              <button key={section.id} type="button" onClick={() => toggleSection(section.id)} className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${manualSections.includes(section.id) ? "border-violet-200 bg-violet-50" : "border-gray-200 bg-white"}`}>
+              <button key={section.id} type="button" onClick={() => toggleSection(section.id)} className={`flex items-center justify-between rounded-xl border p-3 text-left transition ${manualSections.includes(section.id) ? "border-blue-200 bg-blue-50" : "border-gray-200 bg-white"}`}>
                 <div className="flex items-center gap-3 text-gray-700">
                   {section.icon}
                   <span className="font-medium">{section.label}</span>
                 </div>
-                {manualSections.includes(section.id) ? <Check size={16} className="text-violet-600" /> : <div className="w-4 h-4 rounded-full border border-gray-300" />}
+                {manualSections.includes(section.id) ? <Check size={16} className="text-blue-700" /> : <div className="w-4 h-4 rounded-full border border-gray-300" />}
               </button>
             ))}
           </div>

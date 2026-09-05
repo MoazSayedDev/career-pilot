@@ -21,7 +21,7 @@ export function Textarea({
         placeholder={placeholder}
         rows={rows}
         maxLength={maxLength}
-        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-400 transition-colors"
+        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 placeholder:text-gray-400 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-colors"
       />
       {maxLength && (
         <span className="absolute bottom-2 right-2.5 text-xs text-gray-400">

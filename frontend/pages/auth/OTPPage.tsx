@@ -192,7 +192,7 @@ const OTPPageComponent = () => {
               maxLength={1}
               onChange={(event) => handleDigitChange(index, event.target.value)}
               onKeyDown={(event) => handleKeyDown(index, event)}
-              className="h-12 w-11 rounded-xl border-2 border-gray-200 text-center text-lg font-bold transition-colors focus:border-violet-500 focus:outline-none"
+              className="h-12 w-11 rounded-xl border-2 border-gray-200 text-center text-lg font-bold transition-colors focus:border-blue-500 focus:outline-none"
               aria-invalid={Boolean(errors.otp)}
             />
           ))}
@@ -223,7 +223,7 @@ const OTPPageComponent = () => {
             type="button"
             onClick={handleResendOtp}
             disabled={isResending || isSubmitting}
-            className="font-medium text-violet-600 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            className="font-medium text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isResending ? "Sending..." : "Resend code"}
           </button>

@@ -140,11 +140,11 @@ const SignUpPageComponent = () => {
 
         <p className="text-center text-xs text-gray-400">
           By creating an account you agree to our{" "}
-          <a href="#" className="text-violet-600 hover:underline">
+          <a href="#" className="text-blue-700 hover:underline">
             Terms of Service
           </a>{" "}
           and{" "}
-          <a href="#" className="text-violet-600 hover:underline">
+          <a href="#" className="text-blue-700 hover:underline">
             Privacy Policy
           </a>
         </p>
@@ -155,7 +155,7 @@ const SignUpPageComponent = () => {
         <button
           type="button"
           onClick={() => router.push("/login")}
-          className="font-medium text-violet-600 hover:underline"
+          className="font-medium text-blue-700 hover:underline"
         >
           Sign in
         </button>

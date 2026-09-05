@@ -2,8 +2,8 @@
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
+import { LogoMark } from "@/components/ui/Logo";
 import {
-  FileText,
   Sparkles,
   Wand2,
   LayoutTemplate,
@@ -28,7 +28,7 @@ function AppPreviewMockup() {
           <div
             key={item}
             className={`flex items-center gap-2 px-2 py-1.5 rounded-lg text-xs ${
-              i === 2 ? "bg-violet-600 text-white" : "text-gray-500"
+              i === 2 ? "bg-blue-700 text-white" : "text-gray-500"
             }`}
           >
             <div className="w-3 h-3 rounded-sm bg-current opacity-60" />
@@ -48,7 +48,7 @@ function AppPreviewMockup() {
                 <div className="h-6 rounded-md border border-gray-200 bg-gray-50" />
               </div>
             ))}
-            <div className="mt-3 h-7 rounded-lg bg-violet-600" />
+            <div className="mt-3 h-7 rounded-lg bg-blue-700" />
           </div>
           <div className="flex-1 bg-white rounded-xl border border-gray-200 p-3">
             <div className="text-xs font-semibold text-gray-700 mb-2">
@@ -89,24 +89,22 @@ export default function LandingPage() {
       <nav className="fixed top-0 inset-x-0 z-50 bg-white/90 backdrop-blur border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center">
-              <FileText size={16} className="text-white" />
-            </div>
+            <LogoMark size={32} />
             <span className="text-lg font-bold text-gray-900">CareerPilot</span>
           </div>
           <div className="hidden md:flex items-center gap-8 text-sm text-gray-600">
             <a
               href="#features"
-              className="hover:text-violet-600 transition-colors"
+              className="hover:text-blue-700 transition-colors"
             >
               Features
             </a>
-            <a href="#how" className="hover:text-violet-600 transition-colors">
+            <a href="#how" className="hover:text-blue-700 transition-colors">
               How it works
             </a>
             <a
               href="#templates"
-              className="hover:text-violet-600 transition-colors"
+              className="hover:text-blue-700 transition-colors"
             >
               Templates
             </a>
@@ -125,14 +123,14 @@ export default function LandingPage() {
       {/* Hero */}
       <section className="pt-32 pb-20 px-6">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-full px-4 py-1.5 text-sm text-violet-700 font-medium mb-8">
+          <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-full px-4 py-1.5 text-sm text-blue-800 font-medium mb-8">
             <Sparkles size={14} />
             AI-Powered CV Builder
           </div>
           <h1 className="text-5xl md:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
             Build your perfect CV
             <br />
-            <span className="text-violet-600">powered by AI</span>
+            <span className="text-blue-700">powered by AI</span>
           </h1>
           <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
             Create a professional, ATS-optimized resume in minutes. Let AI
@@ -159,7 +157,7 @@ export default function LandingPage() {
         </div>
 
         {/* App preview */}
-        <div className="max-w-5xl mx-auto mt-16 rounded-2xl overflow-hidden border border-gray-200 shadow-2xl shadow-violet-100">
+        <div className="max-w-5xl mx-auto mt-16 rounded-2xl overflow-hidden border border-gray-200 shadow-2xl shadow-blue-100">
           <div className="bg-gray-100 border-b border-gray-200 px-4 py-3 flex items-center gap-2">
             <div className="w-3 h-3 rounded-full bg-red-400" />
             <div className="w-3 h-3 rounded-full bg-amber-400" />
@@ -219,9 +217,9 @@ export default function LandingPage() {
             ].map((f) => (
               <Card
                 key={f.title}
-                className="p-6 hover:border-violet-200 hover:shadow-md transition-all group"
+                className="p-6 hover:border-blue-200 hover:shadow-md transition-all group"
               >
-                <div className="w-11 h-11 rounded-xl bg-violet-50 text-violet-600 flex items-center justify-center mb-4 group-hover:bg-violet-100 transition-colors">
+                <div className="w-11 h-11 rounded-xl bg-blue-50 text-blue-700 flex items-center justify-center mb-4 group-hover:bg-blue-100 transition-colors">
                   {f.icon}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{f.title}</h3>
@@ -262,7 +260,7 @@ export default function LandingPage() {
               },
             ].map((s) => (
               <div key={s.step} className="flex flex-col items-center">
-                <div className="w-12 h-12 rounded-full bg-violet-600 text-white flex items-center justify-center text-lg font-bold mb-4">
+                <div className="w-12 h-12 rounded-full bg-blue-700 text-white flex items-center justify-center text-lg font-bold mb-4">
                   {s.step}
                 </div>
                 <h3 className="font-semibold text-gray-900 mb-2">{s.title}</h3>
@@ -282,22 +280,20 @@ export default function LandingPage() {
       <footer className="border-t border-gray-100 py-10 px-6">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-violet-600 flex items-center justify-center">
-              <FileText size={13} className="text-white" />
-            </div>
+            <LogoMark size={28} />
             <span className="font-bold text-gray-900">CareerPilot</span>
           </div>
           <p className="text-sm text-gray-400">
             © 2026 CareerPilot. All rights reserved.
           </p>
           <div className="flex gap-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-violet-600">
+            <a href="#" className="hover:text-blue-700">
               Privacy
             </a>
-            <a href="#" className="hover:text-violet-600">
+            <a href="#" className="hover:text-blue-700">
               Terms
             </a>
-            <a href="#" className="hover:text-violet-600">
+            <a href="#" className="hover:text-blue-700">
               Contact
             </a>
           </div>
