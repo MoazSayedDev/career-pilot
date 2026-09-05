@@ -29,6 +29,6 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     "**/*.mts"
-  ],
+, "app/certificates/page.tsx", "app/certificates/myCertificates/page.tsx", "services/certificate/components/MyCertificates.jsx"  ],
   "exclude": ["node_modules"]
 }
