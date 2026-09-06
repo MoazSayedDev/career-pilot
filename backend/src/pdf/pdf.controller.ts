@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
+import { ParseUUIDPipe, Controller, Get, Param, Res, UseGuards } from '@nestjs/common';
 import type { Response } from 'express';
 import { PdfService } from './pdf.service';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
@@ -13,7 +13,7 @@ export class PdfController {
   @Get(':resumeId')
   async downloadPdf(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('resumeId') resumeId: string,
+    @Param('resumeId', ParseUUIDPipe) resumeId: string,
     @Res() res: Response,
   ) {
     const pdfBuffer = await this.pdfService.generatePdf(user.sub, resumeId);

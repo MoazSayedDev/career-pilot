@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -36,7 +37,7 @@ export class CertificateController {
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') certificateId: string,
+    @Param('id', ParseUUIDPipe) certificateId: string,
   ) {
     return this.certificateService.findOne(user.sub, certificateId);
   }
@@ -44,7 +45,7 @@ export class CertificateController {
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') certificateId: string,
+    @Param('id', ParseUUIDPipe) certificateId: string,
     @Body() dto: UpdateCertificateDto,
   ) {
     return this.certificateService.update(user.sub, certificateId, dto);
@@ -53,7 +54,7 @@ export class CertificateController {
   @Delete(':id')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') certificateId: string,
+    @Param('id', ParseUUIDPipe) certificateId: string,
   ) {
     return this.certificateService.remove(user.sub, certificateId);
   }

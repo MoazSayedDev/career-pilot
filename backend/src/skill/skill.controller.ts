@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -31,21 +32,21 @@ export class SkillController {
   }
 
   @Get(':id')
-  findOne(@CurrentUser() user: JwtAccessPayload, @Param('id') skillId: string) {
+  findOne(@CurrentUser() user: JwtAccessPayload, @Param('id', ParseUUIDPipe) skillId: string) {
     return this.skillService.findOne(user.sub, skillId);
   }
 
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') skillId: string,
+    @Param('id', ParseUUIDPipe) skillId: string,
     @Body() dto: UpdateSkillDto,
   ) {
     return this.skillService.update(user.sub, skillId, dto);
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: JwtAccessPayload, @Param('id') skillId: string) {
+  remove(@CurrentUser() user: JwtAccessPayload, @Param('id', ParseUUIDPipe) skillId: string) {
     return this.skillService.remove(user.sub, skillId);
   }
 }

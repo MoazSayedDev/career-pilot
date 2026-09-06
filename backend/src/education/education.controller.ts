@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -36,7 +37,7 @@ export class EducationController {
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') educationId: string,
+    @Param('id', ParseUUIDPipe) educationId: string,
   ) {
     return this.educationService.findOne(user.sub, educationId);
   }
@@ -44,7 +45,7 @@ export class EducationController {
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') educationId: string,
+    @Param('id', ParseUUIDPipe) educationId: string,
     @Body() dto: UpdateEducationDto,
   ) {
     return this.educationService.update(user.sub, educationId, dto);
@@ -53,7 +54,7 @@ export class EducationController {
   @Delete(':id')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') educationId: string,
+    @Param('id', ParseUUIDPipe) educationId: string,
   ) {
     return this.educationService.remove(user.sub, educationId);
   }

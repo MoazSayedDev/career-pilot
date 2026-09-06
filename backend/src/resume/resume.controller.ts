@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -47,7 +48,7 @@ export class ResumeController {
   @Get(':resumeId')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('resumeId') resumeId: string,
+    @Param('resumeId', ParseUUIDPipe) resumeId: string,
   ) {
     return this.resumeService.findOne(user.sub, resumeId);
   }
@@ -55,7 +56,7 @@ export class ResumeController {
   @Patch(':resumeId')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('resumeId') resumeId: string,
+    @Param('resumeId', ParseUUIDPipe) resumeId: string,
     @Body() dto: UpdateResumeDto,
   ) {
     return this.resumeService.update(user.sub, resumeId, dto);
@@ -64,7 +65,7 @@ export class ResumeController {
   @Delete(':resumeId')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('resumeId') resumeId: string,
+    @Param('resumeId', ParseUUIDPipe) resumeId: string,
   ) {
     return this.resumeService.remove(user.sub, resumeId);
   }
