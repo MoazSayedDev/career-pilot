@@ -508,7 +508,9 @@
       "selectedOne": "تم اختيار عنصر واحد",
       "selectedTwo": "تم اختيار عنصرين",
       "selectedFew": "تم اختيار {count} عناصر",
-      "selectedMany": "تم اختيار {count} عنصرًا"
+      "selectedMany": "تم اختيار {count} عنصرًا",
+      "language": "لغة السيرة الذاتية",
+      "languageHint": "تُحدد لغة مستند الـ PDF الناتج (العربية تُرسم من اليمين لليسار)."
     },
     "preview": {
       "title": "معاينة السيرة الذاتية",

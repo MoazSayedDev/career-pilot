@@ -508,7 +508,9 @@
       "selectedOne": "1 item selected",
       "selectedTwo": "2 items selected",
       "selectedFew": "{count} items selected",
-      "selectedMany": "{count} items selected"
+      "selectedMany": "{count} items selected",
+      "language": "CV language",
+      "languageHint": "Controls the output PDF document language (Arabic renders RTL)."
     },
     "preview": {
       "title": "Resume Preview",

@@ -22,6 +22,7 @@ import { Card } from "@/components/ui/Card";
 import { Btn } from "@/components/ui/Btn";
 
 import { createResume } from "@/services/resume/api/resume.service";
+import { CV_TEMPLATES } from "@/lib/cv-templates";
 import { getProfile } from "@/services/profile/api/profile.service";
 
 import type { CreateResumeDto } from "@/services/resume/types/resume";
@@ -44,6 +45,7 @@ export default function StartBuildingPage() {
 
   const [title, setTitle] = useState("");
   const [template, setTemplate] = useState("MODERN");
+  const [cvLanguage, setCvLanguage] = useState<"EN" | "AR">("EN");
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
@@ -163,6 +165,7 @@ export default function StartBuildingPage() {
       const payload: CreateResumeDto = {
         title: title.trim(),
         template,
+        language: cvLanguage,
 
         skillIds: selectedSkills,
         experienceIds: selectedExperiences,
@@ -271,25 +274,76 @@ export default function StartBuildingPage() {
               />
             </div>
 
-            {/* Template */}
+            {/* Template gallery */}
             <div>
-              <label
-                htmlFor="resume-template"
-                className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300"
-              >
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                 {t("resume.build.template")}
-              </label>
+              </span>
 
-              <select
-                id="resume-template"
-                value={template}
-                onChange={(event) => setTemplate(event.target.value)}
-                className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-900 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
-              >
-                <option value="MODERN">{t("resume.build.templateModern")}</option>
-                <option value="CLASSIC">{t("resume.build.templateClassic")}</option>
-                <option value="MINIMAL">{t("resume.build.templateMinimal")}</option>
-              </select>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                {CV_TEMPLATES.map((preset) => {
+                  const active = template === preset.id;
+                  const name = locale === "ar" ? preset.nameAr : preset.nameEn;
+
+                  return (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => setTemplate(preset.id)}
+                      aria-pressed={active}
+                      className={`rounded-xl border p-3 text-start transition-all ${
+                        active
+                          ? "border-blue-600 bg-blue-50 ring-2 ring-blue-500/30 dark:border-blue-500 dark:bg-blue-950/40"
+                          : "border-gray-200 bg-white hover:border-blue-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700"
+                      }`}
+                    >
+                      <span
+                        className="mb-2 block h-2 w-2/3 rounded"
+                        style={{ backgroundColor: preset.preview.accent }}
+                      />
+                      <span className="mb-1 block h-1.5 w-1/2 rounded bg-gray-200 dark:bg-gray-700" />
+                      <span
+                        className="mb-2 block h-px w-full"
+                        style={{ backgroundColor: preset.preview.accent, opacity: 0.35 }}
+                      />
+                      <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
+                        {name}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-emerald-600 dark:text-emerald-400">
+                        {t("landing.templates.atsSafe")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* CV language */}
+            <div>
+              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                {t("resume.build.language")}
+              </span>
+
+              <div className="flex gap-3">
+                {(["EN", "AR"] as const).map((lang) => (
+                  <button
+                    key={lang}
+                    type="button"
+                    onClick={() => setCvLanguage(lang)}
+                    aria-pressed={cvLanguage === lang}
+                    className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all ${
+                      cvLanguage === lang
+                        ? "border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-500/30 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-200"
+                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-blue-700"
+                    }`}
+                  >
+                    {lang === "EN" ? "English" : "العربية"}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
+                {t("resume.build.languageHint")}
+              </p>
             </div>
           </div>
         </Card>

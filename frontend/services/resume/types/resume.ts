@@ -2,6 +2,16 @@ export enum ResumeTemplate {
   MODERN = "MODERN",
   CLASSIC = "CLASSIC",
   MINIMAL = "MINIMAL",
+  ATS_SAFE = "ATS_SAFE",
+  EXECUTIVE = "EXECUTIVE",
+  TECHNICAL = "TECHNICAL",
+  ELEGANT = "ELEGANT",
+  COMPACT = "COMPACT",
+}
+
+export enum CvLanguage {
+  EN = "EN",
+  AR = "AR",
 }
 
 export interface ResumeSkill {
@@ -90,6 +100,7 @@ export interface Resume {
   id: string;
   title: string;
   template: ResumeTemplate;
+  language: CvLanguage;
   jobDescription?: string | null;
   generatedSummary?: string | null;
   profileId: string;
@@ -110,6 +121,8 @@ export type ResumeDetails = Resume;
 export interface CreateResumeDto {
   title: string;
   template: string;
+  /** Output document language — Arabic CVs render RTL. */
+  language?: "EN" | "AR";
 
   skillIds: string[];
   experienceIds: string[];
