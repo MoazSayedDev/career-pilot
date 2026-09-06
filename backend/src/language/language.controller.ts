@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -36,7 +37,7 @@ export class LanguageController {
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') languageId: string,
+    @Param('id', ParseUUIDPipe) languageId: string,
   ) {
     return this.languageService.findOne(user.sub, languageId);
   }
@@ -44,7 +45,7 @@ export class LanguageController {
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') languageId: string,
+    @Param('id', ParseUUIDPipe) languageId: string,
     @Body() dto: UpdateLanguageDto,
   ) {
     return this.languageService.update(user.sub, languageId, dto);
@@ -53,7 +54,7 @@ export class LanguageController {
   @Delete(':id')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') languageId: string,
+    @Param('id', ParseUUIDPipe) languageId: string,
   ) {
     return this.languageService.remove(user.sub, languageId);
   }

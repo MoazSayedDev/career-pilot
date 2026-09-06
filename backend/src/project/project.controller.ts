@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -33,7 +34,7 @@ export class ProjectController {
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') projectId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
   ) {
     return this.projectService.findOne(user.sub, projectId);
   }
@@ -41,7 +42,7 @@ export class ProjectController {
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') projectId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
     @Body() dto: UpdateProjectDto,
   ) {
     return this.projectService.update(user.sub, projectId, dto);
@@ -50,7 +51,7 @@ export class ProjectController {
   @Delete(':id')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') projectId: string,
+    @Param('id', ParseUUIDPipe) projectId: string,
   ) {
     return this.projectService.remove(user.sub, projectId);
   }

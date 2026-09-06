@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 
 function parseOrigins(raw: string | undefined): string[] | string {
   if (!raw) return 'http://localhost:3000';
@@ -14,6 +15,9 @@ function parseOrigins(raw: string | undefined): string[] | string {
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  // Standard security response headers (X-Content-Type-Options, HSTS in
+  // production, frameguard, etc.). CSP stays off here: this is a JSON API.
+  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
   app.use(cookieParser());
 
   app.enableCors({

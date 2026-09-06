@@ -1,4 +1,5 @@
 import {
+  ParseUUIDPipe,
   Body,
   Controller,
   Delete,
@@ -36,7 +37,7 @@ export class ExperienceController {
   @Get(':id')
   findOne(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') experienceId: string,
+    @Param('id', ParseUUIDPipe) experienceId: string,
   ) {
     return this.experienceService.findOne(user.sub, experienceId);
   }
@@ -44,7 +45,7 @@ export class ExperienceController {
   @Patch(':id')
   update(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') experienceId: string,
+    @Param('id', ParseUUIDPipe) experienceId: string,
     @Body() dto: UpdateExperienceDto,
   ) {
     return this.experienceService.update(user.sub, experienceId, dto);
@@ -53,7 +54,7 @@ export class ExperienceController {
   @Delete(':id')
   remove(
     @CurrentUser() user: JwtAccessPayload,
-    @Param('id') experienceId: string,
+    @Param('id', ParseUUIDPipe) experienceId: string,
   ) {
     return this.experienceService.remove(user.sub, experienceId);
   }
