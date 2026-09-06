@@ -33,6 +33,16 @@ enum ResumeTemplate {
   MODERN
   CLASSIC
   MINIMAL
+  ATS_SAFE
+  EXECUTIVE
+  TECHNICAL
+  ELEGANT
+  COMPACT
+}
+
+enum CvLanguage {
+  EN
+  AR
 }
 
 enum OtpPurpose {
@@ -226,6 +236,7 @@ model Resume {
   id String @id @default(uuid())
   title String
   template ResumeTemplate
+  language CvLanguage @default(EN)
   jobDescription String?
   generatedSummary String?
   profileId String

@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 import { getApiErrorMessage } from "@/lib/api-error";
+import { findCvTemplate } from "@/lib/cv-templates";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 
 import { getProfile } from "@/services/profile/api/profile.service";
@@ -105,11 +106,41 @@ function sanitizeFileNamePart(value: string): string {
   );
 }
 
-const SectionHeader = ({ label }: { label: string }) => (
-  <h2 className="mb-2 border-b border-[#0066cc] text-[13px] font-bold uppercase tracking-wider text-[#0066cc] dark:border-blue-400 dark:text-blue-400">
+const SectionHeader = ({
+  label,
+  accent,
+  centered,
+  rule,
+}: {
+  label: string;
+  accent: string;
+  centered?: boolean;
+  rule?: boolean;
+}) => (
+  <h2
+    className={`mb-2 border-b text-[13px] font-bold tracking-wider ${
+      centered ? "text-center" : ""
+    }`}
+    style={{
+      color: accent,
+      borderColor: accent,
+      borderWidth: rule ? "0 0 0.75px 0" : "0 0 1.5px 0",
+    }}
+  >
     {label}
   </h2>
 );
+
+/** Section labels for the CV document itself, independent of UI language. */
+const CV_SECTION_LABELS_AR: Record<string, string> = {
+  summary: "الملخص",
+  experience: "الخبرة المهنية",
+  projects: "المشاريع",
+  education: "التعليم",
+  certificates: "الشهادات",
+  skills: "المهارات",
+  languages: "اللغات",
+};
 
 export default function ResumePreviewPage() {
   const router = useRouter();
@@ -126,6 +157,22 @@ export default function ResumePreviewPage() {
   const [downloading, setDownloading] = useState(false);
   const [downloaded, setDownloaded] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+
+  // The CV document has its own language and template, independent of
+  // the UI language — an Arabic CV renders RTL even in an English UI.
+  const cvLanguage: "EN" | "AR" = resume?.language === "AR" ? "AR" : "EN";
+  const isArCv = cvLanguage === "AR";
+  const cvLocale = isArCv ? "ar" : locale;
+  const preset = findCvTemplate(resume?.template ?? "MODERN");
+  const accent = preset.preview.accent;
+  const cvFamilyClass =
+    preset.preview.family === "serif"
+      ? "font-serif"
+      : preset.preview.family === "mono"
+        ? "font-mono"
+        : "";
+  const cvSectionLabel = (key: string) =>
+    isArCv ? CV_SECTION_LABELS_AR[key] : t(`resume.preview.section.${key}`);
 
   useEffect(() => {
     let cancelled = false;
@@ -199,8 +246,8 @@ export default function ResumePreviewPage() {
         company: exp.company ?? "",
         location: exp.location ?? "",
         employmentType: formatEnum(exp.employmentType, t),
-        dateRange: `${formatDate(exp.startDate, locale)} - ${
-          exp.currentlyWorking ? t("common.present") : formatDate(exp.endDate, locale)
+        dateRange: `${formatDate(exp.startDate, cvLocale)} - ${
+          exp.currentlyWorking ? t("common.present") : formatDate(exp.endDate, cvLocale)
         }`,
         bullets:
           item.customDescription?.length > 0
@@ -225,8 +272,8 @@ export default function ResumePreviewPage() {
         description: item.customizedDescription || proj.description || "",
         technologies: proj.technologies ?? [],
         links,
-        dateRange: `${formatDate(proj.startDate, locale)} - ${
-          proj.endDate ? formatDate(proj.endDate, locale) : t("common.present")
+        dateRange: `${formatDate(proj.startDate, cvLocale)} - ${
+          proj.endDate ? formatDate(proj.endDate, cvLocale) : t("common.present")
         }`,
       };
     });
@@ -240,7 +287,7 @@ export default function ResumePreviewPage() {
         university: edu.university ?? "",
         grade: edu.grade ?? "",
         description: edu.description ?? "",
-        dateRange: `${formatDate(edu.startDate, locale)} - ${formatDate(edu.endDate, locale)}`,
+        dateRange: `${formatDate(edu.startDate, cvLocale)} - ${formatDate(edu.endDate, cvLocale)}`,
       };
     });
 
@@ -251,7 +298,7 @@ export default function ResumePreviewPage() {
         id: item.id,
         name: cert.name ?? "",
         issuer: cert.issuer ?? "",
-        date: formatDate(cert.issueDate, locale),
+        date: formatDate(cert.issueDate, cvLocale),
         credentialId: cert.credentialId ?? "",
         url: cert.credentialUrl ?? "",
       };
@@ -450,15 +497,36 @@ export default function ResumePreviewPage() {
 
       {/* Resume sheet */}
       <Card className="overflow-hidden shadow-xl dark:bg-gray-900">
-        <div className="px-6 py-10 sm:px-10">
+        <div
+          dir={isArCv ? "rtl" : "ltr"}
+          className={`px-6 py-10 sm:px-10 ${cvFamilyClass}`}
+          style={{ textAlign: isArCv ? "right" : "left" }}
+        >
           {/* Header */}
-          <header className="text-center">
-            <h1 className="text-2xl font-bold uppercase tracking-[0.2em] text-[#1a1a1a] sm:text-3xl dark:text-gray-100">
+          <header
+            className={
+              preset.preview.headerStyle === "centered" ? "text-center" : ""
+            }
+          >
+            <h1
+              className={`text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100 ${
+                preset.preview.headingCase === "uppercase" && !isArCv
+                  ? "uppercase tracking-[0.2em]"
+                  : ""
+              }`}
+            >
               {cv.fullName}
             </h1>
 
             {cv.title && (
-              <p className="mt-1 text-sm text-[#4a4a4a] sm:text-base dark:text-gray-300">
+              <p
+                className={`mt-1 text-sm sm:text-base ${
+                  preset.preview.headerStyle === "bar" ? "font-semibold" : ""
+                }`}
+                style={{
+                  color: preset.preview.headerStyle === "bar" ? accent : undefined,
+                }}
+              >
                 {cv.title}
               </p>
             )}
@@ -470,7 +538,11 @@ export default function ResumePreviewPage() {
             )}
 
             {cv.links.length > 0 && (
-              <p className="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs">
+              <p
+                className={`mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${
+                  preset.preview.headerStyle === "centered" ? "justify-center" : ""
+                }`}
+              >
                 {cv.links.map((link, index) => (
                   <span key={`${link.id}-${index}`}>
                     {index > 0 && (
@@ -480,7 +552,8 @@ export default function ResumePreviewPage() {
                       href={safeHref(link.url)}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[#0066cc] underline dark:text-blue-400"
+                      className="underline"
+                      style={{ color: accent }}
                     >
                       {formatEnum(link.type, t)}
                     </a>
@@ -489,7 +562,17 @@ export default function ResumePreviewPage() {
               </p>
             )}
 
-            <div className="mt-4 h-[1.5px] w-full bg-[#0066cc] dark:bg-blue-400" />
+            {(preset.preview.headerStyle === "bar" ||
+              preset.preview.headerStyle === "rule") && (
+              <div
+                className="mt-4 w-full"
+                style={{
+                  height: preset.preview.headerStyle === "bar" ? "2px" : "0.75px",
+                  backgroundColor:
+                    preset.preview.headerStyle === "bar" ? accent : "#9ca3af",
+                }}
+              />
+            )}
           </header>
 
           {!cv.hasContent ? (
@@ -500,7 +583,12 @@ export default function ResumePreviewPage() {
             <div className="mt-5 space-y-6 text-sm text-[#2a2a2a] dark:text-gray-200">
               {cv.summary && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.summary")} />
+                  <SectionHeader
+                    label={cvSectionLabel("summary")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <p className="text-justify leading-relaxed">{cv.summary}</p>
                 </section>
@@ -508,7 +596,12 @@ export default function ResumePreviewPage() {
 
               {cv.experiences.length > 0 && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.experience")} />
+                  <SectionHeader
+                    label={cvSectionLabel("experience")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <div className="space-y-5">
                     {cv.experiences.map((experience) => (
@@ -560,7 +653,12 @@ export default function ResumePreviewPage() {
 
               {cv.projects.length > 0 && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.projects")} />
+                  <SectionHeader
+                    label={cvSectionLabel("projects")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <div className="space-y-5">
                     {cv.projects.map((project) => (
@@ -613,7 +711,12 @@ export default function ResumePreviewPage() {
 
               {cv.education.length > 0 && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.education")} />
+                  <SectionHeader
+                    label={cvSectionLabel("education")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <div className="space-y-4">
                     {cv.education.map((education) => (
@@ -656,7 +759,12 @@ export default function ResumePreviewPage() {
 
               {cv.certificates.length > 0 && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.certificates")} />
+                  <SectionHeader
+                    label={cvSectionLabel("certificates")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <div className="space-y-4">
                     {cv.certificates.map((certificate) => (
@@ -708,7 +816,12 @@ export default function ResumePreviewPage() {
 
               {cv.skills.length > 0 && (
                 <section>
-                  <SectionHeader label={t("resume.preview.section.skills")} />
+                  <SectionHeader
+                    label={cvSectionLabel("skills")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
 
                   <p className="leading-relaxed">{cv.skills.join("  •  ")}</p>
                 </section>

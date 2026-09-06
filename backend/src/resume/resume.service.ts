@@ -171,6 +171,7 @@ export class ResumeService {
         data: {
           title: dto.title,
           template: dto.template,
+          language: dto.language ?? 'EN',
           jobDescription: dto.jobDescription,
           generatedSummary: dto.generatedSummary?.trim() || profile.bio || null,
           profileId: profile.id,

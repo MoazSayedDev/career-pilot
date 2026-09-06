@@ -1,4 +1,4 @@
-import { ResumeTemplate } from '@prisma/client';
+import { CvLanguage, ResumeTemplate } from '@prisma/client';
 import {
   ArrayUnique,
   IsArray,
@@ -17,6 +17,11 @@ export class CreateResumeDto {
 
   @IsEnum(ResumeTemplate)
   template!: ResumeTemplate;
+
+  /** Output language of the CV document (Arabic CVs render RTL). */
+  @IsOptional()
+  @IsEnum(CvLanguage)
+  language?: CvLanguage;
 
   @IsOptional()
   @IsString()

@@ -110,7 +110,11 @@ export function mapResumeToCvData(resume: any, profile?: any) {
 
           startDate: formatDate(exp.startDate),
 
+          startDateIso: exp.startDate || null,
+
           endDate: exp.currentlyWorking ? 'Present' : formatDate(exp.endDate),
+
+          endDateIso: exp.endDate || null,
 
           currentlyWorking: !!exp.currentlyWorking,
 
@@ -149,7 +153,11 @@ export function mapResumeToCvData(resume: any, profile?: any) {
 
           startDate: formatDate(proj.startDate),
 
+          startDateIso: proj.startDate || null,
+
           endDate: proj.endDate ? formatDate(proj.endDate) : 'Present',
+
+          endDateIso: proj.endDate || null,
 
           currentlyOngoing: !proj.endDate,
 
@@ -176,7 +184,11 @@ export function mapResumeToCvData(resume: any, profile?: any) {
 
           startDate: formatDate(edu.startDate),
 
+          startDateIso: edu.startDate || null,
+
           endDate: formatDate(edu.endDate),
+
+          endDateIso: edu.endDate || null,
 
           currentlyStudying: !edu.endDate,
 
@@ -201,6 +213,8 @@ export function mapResumeToCvData(resume: any, profile?: any) {
           issuer: cert.issuer || '',
 
           date: formatDate(cert.issueDate),
+
+          dateIso: cert.issueDate || null,
 
           url: cert.credentialUrl || '',
 
