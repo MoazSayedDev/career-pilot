@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    command: npm run start:dev
+    command: sh -c "npx prisma migrate deploy && npm run start:dev"
     env_file:
       - .env
     environment:
