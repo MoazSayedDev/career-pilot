@@ -1,485 +1,1045 @@
 import * as pdfMake from 'pdfmake/build/pdfmake';
-import type { TDocumentDefinitions, Content } from 'pdfmake/interfaces';
+
+import type { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
 import { ensureFontsRegistered } from '../fonts';
-import {
-  AR_EMPLOYMENT_TYPES,
-  AR_LINK_TYPES,
-  AR_SECTION_LABELS,
-  formatArabicDate,
-  shapeContent,
-} from '../arabic';
-import { DENSITY_SPACING, getPreset } from '../template-presets';
 
-type CvData = Record<string, any>;
-type CvLanguage = 'EN' | 'AR';
+import { getPreset } from '../template-presets';
 
-const PAGE_WIDTH = 595.28;
+interface CvLink {
+  type: string;
+  url: string;
+}
 
-function linkLabel(type: string, language: CvLanguage): string {
-  if (language === 'AR') {
-    return AR_LINK_TYPES[type] ?? type;
+interface CvExperience {
+  jobTitle: string;
+  companyName: string;
+  location?: string;
+  startDate?: string;
+  startDateIso?: string | null;
+  endDate?: string;
+  endDateIso?: string | null;
+  currentlyWorking?: boolean;
+  employmentType?: string;
+  links?: CvLink[];
+  description?: string;
+}
+
+interface CvProject {
+  title: string;
+  description?: string;
+  startDate?: string;
+  startDateIso?: string | null;
+  endDate?: string;
+  endDateIso?: string | null;
+  currentlyOngoing?: boolean;
+  links?: CvLink[];
+  technologies?: string[];
+}
+
+interface CvEducation {
+  degree?: string;
+  fieldOfStudy?: string;
+  schoolName?: string;
+  location?: string;
+  grade?: string;
+  startDate?: string;
+  startDateIso?: string | null;
+  endDate?: string;
+  endDateIso?: string | null;
+  currentlyStudying?: boolean;
+  description?: string;
+}
+
+interface CvLanguage {
+  language: string;
+  level: string;
+}
+
+interface CvCertificate {
+  name: string;
+  issuer?: string;
+  date?: string;
+  dateIso?: string | null;
+  url?: string;
+  summary?: string;
+}
+
+/**
+ * Keep this structure exactly compatible with the
+ * object returned by mapResumeToCvData().
+ */
+export interface CvData {
+  fullName?: string;
+  title?: string;
+
+  email?: string;
+  phone?: string;
+  location?: string;
+
+  links?: CvLink[];
+
+  summary?: string;
+
+  skills?: string[];
+
+  experiences?: CvExperience[];
+
+  projects?: CvProject[];
+
+  education?: CvEducation[];
+
+  languages?: CvLanguage[];
+
+  certificates?: CvCertificate[];
+}
+
+function linkLabel(type?: string): string {
+  if (!type) return 'Website';
+
+  const normalized = type.toLowerCase();
+
+  if (normalized.includes('github')) {
+    return 'GitHub';
   }
 
-  // "GITHUB" / "LINKEDIN" enum-ish values become "Github" / "Linkedin".
-  return type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+  if (normalized.includes('linkedin')) {
+    return 'LinkedIn';
+  }
+
+  if (normalized.includes('portfolio')) {
+    return 'Portfolio';
+  }
+
+  if (normalized.includes('live')) {
+    return 'Live Demo';
+  }
+
+  if (normalized.includes('website')) {
+    return 'Website';
+  }
+
+  return type;
+}
+
+function createLinkText(
+  links: CvLink[] | undefined,
+  accent: string,
+): Content | null {
+  if (!links?.length) {
+    return null;
+  }
+
+  const parts: Content[] = [];
+
+  links.forEach((link, index) => {
+    if (index > 0) {
+      parts.push({
+        text: '  •  ',
+        color: '#999999',
+      });
+    }
+
+    parts.push({
+      text: linkLabel(link.type),
+      link: link.url,
+      color: accent,
+      decoration: 'underline',
+    });
+  });
+
+  return {
+    text: parts,
+  };
 }
 
 export class PdfGenerator {
-  /**
-   * Renders the CV for a given template preset and language.
-   * All templates keep the ATS-safe single-column structure; presets
-   * vary typography, accent color, header treatment and density only.
-   */
-  static generatePdf(
+  static async generatePdf(
     cvData: CvData,
-    options: { templateId?: string | null; language?: CvLanguage } = {},
+    options: {
+      templateId?: string | null;
+    } = {},
   ): Promise<Buffer> {
     ensureFontsRegistered();
 
+    /*
+     * There is only one template.
+     *
+     * We keep options.templateId only so existing callers
+     * don't need to change.
+     */
     const preset = getPreset(options.templateId);
-    const language: CvLanguage = options.language === 'AR' ? 'AR' : 'EN';
-    const isAr = language === 'AR';
-    const spacing = DENSITY_SPACING[preset.density];
-    const baseAlignment: 'right' | 'left' = isAr ? 'right' : 'left';
-    const contentWidth = PAGE_WIDTH - spacing.pageMargins[0] - spacing.pageMargins[2];
-    const arabicFont = isAr ? { font: 'Cairo' } : {};
 
-    const headingLabel = (en: string, arKey: keyof typeof AR_SECTION_LABELS) =>
-      isAr ? AR_SECTION_LABELS[arKey] : preset.headingCase === 'uppercase' ? en.toUpperCase() : en;
+    /*
+     * ----------------------------------------------------
+     * SECTION HEADER
+     * ----------------------------------------------------
+     */
 
     const sectionHeader = (label: string): Content => {
-      const base: Content = {
-        text: label,
-        bold: true,
-        fontSize: preset.sectionSize,
-        color: preset.accent,
-        alignment: preset.headerStyle === 'centered' ? 'center' : baseAlignment,
-        margin: [0, spacing.sectionGap, 0, 3],
-        ...(preset.headerStyle === 'centered' && !isAr && preset.headingFamily !== preset.family
-          ? { font: preset.headingFamily }
-          : {}),
-        ...arabicFont,
-      };
-
-      if (preset.headerStyle === 'centered') {
-        return {
-          ...base,
-          decoration: 'underline',
-          decorationColor: preset.accent,
-        } as Content;
-      }
-
-      const lineThickness = preset.headerStyle === 'bar' ? 2 : 0.75;
-      const lineColor = preset.headerStyle === 'bar' ? preset.accent : preset.mutedColor;
-
       return {
         stack: [
-          base,
+          {
+            text: label,
+            font: preset.family,
+            fontSize: preset.sectionSize,
+            bold: true,
+            color: preset.mutedColor,
+            margin: [0, preset.sectionGap, 0, 0],
+          },
+
           {
             canvas: [
               {
                 type: 'line',
                 x1: 0,
                 y1: 0,
-                x2: contentWidth,
+                x2: 100,
                 y2: 0,
-                lineWidth: lineThickness,
-                lineColor,
+                lineWidth: 0.5,
+                lineColor: preset.accent,
               },
             ],
-            margin: [0, 1, 0, 4],
+            margin: [0, 0, 0, 6],
           },
         ],
-      } as Content;
+      };
     };
 
-    const dateRange = (startIso?: string | null, endIso?: string | null, present?: boolean): string => {
-      const start = isAr ? formatArabicDate(startIso) : formatEnDate(startIso);
-      const end = present
-        ? isAr
-          ? AR_SECTION_LABELS.present
-          : 'Present'
-        : isAr
-          ? formatArabicDate(endIso)
-          : formatEnDate(endIso);
-
-      return [start, end].filter(Boolean).join(isAr ? ' – ' : ' - ');
-    };
-
-    /* ---------- Header ---------- */
-
-    const headerAlign = preset.headerStyle === 'centered' ? 'center' : baseAlignment;
+    /*
+     * ----------------------------------------------------
+     * HEADER
+     * ----------------------------------------------------
+     */
 
     const headerStack: Content[] = [
       {
         text: cvData.fullName?.toUpperCase() || '',
+
+        font: preset.family,
+
         fontSize: preset.nameSize,
+
         bold: true,
+
         color: preset.textColor,
-        alignment: headerAlign,
-        ...(preset.headerStyle === 'centered' && preset.headingFamily !== preset.family
-          ? { font: preset.headingFamily }
-          : {}),
-        ...arabicFont,
+
+        alignment: 'center',
       },
-      ...(cvData.title
-        ? [
-            {
-              text: cvData.title,
-              fontSize: preset.bodySize + 1,
-              color: preset.headerStyle === 'bar' ? preset.accent : preset.mutedColor,
-              bold: preset.headerStyle === 'bar',
-              alignment: headerAlign,
-              margin: [0, 1, 0, 0],
-              ...arabicFont,
-            } as Content,
-          ]
-        : []),
     ];
 
+    if (cvData.title) {
+      headerStack.push({
+        text: cvData.title,
+
+        font: preset.family,
+
+        fontSize: preset.titleSize,
+
+        color: preset.mutedColor,
+
+        alignment: 'center',
+
+        margin: [0, 2, 0, 0],
+      });
+    }
+
+    /*
+     * Contact information
+     */
     const contactParts: Content[] = [];
+
     if (cvData.email) {
-      contactParts.push({ text: cvData.email, link: `mailto:${cvData.email}`, color: preset.mutedColor });
+      contactParts.push({
+        text: cvData.email,
+
+        link: `mailto:${cvData.email}`,
+
+        color: preset.mutedColor,
+      });
     }
+
     if (cvData.phone) {
-      if (contactParts.length) contactParts.push({ text: '  •  ', color: '#999999' });
-      contactParts.push({ text: cvData.phone, color: preset.mutedColor });
+      if (contactParts.length) {
+        contactParts.push({
+          text: '  •  ',
+
+          color: '#999999',
+        });
+      }
+
+      contactParts.push({
+        text: cvData.phone,
+
+        color: preset.mutedColor,
+      });
     }
+
     if (cvData.location) {
-      if (contactParts.length) contactParts.push({ text: '  •  ', color: '#999999' });
-      contactParts.push({ text: cvData.location, color: preset.mutedColor });
+      if (contactParts.length) {
+        contactParts.push({
+          text: '  •  ',
+
+          color: '#999999',
+        });
+      }
+
+      contactParts.push({
+        text: cvData.location,
+
+        color: preset.mutedColor,
+      });
     }
+
     if (contactParts.length) {
       headerStack.push({
         text: contactParts,
-        fontSize: preset.bodySize - 2,
-        alignment: headerAlign,
-        margin: [0, 2, 0, 0],
+
+        font: preset.family,
+
+        fontSize: preset.smallSize,
+
+        alignment: 'center',
+
+        margin: [0, 4, 0, 0],
+      });
+    }
+
+    /*
+     * Social / portfolio links
+     */
+    const linksContent = createLinkText(cvData.links, preset.accent);
+
+    if (linksContent) {
+      headerStack.push({
+        stack: [linksContent],
+
+        font: preset.family,
+
+        fontSize: preset.smallSize,
+
+        alignment: 'center',
+
+        margin: [0, 2, 0, 4],
       } as Content);
     }
 
-    if ((cvData.links?.length ?? 0) > 0) {
-      headerStack.push({
-        text: cvData.links.flatMap((link: any, index: number) => [
-          ...(index > 0 ? [{ text: '  •  ', color: '#999999' }] : []),
-          {
-            text: linkLabel(link.type, language),
-            link: link.url,
-            color: preset.accent,
-            decoration: 'underline',
-          },
-        ]),
-        fontSize: preset.bodySize - 2.5,
-        alignment: headerAlign,
-        margin: [0, 1, 0, 2],
-      } as Content);
-    }
+    /*
+     * Blue line under header
+     */
+    headerStack.push({
+      canvas: [
+        {
+          type: 'line',
+          x1: 0,
+          y1: 0,
+          x2: 515.28,
+          y2: 0,
+          lineWidth: 1,
+          lineColor: preset.accent,
+        },
+      ],
+      margin: [0, 6, 0, 4],
+    });
 
-    if (preset.headerStyle === 'bar' || preset.headerStyle === 'rule') {
-      headerStack.push({
-        canvas: [
-          {
-            type: 'line',
-            x1: 0,
-            y1: 0,
-            x2: contentWidth,
-            y2: 0,
-            lineWidth: preset.headerStyle === 'bar' ? 2 : 0.75,
-            lineColor: preset.headerStyle === 'bar' ? preset.accent : preset.mutedColor,
-          },
-        ],
-        margin: [0, 3, 0, 2],
-      } as Content);
-    }
+    /*
+     * No line under header.
+     */
 
     const content: Content[] = [...headerStack];
 
-    /* ---------- Summary ---------- */
-    if (cvData.summary) {
-      content.push(sectionHeader(headingLabel('SUMMARY', 'summary')));
+    /*
+     * ----------------------------------------------------
+     * SUMMARY
+     * ----------------------------------------------------
+     */
+
+    if (cvData.summary?.trim()) {
+      content.push(sectionHeader('SUMMARY'));
+
       content.push({
         text: cvData.summary,
-        alignment: baseAlignment,
-        lineHeight: spacing.lineHeight,
+
+        font: preset.family,
+
         fontSize: preset.bodySize,
+
+        color: preset.textColor,
+
+        lineHeight: preset.lineHeight,
+
         margin: [0, 0, 0, 2],
       });
     }
 
-    /* ---------- Experience ---------- */
+    /*
+     * ----------------------------------------------------
+     * EXPERIENCE
+     * ----------------------------------------------------
+     */
+
     if (cvData.experiences?.length) {
-      content.push(sectionHeader(headingLabel('PROFESSIONAL EXPERIENCE', 'experience')));
+      content.push(sectionHeader('EXPERIENCE'));
 
       for (const exp of cvData.experiences) {
-        content.push({
+        const dateText = [exp.startDate, exp.endDate]
+          .filter(Boolean)
+          .join(' - ');
+
+        /*
+         * Full Stack Developer - Tech Solutions | Cairo
+         */
+        const titleParts: Content[] = [];
+
+        if (exp.jobTitle) {
+          titleParts.push({
+            text: exp.jobTitle,
+
+            bold: true,
+          });
+        }
+
+        if (exp.companyName) {
+          if (titleParts.length) {
+            titleParts.push({
+              text: ' - ',
+
+              color: '#777777',
+            });
+          }
+
+          titleParts.push({
+            text: exp.companyName,
+          });
+        }
+
+        if (exp.location) {
+          if (titleParts.length) {
+            titleParts.push({
+              text: ' | ',
+
+              color: '#777777',
+            });
+          }
+
+          titleParts.push({
+            text: exp.location,
+
+            color: preset.mutedColor,
+          });
+        }
+
+        /*
+         * Complete experience item
+         */
+        const item: Content = {
           unbreakable: true,
+
           stack: [
+            /*
+             * ---------------------------------------------
+             * TOP ROW
+             *
+             * LEFT:
+             * Full Stack Developer - Tech Solutions | Cairo
+             *
+             * RIGHT:
+             * Jan 2024 - Present
+             * Full Time
+             * ---------------------------------------------
+             */
             {
-              text: [
-                { text: exp.jobTitle || '' as any, bold: true, fontSize: preset.bodySize + 0.5, color: preset.textColor },
-                ...(exp.companyName
-                  ? [{ text: ` ${isAr ? 'في' : '-'} ${exp.companyName}`, color: preset.accent, fontSize: preset.bodySize }]
-                  : []),
-                ...(exp.location
-                  ? [{ text: ` | ${exp.location}`, color: preset.mutedColor, fontSize: preset.bodySize - 1 }]
-                  : []),
+              columns: [
+                /*
+                 * LEFT SIDE
+                 */
+                {
+                  width: '*',
+
+                  text: titleParts,
+
+                  font: preset.family,
+
+                  fontSize: 11.5,
+
+                  color: preset.textColor,
+                },
+
+                /*
+                 * RIGHT SIDE
+                 */
+                {
+                  width: 'auto',
+
+                  stack: [
+                    /*
+                     * Date
+                     */
+                    {
+                      text: dateText,
+
+                      font: preset.family,
+
+                      fontSize: preset.smallSize,
+
+                      color: preset.mutedColor,
+
+                      alignment: 'right',
+
+                      noWrap: true,
+                    },
+
+                    /*
+                     * Employment type
+                     */
+                    ...(exp.employmentType
+                      ? [
+                          {
+                            text: exp.employmentType,
+
+                            font: preset.family,
+
+                            fontSize: preset.smallSize,
+
+                            color: preset.mutedColor,
+
+                            alignment: 'right',
+
+                            noWrap: true,
+
+                            margin: [0, 1, 0, 0],
+                          } as Content,
+                        ]
+                      : []),
+                  ],
+                },
               ],
-              alignment: baseAlignment,
-              ...arabicFont,
+
+              columnGap: 10,
             },
-            {
-              text: dateRange(exp.startDateIso, exp.endDateIso, exp.currentlyWorking),
-              fontSize: preset.bodySize - 2,
-              color: preset.mutedColor,
-              alignment: baseAlignment,
-              margin: [0, 0, 0, 1],
-            },
-            ...(exp.employmentType
-              ? [
-                  {
-                    text: isAr
-                      ? AR_EMPLOYMENT_TYPES[exp.employmentType] ?? exp.employmentType
-                      : exp.employmentType,
-                    fontSize: preset.bodySize - 2.5,
-                    color: preset.mutedColor,
-                    italics: !isAr,
-                    alignment: baseAlignment,
-                    margin: [0, 0, 0, 1],
-                  } as Content,
-                ]
-              : []),
+
+            /*
+             * ---------------------------------------------
+             * DESCRIPTION
+             * ---------------------------------------------
+             */
             ...(exp.description
               ? [
                   {
                     text: exp.description,
-                    alignment: baseAlignment,
-                    lineHeight: spacing.lineHeight,
-                    fontSize: preset.bodySize - 0.5,
-                    margin: [0, 1, 0, 0],
+
+                    font: preset.family,
+
+                    fontSize: preset.bodySize,
+
+                    color: preset.textColor,
+
+                    lineHeight: preset.lineHeight,
+
+                    margin: [0, 3, 0, 0],
                   } as Content,
                 ]
               : []),
           ],
-          margin: [0, 0, 0, spacing.itemGap + 2],
-        });
+
+          /*
+           * Space between experiences
+           */
+          margin: [0, 0, 0, preset.itemGap],
+        };
+
+        content.push(item);
       }
     }
 
-    /* ---------- Projects ---------- */
+    /*
+     * ----------------------------------------------------
+     * PROJECTS
+     * ----------------------------------------------------
+     */
+
     if (cvData.projects?.length) {
-      content.push(sectionHeader(headingLabel('PROJECTS', 'projects')));
+      content.push(sectionHeader('PROJECTS'));
 
       for (const project of cvData.projects) {
-        content.push({
+        const dateText = [project.startDate, project.endDate]
+          .filter(Boolean)
+          .join(' - ');
+
+        const projectLinks = createLinkText(project.links, preset.accent);
+
+        const projectTitleParts: Content[] = [
+          {
+            text: project.title || '',
+
+            bold: true,
+          },
+        ];
+
+        if (projectLinks) {
+          projectTitleParts.push({
+            text: '  •  ',
+
+            color: '#999999',
+          });
+
+          projectTitleParts.push(projectLinks as any);
+        }
+
+        const projectItem: Content = {
           unbreakable: true,
+
           stack: [
             {
-              text: ([
-                { text: project.title || '', bold: true, fontSize: preset.bodySize + 0.5, color: preset.textColor },
-                ...((project.links ?? []) as any[]).flatMap((link, index) => [
-                  { text: index === 0 ? '   —   ' : '  |  ', color: '#999999' },
-                  {
-                    text: linkLabel(link.type, language),
-                    link: link.url,
-                    color: preset.accent,
-                    decoration: 'underline',
-                    fontSize: preset.bodySize - 2,
-                  },
-                ])] as any),
-              alignment: baseAlignment,
-              ...arabicFont,
+              columns: [
+                {
+                  width: '*',
+
+                  text: projectTitleParts,
+
+                  font: preset.family,
+
+                  fontSize: 12,
+
+                  color: preset.textColor,
+                },
+
+                {
+                  width: 'auto',
+
+                  text: dateText,
+
+                  font: preset.family,
+
+                  fontSize: preset.smallSize,
+
+                  color: preset.mutedColor,
+
+                  alignment: 'right',
+                },
+              ],
+
+              columnGap: 10,
             },
-            ...((project.technologies?.length ?? 0) > 0
-              ? [
-                  {
-                    text: (project.technologies as string[]).join(isAr ? '، ' : ', '),
-                    color: preset.accent,
-                    fontSize: preset.bodySize - 1.5,
-                    alignment: baseAlignment,
-                    margin: [0, 0, 0, 1],
-                  } as Content,
-                ]
-              : []),
-            ...((project.startDateIso || project.endDateIso)
-              ? [
-                  {
-                    text: dateRange(project.startDateIso, project.endDateIso, project.currentlyOngoing),
-                    fontSize: preset.bodySize - 2,
-                    color: preset.mutedColor,
-                    alignment: baseAlignment,
-                    margin: [0, 0, 0, 1],
-                  } as Content,
-                ]
-              : []),
+
             ...(project.description
               ? [
                   {
                     text: project.description,
-                    alignment: baseAlignment,
-                    lineHeight: spacing.lineHeight,
-                    fontSize: preset.bodySize - 0.5,
-                    margin: [0, 1, 0, 0],
+
+                    font: preset.family,
+
+                    fontSize: preset.bodySize,
+
+                    color: preset.textColor,
+
+                    lineHeight: preset.lineHeight,
+
+                    margin: [0, 2, 0, 0],
                   } as Content,
                 ]
               : []),
-          ],
-          margin: [0, 0, 0, spacing.itemGap + 2],
-        });
-      }
-    }
 
-    /* ---------- Education ---------- */
-    if (cvData.education?.length) {
-      content.push(sectionHeader(headingLabel('EDUCATION', 'education')));
-
-      for (const edu of cvData.education) {
-        const degreeLine = [edu.degree, edu.fieldOfStudy].filter(Boolean).join(isAr ? ' – ' : ' — ');
-        content.push({
-          unbreakable: true,
-          stack: [
-            {
-              text: [
-                { text: degreeLine, bold: true, fontSize: preset.bodySize + 0.5, color: preset.textColor },
-                ...(edu.schoolName
-                  ? [{ text: ` ${isAr ? 'في' : '-'} ${edu.schoolName}`, color: preset.accent, fontSize: preset.bodySize }]
-                  : []),
-              ],
-              alignment: baseAlignment,
-              ...arabicFont,
-            },
-            ...((edu.startDateIso || edu.endDateIso)
+            ...(project.technologies?.length
               ? [
                   {
-                    text: dateRange(edu.startDateIso, edu.endDateIso, edu.currentlyStudying),
-                    fontSize: preset.bodySize - 2,
-                    color: preset.mutedColor,
-                    alignment: baseAlignment,
-                    margin: [0, 0, 0, 1],
-                  } as Content,
-                ]
-              : []),
-            ...(edu.description
-              ? [
-                  {
-                    text: edu.description,
-                    alignment: baseAlignment,
-                    fontSize: preset.bodySize - 0.5,
-                    lineHeight: spacing.lineHeight,
-                    margin: [0, 1, 0, 0],
-                  } as Content,
-                ]
-              : []),
-          ],
-          margin: [0, 0, 0, spacing.itemGap + 2],
-        });
-      }
-    }
+                    text: project.technologies.join(' • '),
 
-    /* ---------- Certificates ---------- */
-    if (cvData.certificates?.length) {
-      content.push(sectionHeader(headingLabel('CERTIFICATES', 'certificates')));
+                    font: preset.family,
 
-      for (const cert of cvData.certificates) {
-        content.push({
-          unbreakable: true,
-          stack: [
-            {
-              text: [
-                { text: cert.name || '', bold: true, fontSize: preset.bodySize + 0.5, color: preset.textColor },
-                ...(cert.issuer
-                  ? [{ text: ` ${isAr ? 'من' : '-'} ${cert.issuer}`, color: preset.accent, fontSize: preset.bodySize }]
-                  : []),
-              ],
-              alignment: baseAlignment,
-              ...arabicFont,
-            },
-            {
-              text: [
-                dateRange(cert.dateIso, cert.dateIso, false),
-                cert.summary
-                  ? `  •  ${isAr ? cert.summary.replace('Credential ID:', AR_SECTION_LABELS.credentialId + ':') : cert.summary}`
-                  : '',
-              ]
-                .filter(Boolean)
-                .join(''),
-              fontSize: preset.bodySize - 2,
-              color: preset.mutedColor,
-              alignment: baseAlignment,
-              margin: [0, 0, 0, 1],
-            },
-            ...(cert.url
-              ? [
-                  {
-                    text: cert.url,
-                    link: cert.url,
+                    fontSize: preset.smallSize,
+
                     color: preset.accent,
-                    decoration: 'underline',
-                    fontSize: preset.bodySize - 2,
-                    alignment: baseAlignment,
+
+                    margin: [0, 2, 0, 0],
                   } as Content,
                 ]
               : []),
           ],
-          margin: [0, 0, 0, spacing.itemGap],
-        });
+
+          margin: [0, 0, 0, preset.itemGap],
+        };
+
+        content.push(projectItem);
       }
     }
 
-    /* ---------- Skills ---------- */
+    /*
+     * ----------------------------------------------------
+     * EDUCATION
+     * ----------------------------------------------------
+     */
+
+    if (cvData.education?.length) {
+      content.push(sectionHeader('EDUCATION'));
+
+      for (const education of cvData.education) {
+        const dateText = [
+          education.startDate,
+          education.endDate || (education.currentlyStudying ? 'Present' : ''),
+        ]
+          .filter(Boolean)
+          .join(' - ');
+
+        const educationTitle: Content[] = [];
+
+        // Degree
+        if (education.degree) {
+          educationTitle.push({
+            text: education.degree,
+            bold: true,
+          });
+        }
+
+        // Field of study
+        if (education.fieldOfStudy) {
+          educationTitle.push({
+            text: `, ${education.fieldOfStudy}`,
+          });
+        }
+
+        // University / school
+        if (education.schoolName) {
+          educationTitle.push({
+            text: `, ${education.schoolName}`,
+            bold: true,
+          });
+        }
+
+        const educationItem: Content = {
+          unbreakable: true,
+
+          stack: [
+            /*
+             * ---------------------------------------------
+             * DEGREE + FIELD + UNIVERSITY       DATE
+             * ---------------------------------------------
+             *
+             * Bachelor of Science, Chemistry, Al-Azhar University
+             *                                      2022 - 2027
+             */
+            {
+              columns: [
+                {
+                  width: '*',
+
+                  text: educationTitle,
+
+                  font: preset.family,
+
+                  fontSize: 12,
+
+                  color: preset.textColor,
+                },
+
+                {
+                  width: 'auto',
+
+                  text: dateText,
+
+                  font: preset.family,
+
+                  fontSize: preset.smallSize,
+
+                  color: preset.mutedColor,
+
+                  alignment: 'right',
+
+                  noWrap: true,
+                },
+              ],
+
+              columnGap: 10,
+            },
+
+            /*
+             * ---------------------------------------------
+             * GRADE
+             * ---------------------------------------------
+             */
+            ...(education.grade
+              ? [
+                  {
+                    text: `Grade: ${education.grade}`,
+
+                    font: preset.family,
+
+                    fontSize: preset.smallSize,
+
+                    color: preset.mutedColor,
+
+                    margin: [0, 2, 0, 0],
+                  } as Content,
+                ]
+              : []),
+
+            /*
+             * ---------------------------------------------
+             * DESCRIPTION
+             * ---------------------------------------------
+             */
+            ...(education.description
+              ? [
+                  {
+                    text: education.description,
+
+                    font: preset.family,
+
+                    fontSize: preset.bodySize,
+
+                    color: preset.textColor,
+
+                    lineHeight: preset.lineHeight,
+
+                    margin: [0, 2, 0, 0],
+                  } as Content,
+                ]
+              : []),
+          ],
+
+          margin: [0, 0, 0, preset.itemGap],
+        };
+
+        content.push(educationItem);
+      }
+    }
+    /*
+     * ----------------------------------------------------
+     * CERTIFICATES
+     * ----------------------------------------------------
+     */
+
+    if (cvData.certificates?.length) {
+      content.push(sectionHeader('CERTIFICATES'));
+
+      for (const certificate of cvData.certificates) {
+        const issuerContent: Content[] = [];
+
+        /*
+         * Certificate name
+         */
+        issuerContent.push({
+          text: certificate.name || '',
+
+          bold: true,
+        });
+
+        /*
+         * Issuer
+         *
+         * The issuer itself becomes the clickable link.
+         */
+        if (certificate.issuer) {
+          issuerContent.push({
+            text: ' - ',
+
+            color: '#777777',
+          });
+
+          if (certificate.url) {
+            issuerContent.push({
+              text: certificate.issuer,
+
+              link: certificate.url,
+
+              color: preset.accent,
+
+              decoration: 'underline' as const,
+            });
+          } else {
+            issuerContent.push({
+              text: certificate.issuer,
+
+              color: preset.mutedColor,
+            });
+          }
+        }
+
+        const certificateItem: Content = {
+          unbreakable: true,
+
+          stack: [
+            /*
+             * ---------------------------------------------
+             * Certificate name + issuer
+             *                                      Date
+             *
+             * Docker & Kubernetes... - Udemy       May 2023
+             * ---------------------------------------------
+             */
+            {
+              columns: [
+                {
+                  width: '*',
+
+                  text: issuerContent,
+
+                  font: preset.family,
+
+                  fontSize: 12,
+
+                  color: preset.textColor,
+                },
+
+                /*
+                 * Date on the right
+                 */
+                {
+                  width: 'auto',
+
+                  text: certificate.date || '',
+
+                  font: preset.family,
+
+                  fontSize: preset.smallSize,
+
+                  color: preset.mutedColor,
+
+                  alignment: 'right',
+
+                  noWrap: true,
+                },
+              ],
+
+              columnGap: 10,
+            },
+
+            /*
+             * ---------------------------------------------
+             * Credential ID / Summary
+             * ---------------------------------------------
+             */
+            ...(certificate.summary
+              ? [
+                  {
+                    text: certificate.summary,
+
+                    font: preset.family,
+
+                    fontSize: preset.smallSize,
+
+                    color: preset.mutedColor,
+
+                    margin: [0, 2, 0, 0],
+                  } as Content,
+                ]
+              : []),
+          ],
+
+          margin: [0, 0, 0, preset.itemGap],
+        };
+
+        content.push(certificateItem);
+      }
+    }
+
+    /*
+     * ----------------------------------------------------
+     * SKILLS
+     * ----------------------------------------------------
+     */
+
     if (cvData.skills?.length) {
-      content.push(sectionHeader(headingLabel('SKILLS', 'skills')));
-      content.push({
-        text: cvData.skills.join(isAr ? '، ' : '  •  '),
-        fontSize: preset.bodySize,
-        alignment: baseAlignment,
-        lineHeight: spacing.lineHeight,
-        ...arabicFont,
-      });
-    }
+      content.push(sectionHeader('SKILLS'));
 
-    /* ---------- Languages ---------- */
-    if (cvData.languages?.length) {
-      content.push(sectionHeader(headingLabel('LANGUAGES', 'languages')));
       content.push({
-        text: cvData.languages
-          .map((l: any) => `${l.language}${l.level ? (isAr ? ' – ' : ' — ') + l.level : ''}`)
-          .join(isAr ? '، ' : '  •  '),
-        fontSize: preset.bodySize,
-        alignment: baseAlignment,
-        lineHeight: spacing.lineHeight,
-        ...arabicFont,
-      });
-    }
+        unbreakable: true,
 
-    const docDefinition: TDocumentDefinitions = {
-      pageMargins: spacing.pageMargins,
-      content: shapeContent(content, language) as Content[],
-      defaultStyle: {
-        font: isAr ? 'Cairo' : preset.family,
+        text: cvData.skills.join('  •  '),
+
+        font: preset.family,
+
         fontSize: preset.bodySize,
+
         color: preset.textColor,
-        lineHeight: spacing.lineHeight,
+
+        lineHeight: preset.lineHeight,
+
+        margin: [0, 0, 0, preset.itemGap],
+      });
+    }
+
+    /*
+     * ----------------------------------------------------
+     * LANGUAGES
+     * ----------------------------------------------------
+     */
+
+    if (cvData.languages?.length) {
+      content.push(sectionHeader('LANGUAGES'));
+
+      content.push({
+        unbreakable: true,
+
+        stack: cvData.languages.map((language) => ({
+          text: `${language.language} — ${language.level}`,
+
+          font: preset.family,
+
+          fontSize: preset.bodySize,
+
+          color: preset.textColor,
+
+          margin: [0, 0, 0, 3],
+        })),
+
+        margin: [0, 0, 0, preset.itemGap],
+      });
+    }
+
+    /*
+     * ----------------------------------------------------
+     * DOCUMENT
+     * ----------------------------------------------------
+     */
+
+    const documentDefinition: TDocumentDefinitions = {
+      pageSize: 'A4',
+
+      pageMargins: preset.pageMargins,
+
+      defaultStyle: {
+        font: preset.family,
+
+        fontSize: preset.bodySize,
+
+        color: preset.textColor,
+
+        lineHeight: preset.lineHeight,
       },
+
+      content,
+
+      /*
+       * Footer page number.
+       */
+      footer: (currentPage, pageCount) => ({
+        text: pageCount > 1 ? `${currentPage} / ${pageCount}` : '',
+
+        alignment: 'center',
+
+        font: preset.family,
+
+        fontSize: 8,
+
+        color: preset.mutedColor,
+
+        margin: [0, 10, 0, 0],
+      }),
     };
 
-    const pdfDocGenerator = (pdfMake as any).createPdf(docDefinition);
+    const pdfMakeAny = pdfMake as any;
 
-    return new Promise((resolve, reject) => {
-      pdfDocGenerator.getBuffer(
-        (buffer: Buffer) => resolve(buffer),
-        (err: Error) => reject(err),
-      );
+    return new Promise<Buffer>((resolve, reject) => {
+      try {
+        const pdfDoc = pdfMakeAny.createPdf(documentDefinition);
+
+        pdfDoc.getBuffer((buffer: Buffer) => {
+          resolve(buffer);
+        });
+      } catch (error) {
+        reject(error);
+      }
     });
   }
-}
-
-function formatEnDate(dateStr?: string | null): string {
-  if (!dateStr) return '';
-
-  const date = new Date(dateStr);
-
-  if (isNaN(date.getTime())) return '';
-
-  return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
 }

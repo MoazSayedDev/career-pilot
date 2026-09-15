@@ -20,7 +20,6 @@ export class PdfService {
 
     const pdfBuffer = await PdfGenerator.generatePdf(cvData, {
       templateId: resume.template,
-      language: resume.language,
     });
 
     return pdfBuffer;

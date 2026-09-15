@@ -6,12 +6,18 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+
+import { OtpPurpose } from '@prisma/client';
+
 import { PrismaService } from '../prisma/prisma.service';
 import { TokenService } from '../token/token.service';
 import { OtpService } from '../otp/otp.service';
 import { EmailService } from '../email/email.service';
 import { UsersService } from '../users/users.service';
+import { ProfileService } from 'src/profile/profile.service';
+
 import { AuthRepository } from './auth.repository';
+
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { VerifyEmailDto } from './dto/verify-email.dto';
@@ -21,8 +27,9 @@ import { VerifyResetOtpDto } from './dto/verify-reset-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUserDto } from './dto/current-user.dto';
-import { OtpPurpose } from '@prisma/client';
+
 import { PasswordUtil } from '../common/utils/password.util';
+import { OtpUtil } from '../common/utils/otp.util';
 
 /**
  * AuthService handles all authentication operations
@@ -57,6 +64,7 @@ export class AuthService {
     private readonly emailService: EmailService,
     private readonly usersService: UsersService,
     private readonly authRepository: AuthRepository,
+    private readonly profileServices: ProfileService,
   ) {}
 
   /**
@@ -729,6 +737,3 @@ export class AuthService {
     return Math.ceil(diffMs / (1000 * 60));
   }
 }
-
-// Import OTP utilities here to avoid circular dependencies
-import { OtpUtil } from '../common/utils/otp.util';

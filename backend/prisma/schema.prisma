@@ -84,7 +84,7 @@ model User {
 model Profile {
   id            String @id @default(uuid())
   firstName     String
-  lastName      String
+  lastName      String?
   headline      String?
   bio           String?
   image         String?

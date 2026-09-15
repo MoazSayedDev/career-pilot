@@ -22,7 +22,8 @@ export class AiService {
     private readonly profileServices: ProfileService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
-    this.model = this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+    this.model =
+      this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-3.6-flash';
     // The client is created lazily-safe: without a key every request fails
     // fast with a clean 503 instead of an unhandled 500.
     this.ai = apiKey ? new GoogleGenAI({ apiKey }) : null;
@@ -67,7 +68,10 @@ export class AiService {
 
       return JSON.parse(cleaned);
     } catch (error) {
-      if (error instanceof NotFoundException || error instanceof ServiceUnavailableException) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ServiceUnavailableException
+      ) {
         throw error;
       }
       this.logger.error('Gemini request failed', error as Error);

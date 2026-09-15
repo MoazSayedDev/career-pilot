@@ -10,6 +10,7 @@ import { OtpModule } from '../otp/otp.module';
 import { EmailModule } from '../email/email.module';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../prisma/prisma.module';
+import { ProfileModule } from 'src/profile/profile.module';
 
 /**
  * AuthModule handles all authentication-related operations
@@ -25,6 +26,7 @@ import { PrismaModule } from '../prisma/prisma.module';
     EmailModule,
     UsersModule,
     PrismaModule,
+    ProfileModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, JwtStrategy],

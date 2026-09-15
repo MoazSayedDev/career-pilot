@@ -33,12 +33,30 @@ function formatEmploymentType(type?: string | null): string {
     .join(' ');
 }
 
+function linkLabel(type?: string): string {
+  if (!type) return 'Website';
+
+  const normalized = type.toLowerCase();
+
+  if (normalized.includes('github')) return 'GitHub';
+
+  if (normalized.includes('linkedin')) return 'LinkedIn';
+
+  if (normalized.includes('portfolio')) return 'Portfolio';
+
+  if (normalized.includes('live')) return 'Live Demo';
+
+  if (normalized.includes('website')) return 'Website';
+
+  return type;
+}
+
 /**
  * Maps the resume response returned by getOneResume
  * into the cvData structure expected by PdfGenerator.
  *
- * @param resume Resume response including Prisma relations.
- * @param profile Profile data containing personal information.
+ * IMPORTANT:
+ * Do not change the returned data structure.
  */
 export function mapResumeToCvData(resume: any, profile?: any) {
   try {

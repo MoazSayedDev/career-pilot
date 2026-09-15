@@ -15,8 +15,9 @@ export class CreateProfileDto {
 
   @IsString()
   @MinLength(2)
+  @IsOptional()
   @MaxLength(50)
-  lastName: string;
+  lastName?: string;
 
   @IsOptional()
   @IsString()
