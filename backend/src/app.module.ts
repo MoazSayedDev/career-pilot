@@ -37,6 +37,8 @@ import { TokenModule } from './token/token.module';
 import { OtpModule } from './otp/otp.module';
 import { EmailModule } from './email/email.module';
 import { AiService } from './ai/ai.service';
+import { PlanModule } from './plan/plan.module';
+import { SubscriptionModule } from './subscription/subscription.module';
 
 @Module({
   imports: [
@@ -85,6 +87,8 @@ import { AiService } from './ai/ai.service';
     ResumeModule,
     AiModule,
     PdfModule,
+    PlanModule,
+    SubscriptionModule,
   ],
   controllers: [],
   providers: [
