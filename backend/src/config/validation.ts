@@ -92,6 +92,22 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   APP_URL: string;
+
+  @IsNotEmpty()
+  @IsString()
+  STRIPE_SECRET_KEY: string;
+
+  @IsNotEmpty()
+  @IsString()
+  STRIPE_WEBHOOK_SECRET: string;
+
+  @IsNotEmpty()
+  @IsString()
+  STRIPE_SUCCESS_URL: string;
+
+  @IsNotEmpty()
+  @IsString()
+  STRIPE_CANCEL_URL: string;
 }
 
 /**

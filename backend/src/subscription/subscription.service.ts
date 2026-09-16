@@ -6,6 +6,8 @@ import {
 } from '@nestjs/common';
 import { PlanInterval, Prisma, SubscriptionStatus } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PaymentProvider, PaymentStatus } from '@prisma/client';
+import { PaymentProviderRegistry } from '../payment/payment-provider.registry';
 
 const FREE_PLAN_NAME = 'Free';
 const DEFAULT_FREE_PLAN = {
@@ -21,19 +23,22 @@ export type UsageType = 'cv' | 'jobDescription';
 
 @Injectable()
 export class SubscriptionService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly providers: PaymentProviderRegistry,
+  ) {}
 
-/**
- * Creates an active free subscription for a user when one does not exist.
- *
- * This method is safe to call repeatedly and can use a transaction client
- * when subscription creation must be part of a larger transaction.
- *
- * @param userId - The ID of the user receiving the subscription.
- * @param database - The Prisma client used for the operation.
- * @returns The existing or newly created free subscription.
- */
-async createFreeSubscriptionForUser(
+  /**
+   * Creates an active free subscription for a user when one does not exist.
+   *
+   * This method is safe to call repeatedly and can use a transaction client
+   * when subscription creation must be part of a larger transaction.
+   *
+   * @param userId - The ID of the user receiving the subscription.
+   * @param database - The Prisma client used for the operation.
+   * @returns The existing or newly created free subscription.
+   */
+  async createFreeSubscriptionForUser(
     userId: string,
     database: DatabaseClient = this.prisma,
   ) {
@@ -173,24 +178,78 @@ async createFreeSubscriptionForUser(
    * is configured.
    */
   async subscribe(userId: string, planId: string) {
-    const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
+    const plan = await this.prisma.plan.findUnique({
+      where: { id: planId },
+      include: { providerPrices: true },
+    });
     if (!plan || !plan.isActive) {
       throw new NotFoundException('Plan not found or inactive');
     }
     if (plan.price.toNumber() > 0) {
-      throw new BadRequestException(
-        'Paid subscriptions require a configured payment provider.',
-      );
+      const user = await this.prisma.user.findUniqueOrThrow({
+        where: { id: userId },
+      });
+      const payment = await this.prisma.payment.create({
+        data: {
+          userId,
+          amount: plan.price,
+          currency: plan.currency,
+          provider: PaymentProvider.STRIPE,
+          status: PaymentStatus.PENDING,
+        },
+      });
+      try {
+        const checkout = await this.providers
+          .get(PaymentProvider.STRIPE)
+          .createCheckoutSession({
+            paymentId: payment.id,
+            planId: plan.id,
+            planName: plan.name,
+            interval: plan.interval,
+            amount: plan.price.toNumber(),
+            currency: plan.currency,
+            userEmail: user.email,
+          });
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { providerPaymentId: checkout.providerPaymentId },
+        });
+        return {
+          paymentId: payment.id,
+          status: PaymentStatus.PENDING,
+          ...checkout,
+        };
+      } catch (error) {
+        await this.prisma.payment.update({
+          where: { id: payment.id },
+          data: { status: PaymentStatus.FAILED },
+        });
+        throw error;
+      }
     }
 
     const now = new Date();
     const endDate = this.addInterval(now, plan.interval);
     return this.prisma.$transaction(async (tx) => {
-      await tx.subscription.updateMany({
-        where: { userId, status: SubscriptionStatus.ACTIVE },
-        data: { status: SubscriptionStatus.CANCELED, cancelAtPeriodEnd: true },
+      console.log('userId:', userId);
+      console.log('plan:', plan);
+      console.log('now:', now);
+      console.log('endDate:', endDate);
+
+      const canceledSubscriptions = await tx.subscription.updateMany({
+        where: {
+          userId,
+          status: SubscriptionStatus.ACTIVE,
+        },
+        data: {
+          status: SubscriptionStatus.CANCELED,
+          cancelAtPeriodEnd: true,
+        },
       });
-      return tx.subscription.create({
+
+      console.log('Canceled subscriptions:', canceledSubscriptions);
+
+      const subscription = await tx.subscription.create({
         data: {
           userId,
           planId: plan.id,
@@ -198,8 +257,88 @@ async createFreeSubscriptionForUser(
           startDate: now,
           endDate,
         },
+        include: {
+          plan: true,
+        },
+      });
+
+      console.log('Created subscription:', subscription);
+
+      return subscription;
+    });
+  }
+
+  async activatePaidSubscription(
+    paymentId: string,
+    providerPaymentId: string,
+    planId?: string,
+    providerSubscriptionId?: string,
+  ) {
+    console.log('🔥 activatePaidSubscription called');
+
+    console.log({
+      paymentId,
+      providerPaymentId,
+      planId,
+      providerSubscriptionId,
+    });
+    return this.prisma.$transaction(async (tx) => {
+      const payment = await tx.payment.findUnique({
+        where: { id: paymentId },
+        include: { user: true },
+      });
+      if (!payment || payment.status === PaymentStatus.SUCCEEDED) {
+        return payment;
+      }
+      const plan = planId
+        ? await tx.plan.findUnique({ where: { id: planId } })
+        : await tx.plan.findFirst({
+            where: {
+              providerPrices: {
+                some: { provider: payment.provider, externalId: { not: '' } },
+              },
+            },
+          });
+      if (!plan) {
+        throw new NotFoundException('Plan for payment was not found');
+      }
+      const now = new Date();
+      const endDate = this.addInterval(now, plan.interval);
+      await tx.subscription.updateMany({
+        where: { userId: payment.userId, status: SubscriptionStatus.ACTIVE },
+        data: { status: SubscriptionStatus.CANCELED, cancelAtPeriodEnd: true },
+      });
+      const subscription = await tx.subscription.create({
+        data: {
+          userId: payment.userId,
+          planId: plan.id,
+          status: SubscriptionStatus.ACTIVE,
+          startDate: now,
+          endDate,
+          providerSubscriptionId,
+        },
         include: { plan: true },
       });
+      await tx.payment.update({
+        where: { id: payment.id },
+        data: {
+          providerPaymentId,
+          status: PaymentStatus.SUCCEEDED,
+          paidAt: now,
+          subscriptionId: subscription.id,
+        },
+      });
+      await tx.usage.create({
+        data: { userId: payment.userId, periodStart: now, periodEnd: endDate },
+      });
+      return subscription;
+    });
+  }
+
+  async markProviderSubscriptionCanceled(providerSubscriptionId: string) {
+    return this.prisma.subscription.updateMany({
+      where: { providerSubscriptionId },
+      data: { status: SubscriptionStatus.CANCELED, cancelAtPeriodEnd: false },
     });
   }
 
@@ -213,6 +352,11 @@ async createFreeSubscriptionForUser(
    */
   async cancelAtPeriodEnd(userId: string) {
     const subscription = await this.ensureCurrentSubscription(userId);
+    if (subscription.providerSubscriptionId) {
+      await this.providers
+        .get(PaymentProvider.STRIPE)
+        .cancelSubscription(subscription.providerSubscriptionId);
+    }
     return this.prisma.subscription.update({
       where: { id: subscription.id },
       data: { cancelAtPeriodEnd: true },
@@ -258,6 +402,11 @@ async createFreeSubscriptionForUser(
       );
     }
 
+    if (expired.plan.price.toNumber() > 0) {
+      throw new ForbiddenException(
+        'Your paid subscription requires provider-confirmed renewal.',
+      );
+    }
     const startDate = expired.endDate ?? now;
     const endDate = this.addInterval(startDate, expired.plan.interval);
     subscription = await this.prisma.subscription.update({

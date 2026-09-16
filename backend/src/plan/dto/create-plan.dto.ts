@@ -38,4 +38,8 @@ export class CreatePlanDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  stripePriceId?: string;
 }

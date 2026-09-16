@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { UpdatePlanDto } from './dto/update-plan.dto';
+import { PaymentProvider } from '@prisma/client';
 
 @Injectable()
 export class PlanService {
@@ -30,7 +31,7 @@ export class PlanService {
       throw new BadRequestException('Plan with this name already exists');
     }
 
-    return this.prisma.plan.create({
+    const plan = await this.prisma.plan.create({
       data: {
         name: createPlanDto.name,
         description: createPlanDto.description,
@@ -42,6 +43,17 @@ export class PlanService {
         isActive: createPlanDto.isActive ?? true,
       },
     });
+    if (createPlanDto.stripePriceId && plan.price.toNumber() > 0) {
+      await this.prisma.planProviderPrice.create({
+        data: {
+          planId: plan.id,
+          provider: PaymentProvider.STRIPE,
+          interval: plan.interval,
+          externalId: createPlanDto.stripePriceId,
+        },
+      });
+    }
+    return plan;
   }
 
   /**

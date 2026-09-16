@@ -14,7 +14,7 @@ function parseOrigins(raw: string | undefined): string[] | string {
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { rawBody: true });
   // Standard security response headers (X-Content-Type-Options, HSTS in
   // production, frameguard, etc.). CSP stays off here: this is a JSON API.
   app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
