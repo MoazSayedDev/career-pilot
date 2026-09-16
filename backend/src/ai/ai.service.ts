@@ -9,6 +9,7 @@ import { GoogleGenAI } from '@google/genai';
 import { RESUME_OPTIMIZER_PROMPT } from './prompt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { ProfileService } from 'src/profile/profile.service';
+import { SubscriptionService } from 'src/subscription/subscription.service';
 
 @Injectable()
 export class AiService {
@@ -20,6 +21,7 @@ export class AiService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly profileServices: ProfileService,
+    private readonly subscriptionService: SubscriptionService,
   ) {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     this.model =
@@ -40,6 +42,8 @@ export class AiService {
     if (!myProfile) {
       throw new NotFoundException('Profile not found');
     }
+
+    await this.subscriptionService.consume(userId, 'jobDescription');
 
     const prompt = RESUME_OPTIMIZER_PROMPT.replace(
       '{{JOB_DESCRIPTION}}',

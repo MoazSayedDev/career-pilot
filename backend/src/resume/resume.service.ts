@@ -8,12 +8,14 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
 import { AiService } from 'src/ai/ai.service';
+import { SubscriptionService } from 'src/subscription/subscription.service';
 
 @Injectable()
 export class ResumeService {
   constructor(
     private readonly aiService: AiService,
     private readonly prisma: PrismaService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /**
@@ -52,6 +54,8 @@ export class ResumeService {
     if (!profile) {
       throw new NotFoundException('Profile not found');
     }
+
+    await this.subscriptionService.consume(userId, 'cv');
 
     // Normalize optional relation IDs
     const skillIds = dto.skillIds ?? [];

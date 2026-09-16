@@ -15,6 +15,7 @@ import { OtpService } from '../otp/otp.service';
 import { EmailService } from '../email/email.service';
 import { UsersService } from '../users/users.service';
 import { ProfileService } from 'src/profile/profile.service';
+import { SubscriptionService } from 'src/subscription/subscription.service';
 
 import { AuthRepository } from './auth.repository';
 
@@ -65,6 +66,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly authRepository: AuthRepository,
     private readonly profileServices: ProfileService,
+    private readonly subscriptionService: SubscriptionService,
   ) {}
 
   /**
@@ -124,6 +126,11 @@ export class AuthService {
             isVerified: false,
           },
         });
+
+        await this.subscriptionService.createFreeSubscriptionForUser(
+          createdUser.id,
+          tx,
+        );
 
         // Create OTP
         const otpCode = OtpUtil.generateOtp();

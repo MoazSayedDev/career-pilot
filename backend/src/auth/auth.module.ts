@@ -11,6 +11,7 @@ import { EmailModule } from '../email/email.module';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProfileModule } from 'src/profile/profile.module';
+import { SubscriptionModule } from 'src/subscription/subscription.module';
 
 /**
  * AuthModule handles all authentication-related operations
@@ -27,6 +28,7 @@ import { ProfileModule } from 'src/profile/profile.module';
     UsersModule,
     PrismaModule,
     ProfileModule,
+    SubscriptionModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, AuthRepository, JwtStrategy],
