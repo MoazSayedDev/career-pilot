@@ -12,8 +12,8 @@ const DEFAULT_FREE_PLAN = {
   description: 'Free monthly plan',
   price: 0,
   currency: 'USD',
-  cvLimit: 3,
-  jobDescriptionLimit: 3,
+  cvLimit: 5,
+  jobDescriptionLimit: 1,
 };
 
 type DatabaseClient = PrismaService | Prisma.TransactionClient;
@@ -23,7 +23,17 @@ export type UsageType = 'cv' | 'jobDescription';
 export class SubscriptionService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createFreeSubscriptionForUser(
+/**
+ * Creates an active free subscription for a user when one does not exist.
+ *
+ * This method is safe to call repeatedly and can use a transaction client
+ * when subscription creation must be part of a larger transaction.
+ *
+ * @param userId - The ID of the user receiving the subscription.
+ * @param database - The Prisma client used for the operation.
+ * @returns The existing or newly created free subscription.
+ */
+async createFreeSubscriptionForUser(
     userId: string,
     database: DatabaseClient = this.prisma,
   ) {
@@ -50,6 +60,14 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Retrieves the authenticated user's current subscription and plan.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The current subscription with its plan.
+   *
+   * @throws ForbiddenException If the user has no active subscription.
+   */
   async getCurrentSubscription(userId: string) {
     const subscription = await this.ensureCurrentSubscription(userId);
     return this.prisma.subscription.findUniqueOrThrow({
@@ -58,6 +76,16 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Retrieves the current subscription, plan, and usage counters for a user.
+   *
+   * Usage is created for the current billing period when it does not exist.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The current plan, subscription period, and usage.
+   *
+   * @throws ForbiddenException If the user has no active subscription.
+   */
   async getCurrentUsage(userId: string) {
     const subscription = await this.ensureCurrentSubscription(userId);
     const usage = await this.getOrCreateUsage(
@@ -79,6 +107,16 @@ export class SubscriptionService {
     };
   }
 
+  /**
+   * Consumes one unit of a usage-limited feature.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @param type - The usage type to consume.
+   * @returns The updated usage record.
+   *
+   * @throws ForbiddenException If the user has no active subscription,
+   * the feature is not included, or its limit has been reached.
+   */
   async consume(userId: string, type: UsageType) {
     const subscription = await this.ensureCurrentSubscription(userId);
     const periodEnd =
@@ -120,6 +158,20 @@ export class SubscriptionService {
     return this.prisma.usage.findUniqueOrThrow({ where: { id: usage.id } });
   }
 
+  /**
+   * Starts a subscription for an active plan.
+   *
+   * Existing active subscriptions are canceled when the new subscription is
+   * created. Paid plans are rejected until a payment provider is configured.
+   *
+   * @param userId - The ID of the user subscribing.
+   * @param planId - The ID of the plan to subscribe to.
+   * @returns The newly created subscription with its plan.
+   *
+   * @throws NotFoundException If the plan does not exist or is inactive.
+   * @throws BadRequestException If the plan is paid and no payment provider
+   * is configured.
+   */
   async subscribe(userId: string, planId: string) {
     const plan = await this.prisma.plan.findUnique({ where: { id: planId } });
     if (!plan || !plan.isActive) {
@@ -151,6 +203,14 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Schedules the current subscription to be canceled at period end.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The updated subscription with its plan.
+   *
+   * @throws ForbiddenException If the user has no active subscription.
+   */
   async cancelAtPeriodEnd(userId: string) {
     const subscription = await this.ensureCurrentSubscription(userId);
     return this.prisma.subscription.update({
@@ -160,6 +220,16 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Finds the user's active subscription and renews an expired period when
+   * cancellation has not been requested.
+   *
+   * @param userId - The ID of the user whose subscription is needed.
+   * @returns The active subscription with its plan.
+   *
+   * @throws ForbiddenException If the user has no active subscription or has
+   * canceled the expired subscription.
+   */
   private async ensureCurrentSubscription(userId: string) {
     const now = new Date();
     let subscription = await this.prisma.subscription.findFirst({
@@ -198,6 +268,15 @@ export class SubscriptionService {
     return subscription;
   }
 
+  /**
+   * Retrieves usage for a billing period or creates it when absent.
+   *
+   * @param userId - The ID of the user whose usage is tracked.
+   * @param periodStart - The start of the billing period.
+   * @param periodEnd - The end of the billing period.
+   * @param database - The Prisma client used for the operation.
+   * @returns The existing or newly created usage record.
+   */
   private async getOrCreateUsage(
     userId: string,
     periodStart: Date,
@@ -213,6 +292,12 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Retrieves the existing free plan or creates the default one.
+   *
+   * @param database - The Prisma client used for the operation.
+   * @returns The existing or newly created free plan.
+   */
   private async getOrCreateFreePlan(database: DatabaseClient) {
     const existing = await database.plan.findFirst({
       where: { name: { equals: FREE_PLAN_NAME, mode: 'insensitive' } },
@@ -230,6 +315,13 @@ export class SubscriptionService {
     });
   }
 
+  /**
+   * Calculates the end of a billing period from its start date and interval.
+   *
+   * @param date - The start date of the billing period.
+   * @param interval - The plan billing interval.
+   * @returns The calculated billing period end date.
+   */
   private addInterval(date: Date, interval: PlanInterval) {
     const result = new Date(date);
     result.setMonth(

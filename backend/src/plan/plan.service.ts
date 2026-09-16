@@ -11,6 +11,14 @@ import { UpdatePlanDto } from './dto/update-plan.dto';
 export class PlanService {
   constructor(private readonly prisma: PrismaService) {}
 
+  /**
+   * Creates a subscription plan.
+   *
+   * @param createPlanDto - The plan details to create.
+   * @returns The newly created plan.
+   *
+   * @throws BadRequestException If another plan has the same name.
+   */
   async create(createPlanDto: CreatePlanDto) {
     const existingPlan = await this.prisma.plan.findFirst({
       where: {
@@ -36,6 +44,13 @@ export class PlanService {
     });
   }
 
+  /**
+   * Retrieves all active subscription plans for public plan selection.
+   *
+   * Plans are ordered by price in ascending order.
+   *
+   * @returns A list of active plans.
+   */
   async findAll() {
     return this.prisma.plan.findMany({
       where: {
@@ -47,6 +62,13 @@ export class PlanService {
     });
   }
 
+  /**
+   * Retrieves all subscription plans for administrative management.
+   *
+   * Plans are ordered by creation date, with the newest returned first.
+   *
+   * @returns A list of all plans.
+   */
   async findAllForAdmin() {
     return this.prisma.plan.findMany({
       orderBy: {
@@ -55,6 +77,14 @@ export class PlanService {
     });
   }
 
+  /**
+   * Retrieves a subscription plan by its ID.
+   *
+   * @param id - The ID of the plan to retrieve.
+   * @returns The requested plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   */
   async findOne(id: string) {
     const plan = await this.prisma.plan.findUnique({
       where: { id },
@@ -67,6 +97,15 @@ export class PlanService {
     return plan;
   }
 
+  /**
+   * Retrieves a plan and verifies that it is available for subscriptions.
+   *
+   * @param id - The ID of the plan to retrieve.
+   * @returns The requested active plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   * @throws BadRequestException If the plan is inactive.
+   */
   async findActivePlan(id: string) {
     const plan = await this.prisma.plan.findUnique({
       where: {
@@ -85,6 +124,16 @@ export class PlanService {
     return plan;
   }
 
+  /**
+   * Updates an existing subscription plan.
+   *
+   * @param id - The ID of the plan to update.
+   * @param updatePlanDto - The plan fields to update.
+   * @returns The updated plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   * @throws BadRequestException If the new name is already in use.
+   */
   async update(id: string, updatePlanDto: UpdatePlanDto) {
     await this.findOne(id);
 
@@ -109,6 +158,14 @@ export class PlanService {
     });
   }
 
+  /**
+   * Deactivates a subscription plan so it cannot be selected by new users.
+   *
+   * @param id - The ID of the plan to deactivate.
+   * @returns The deactivated plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   */
   async deactivate(id: string) {
     await this.findOne(id);
 
@@ -120,6 +177,14 @@ export class PlanService {
     });
   }
 
+  /**
+   * Activates a subscription plan.
+   *
+   * @param id - The ID of the plan to activate.
+   * @returns The activated plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   */
   async activate(id: string) {
     await this.findOne(id);
 
@@ -131,6 +196,14 @@ export class PlanService {
     });
   }
 
+  /**
+   * Permanently deletes a subscription plan.
+   *
+   * @param id - The ID of the plan to delete.
+   * @returns The deleted plan.
+   *
+   * @throws NotFoundException If the plan does not exist.
+   */
   async delete(id: string) {
     const plan = await this.prisma.plan.findUnique({
       where: { id },
