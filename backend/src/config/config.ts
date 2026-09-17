@@ -42,9 +42,3 @@ export const throttlerConfig = registerAs('throttler', () => ({
   limit: parseInt(process.env.THROTTLE_LIMIT || '100', 10),
 }));
 
-export const paymentConfig = registerAs('payment', () => ({
-  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
-  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
-  stripeSuccessUrl: process.env.STRIPE_SUCCESS_URL,
-  stripeCancelUrl: process.env.STRIPE_CANCEL_URL,
-}));

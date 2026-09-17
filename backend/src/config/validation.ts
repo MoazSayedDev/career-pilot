@@ -93,21 +93,17 @@ class EnvironmentVariables {
   @IsString()
   APP_URL: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
-  STRIPE_SECRET_KEY: string;
+  GEMINI_API_KEY: string;
+
+  @IsOptional()
+  @IsString()
+  GEMINI_MODEL: string = 'gemini-2.5-flash';
 
   @IsNotEmpty()
   @IsString()
-  STRIPE_WEBHOOK_SECRET: string;
-
-  @IsNotEmpty()
-  @IsString()
-  STRIPE_SUCCESS_URL: string;
-
-  @IsNotEmpty()
-  @IsString()
-  STRIPE_CANCEL_URL: string;
+  GEMINI_ENCRYPTION_KEY: string;
 }
 
 /**

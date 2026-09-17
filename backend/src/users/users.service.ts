@@ -1,8 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { UsersRepository } from './users.repository';
 import { User } from '@prisma/client';
+
 import { CurrentUserDto } from '../auth/dto/current-user.dto';
 import { PasswordUtil } from '../common/utils/password.util';
+import { GeminiApiKeyService } from '../gemini/gemini-api-key.service';
+import { UsersRepository } from './users.repository';
 
 /**
  * UsersService handles user business logic
@@ -19,7 +21,10 @@ export class UsersService {
   private readonly accountLockDurationMinutes = 15;
   private readonly maxFailedAttempts = 5;
 
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly geminiApiKeyService: GeminiApiKeyService,
+  ) {}
 
   /**
    * Create a new user
@@ -203,5 +208,23 @@ export class UsersService {
    */
   async usernameExists(username: string): Promise<boolean> {
     return this.usersRepository.existsByUsername(username);
+  }
+
+  async setGeminiApiKey(userId: string, apiKey: string): Promise<{ configured: boolean }> {
+    const encryptedGeminiApiKey = this.geminiApiKeyService.encrypt(apiKey);
+    await this.usersRepository.updateGeminiApiKey(userId, encryptedGeminiApiKey);
+
+    return { configured: true };
+  }
+
+  async clearGeminiApiKey(userId: string): Promise<{ configured: boolean }> {
+    await this.usersRepository.clearGeminiApiKey(userId);
+    return { configured: false };
+  }
+
+  async getGeminiApiKeyStatus(userId: string): Promise<{ configured: boolean }> {
+    return {
+      configured: await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
+    };
   }
 }

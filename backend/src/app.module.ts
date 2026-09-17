@@ -5,7 +5,7 @@ import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 
 // Configuration
-import { authConfig, emailConfig, paymentConfig, throttlerConfig } from './config/config';
+import { authConfig, emailConfig, throttlerConfig } from './config/config';
 import { validateEnvironment } from './config/validation';
 
 // Global filters and interceptors
@@ -37,9 +37,8 @@ import { TokenModule } from './token/token.module';
 import { OtpModule } from './otp/otp.module';
 import { EmailModule } from './email/email.module';
 import { AiService } from './ai/ai.service';
-import { PlanModule } from './plan/plan.module';
-import { SubscriptionModule } from './subscription/subscription.module';
-import { PaymentModule } from './payment/payment.module';
+import { UsageModule } from './usage/usage.module';
+import { GeminiModule } from './gemini/gemini.module';
 
 @Module({
   imports: [
@@ -47,7 +46,7 @@ import { PaymentModule } from './payment/payment.module';
     ConfigModule.forRoot({
       isGlobal: true,
       validate: validateEnvironment,
-      load: [authConfig, emailConfig, paymentConfig, throttlerConfig],
+      load: [authConfig, emailConfig, throttlerConfig],
     }),
 
     // Rate limiting
@@ -88,9 +87,8 @@ import { PaymentModule } from './payment/payment.module';
     ResumeModule,
     AiModule,
     PdfModule,
-    PlanModule,
-    SubscriptionModule,
-    PaymentModule,
+    UsageModule,
+    GeminiModule,
   ],
   controllers: [],
   providers: [

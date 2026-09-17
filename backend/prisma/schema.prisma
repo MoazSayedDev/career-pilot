@@ -65,6 +65,7 @@ model User {
   username              String   @unique
   email                 String   @unique
   passwordHash          String
+  encryptedGeminiApiKey String?
   isVerified            Boolean  @default(false)
   lastLoginAt           DateTime?
   failedLoginAttempts   Int      @default(0)
@@ -75,8 +76,6 @@ model User {
   profile               Profile?
   refreshTokens         RefreshToken[]
   otps                  Otp[]
-  subscriptions         Subscription[]
-  payments              Payment[]
   usages                Usage[]
 
   @@index([email])
@@ -347,138 +346,20 @@ model Otp {
   @@index([expiresAt])
 }
 
-enum PlanInterval {
-  MONTHLY
-  YEARLY
-}
-
-enum SubscriptionStatus {
-  ACTIVE
-  CANCELED
-  EXPIRED
-  PAST_DUE
-}
-
-enum PaymentProvider {
-  STRIPE
-  PAYPAL
-}
-
-enum PaymentStatus {
-  PENDING
-  SUCCEEDED
-  FAILED
-  REFUNDED
-}
-
-model Plan {
-  id String @id @default(cuid())
-
-  name        String
-  description String?
-
-  price    Decimal
-  currency String @default("USD")
-
-  interval PlanInterval
-
-  cvLimit             Int
-  jobDescriptionLimit Int
-
-  isActive Boolean @default(true)
-
-  subscriptions Subscription[]
-  providerPrices PlanProviderPrice[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model PlanProviderPrice {
-  id         String        @id @default(cuid())
-  planId     String
-  provider   PaymentProvider
-  interval   PlanInterval
-  externalId String
-  plan       Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
-
-  @@unique([planId, provider, interval])
-  @@unique([provider, externalId])
-  @@index([planId])
-}
-
-model Subscription {
-  id String @id @default(cuid())
-
-  userId String
-  planId String
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan Plan @relation(fields: [planId], references: [id], onDelete: Cascade)
-
-  status SubscriptionStatus
-
-  startDate DateTime
-  endDate   DateTime?
-
-  cancelAtPeriodEnd Boolean @default(false)
-  providerSubscriptionId String?
-
-  payments Payment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([planId])
-}
-
-model Payment {
-  id String @id @default(cuid())
-
-  userId String
-  subscriptionId String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
-
-  amount   Decimal
-  currency String
-
-  provider PaymentProvider
-  status   PaymentStatus
-
-  providerPaymentId String?
-
-  paidAt DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([userId])
-  @@index([subscriptionId])
-  @@index([providerPaymentId])
-}
-
 model Usage {
-  id String @id @default(cuid())
+  id String @id @default(uuid())
 
   userId String
+  month  DateTime
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  cvUsed             Int @default(0)
-  jobDescriptionUsed Int @default(0)
-
-  periodStart DateTime
-  periodEnd   DateTime
+  cvGenerations  Int @default(0)
+  jobDescriptions Int @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([userId, periodStart])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month])
   @@index([userId])
 }

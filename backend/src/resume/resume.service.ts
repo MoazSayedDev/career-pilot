@@ -4,18 +4,19 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ResumeTemplate } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+
+import { AiService } from '../ai/ai.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { UsageService } from '../usage/usage.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
-import { AiService } from 'src/ai/ai.service';
-import { SubscriptionService } from 'src/subscription/subscription.service';
 
 @Injectable()
 export class ResumeService {
   constructor(
     private readonly aiService: AiService,
     private readonly prisma: PrismaService,
-    private readonly subscriptionService: SubscriptionService,
+    private readonly usageService: UsageService,
   ) {}
 
   /**
@@ -55,7 +56,7 @@ export class ResumeService {
       throw new NotFoundException('Profile not found');
     }
 
-    await this.subscriptionService.consume(userId, 'cv');
+    await this.usageService.consumeCv(userId);
 
     // Normalize optional relation IDs
     const skillIds = dto.skillIds ?? [];

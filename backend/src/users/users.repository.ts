@@ -92,6 +92,20 @@ export class UsersRepository {
     });
   }
 
+  async updateGeminiApiKey(userId: string, encryptedGeminiApiKey: string): Promise<User> {
+   return this.prisma.user.update({
+     where: { id: userId },
+     data: { encryptedGeminiApiKey },
+   });
+  }
+
+  async clearGeminiApiKey(userId: string): Promise<User> {
+   return this.prisma.user.update({
+     where: { id: userId },
+     data: { encryptedGeminiApiKey: null },
+   });
+  }
+
   /**
    * Update last login timestamp
    * @param userId - User ID

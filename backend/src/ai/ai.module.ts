@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
-import { AiService } from './ai.service';
+
 import { AiController } from './ai.controller';
-import { ProfileModule } from 'src/profile/profile.module';
-import { SubscriptionModule } from 'src/subscription/subscription.module';
+import { AiService } from './ai.service';
+import { GeminiModule } from '../gemini/gemini.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { ProfileModule } from '../profile/profile.module';
+import { UsageModule } from '../usage/usage.module';
 
 @Module({
-  imports: [ProfileModule, PrismaModule, SubscriptionModule],
+  imports: [ProfileModule, PrismaModule, GeminiModule, UsageModule],
   controllers: [AiController],
   providers: [AiService],
   exports: [AiService],

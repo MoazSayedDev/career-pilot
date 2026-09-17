@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from 'src/prisma/prisma.module';
+
+import { AiModule } from '../ai/ai.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { UsageModule } from '../usage/usage.module';
 import { ResumeController } from './resume.controller';
 import { ResumeService } from './resume.service';
-import { AiModule } from 'src/ai/ai.module';
-import { SubscriptionModule } from 'src/subscription/subscription.module';
 
 @Module({
-  imports: [PrismaModule, AiModule, SubscriptionModule],
+  imports: [PrismaModule, AiModule, UsageModule],
   controllers: [ResumeController],
   providers: [ResumeService],
   exports: [ResumeService],
