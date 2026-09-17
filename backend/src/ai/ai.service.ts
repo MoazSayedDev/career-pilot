@@ -84,4 +84,30 @@ export class AiService {
       );
     }
   }
+
+  async setGeminiApiKey(
+    userId: string,
+    apiKey: string,
+  ): Promise<{ configured: boolean }> {
+    const encryptedApiKey = this.geminiApiKeyService.encrypt(apiKey);
+    await this.geminiApiKeyService.setUserGeminiApiKey(userId, encryptedApiKey);
+
+    return { configured: true };
+  }
+
+  async clearGeminiApiKey(
+    userId: string,
+  ): Promise<{ configured: boolean }> {
+    await this.geminiApiKeyService.clearUserGeminiApiKey(userId);
+    return { configured: false };
+  }
+
+  async getGeminiApiKeyStatus(
+    userId: string,
+  ): Promise<{ configured: boolean }> {
+    return {
+      configured:
+        await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
+    };
+  }
 }

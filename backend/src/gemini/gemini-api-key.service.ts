@@ -107,4 +107,21 @@ export class GeminiApiKeyService {
 
     return Boolean(user?.encryptedGeminiApiKey);
   }
+
+  async setUserGeminiApiKey(
+    userId: string,
+    encryptedApiKey: string,
+  ): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { encryptedGeminiApiKey: encryptedApiKey },
+    });
+  }
+
+  async clearUserGeminiApiKey(userId: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { encryptedGeminiApiKey: null },
+    });
+  }
 }

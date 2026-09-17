@@ -6,6 +6,7 @@ import {
 import { ResumeTemplate } from '@prisma/client';
 
 import { AiService } from '../ai/ai.service';
+import { GeminiApiKeyService } from '../gemini/gemini-api-key.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UsageService } from '../usage/usage.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
@@ -15,6 +16,7 @@ import { UpdateResumeDto } from './dto/update-resume.dto';
 export class ResumeService {
   constructor(
     private readonly aiService: AiService,
+    private readonly geminiApiKeyService: GeminiApiKeyService,
     private readonly prisma: PrismaService,
     private readonly usageService: UsageService,
   ) {}
@@ -292,8 +294,12 @@ export class ResumeService {
    */
   async createByJobDescription(userId: string, jobDescription: string) {
     const normalizedJobDescription = jobDescription.trim();
+    const hasPersonalGeminiKey =
+      await this.geminiApiKeyService.hasConfiguredGeminiKey(userId);
 
-    await this.usageService.consumeJobDescription(userId);
+    if (!hasPersonalGeminiKey) {
+      await this.usageService.consumeJobDescription(userId);
+    }
 
     const aiResume = await this.aiService.optimizeResume(
       userId,
