@@ -42,7 +42,11 @@ export class ResumeService {
    * @throws {BadRequestException} When one or more selected related records
    * do not belong to the user's profile.
    */
-  async create(userId: string, dto: CreateResumeDto) {
+  async create(
+    userId: string,
+    dto: CreateResumeDto,
+    consumeCv = true,
+  ) {
     // Check if profile exists
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
@@ -56,7 +60,9 @@ export class ResumeService {
       throw new NotFoundException('Profile not found');
     }
 
-    await this.usageService.consumeCv(userId);
+    if (consumeCv) {
+      await this.usageService.consumeCv(userId);
+    }
 
     // Normalize optional relation IDs
     const skillIds = dto.skillIds ?? [];
@@ -287,6 +293,8 @@ export class ResumeService {
   async createByJobDescription(userId: string, jobDescription: string) {
     const normalizedJobDescription = jobDescription.trim();
 
+    await this.usageService.consumeJobDescription(userId);
+
     const aiResume = await this.aiService.optimizeResume(
       userId,
       normalizedJobDescription,
@@ -317,7 +325,7 @@ export class ResumeService {
       languageIds: aiResume.languageIds,
     };
 
-    return this.create(userId, dto);
+    return this.create(userId, dto, false);
   }
 
   /**

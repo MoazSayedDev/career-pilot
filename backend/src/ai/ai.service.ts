@@ -9,7 +9,6 @@ import { GoogleGenAI } from '@google/genai';
 
 import { GeminiApiKeyService } from '../gemini/gemini-api-key.service';
 import { ProfileService } from '../profile/profile.service';
-import { UsageService } from '../usage/usage.service';
 import { RESUME_OPTIMIZER_PROMPT } from './prompt';
 
 @Injectable()
@@ -20,11 +19,10 @@ export class AiService {
   constructor(
     private readonly configService: ConfigService,
     private readonly profileServices: ProfileService,
-    private readonly usageService: UsageService,
     private readonly geminiApiKeyService: GeminiApiKeyService,
   ) {
     this.model =
-      this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-3.6-flash';
+      this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
   }
 
   private async getClientForUser(userId: string): Promise<GoogleGenAI> {
@@ -45,8 +43,6 @@ export class AiService {
     if (!myProfile) {
       throw new NotFoundException('Profile not found');
     }
-
-    await this.usageService.consumeJobDescription(userId);
 
     const prompt = RESUME_OPTIMIZER_PROMPT.replace(
       '{{JOB_DESCRIPTION}}',
