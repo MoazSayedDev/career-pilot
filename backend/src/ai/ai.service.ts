@@ -24,11 +24,12 @@ export class AiService {
     private readonly geminiApiKeyService: GeminiApiKeyService,
   ) {
     this.model =
-      this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
+      this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-3.6-flash';
   }
 
   private async getClientForUser(userId: string): Promise<GoogleGenAI> {
-    const apiKey = await this.geminiApiKeyService.getEffectiveGeminiApiKey(userId);
+    const apiKey =
+      await this.geminiApiKeyService.getEffectiveGeminiApiKey(userId);
 
     if (!apiKey) {
       throw new ServiceUnavailableException(
