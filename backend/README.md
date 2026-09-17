@@ -25,6 +25,12 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Backend service documentation
+
+See [SERVICES.md](./SERVICES.md) for an explanation of the backend business
+services, including experience and education CRUD behavior, AI/Gemini key
+handling, PDF generation, usage limits, and user security rules.
+
 ## Project setup
 
 ```bash

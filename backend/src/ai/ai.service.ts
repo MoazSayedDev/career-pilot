@@ -38,6 +38,16 @@ export class AiService {
     return new GoogleGenAI({ apiKey });
   }
 
+  /**
+   * Generates an optimized resume selection for a job description.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @param jobDescription - The target job description.
+   * @returns The parsed resume data returned by Gemini.
+   * @throws NotFoundException If the user's profile does not exist.
+   * @throws ServiceUnavailableException If the AI service is not configured,
+   * returns an empty response, or cannot process the request.
+   */
   async optimizeResume(userId: string, jobDescription: string) {
     const myProfile = await this.profileServices.findMe(userId);
     if (!myProfile) {
@@ -85,6 +95,15 @@ export class AiService {
     }
   }
 
+  /**
+   * Encrypts and stores a user's Gemini API key.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @param apiKey - The Gemini API key to store.
+   * @returns An object indicating that the key is configured.
+   * @throws BadRequestException If the API key is empty.
+   * @throws InternalServerErrorException If encryption is not configured.
+   */
   async setGeminiApiKey(
     userId: string,
     apiKey: string,
@@ -95,6 +114,12 @@ export class AiService {
     return { configured: true };
   }
 
+  /**
+   * Removes a user's stored Gemini API key.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns An object indicating that the key is not configured.
+   */
   async clearGeminiApiKey(
     userId: string,
   ): Promise<{ configured: boolean }> {
@@ -102,6 +127,12 @@ export class AiService {
     return { configured: false };
   }
 
+  /**
+   * Checks whether the user has a personal Gemini API key configured.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns An object indicating whether a personal key is configured.
+   */
   async getGeminiApiKeyStatus(
     userId: string,
   ): Promise<{ configured: boolean }> {

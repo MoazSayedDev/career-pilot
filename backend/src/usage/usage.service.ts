@@ -45,6 +45,13 @@ export class UsageService {
     });
   }
 
+  /**
+   * Retrieves the authenticated user's usage for the current UTC month.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The current CV and job-description usage, limits, remaining
+   * amounts, and month.
+   */
   async getCurrentUsage(userId: string) {
     const month = this.getCurrentMonthStart();
     const usage = await this.getOrCreateUsageRecord(userId, month);
@@ -67,22 +74,48 @@ export class UsageService {
     };
   }
 
+  /**
+   * Checks whether the user can generate another CV this month.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns `true` when the CV monthly limit has not been reached.
+   */
   async canUseCv(userId: string): Promise<boolean> {
     const month = this.getCurrentMonthStart();
     const usage = await this.getOrCreateUsageRecord(userId, month);
     return usage.cvGenerations < CV_MONTHLY_LIMIT;
   }
 
+  /**
+   * Checks whether the user can process another job description this month.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns `true` when the job-description monthly limit has not been reached.
+   */
   async canUseJobDescription(userId: string): Promise<boolean> {
     const month = this.getCurrentMonthStart();
     const usage = await this.getOrCreateUsageRecord(userId, month);
     return usage.jobDescriptions < JOB_DESCRIPTION_MONTHLY_LIMIT;
   }
 
+  /**
+   * Consumes one CV generation from the user's monthly allowance.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The updated monthly usage record.
+   * @throws ForbiddenException If the CV monthly limit has been reached.
+   */
   async consumeCv(userId: string) {
     return this.consume(userId, 'cv');
   }
 
+  /**
+   * Consumes one job-description request from the user's monthly allowance.
+   *
+   * @param userId - The ID of the authenticated user.
+   * @returns The updated monthly usage record.
+   * @throws ForbiddenException If the job-description monthly limit has been reached.
+   */
   async consumeJobDescription(userId: string) {
     return this.consume(userId, 'jobDescription');
   }

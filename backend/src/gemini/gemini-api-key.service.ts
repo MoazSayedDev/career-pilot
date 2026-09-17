@@ -27,6 +27,14 @@ export class GeminiApiKeyService {
     return scryptSync(encryptionKey, 'career-pilot-gemini', 32);
   }
 
+  /**
+   * Encrypts a Gemini API key for secure storage.
+   *
+   * @param apiKey - The Gemini API key to encrypt.
+   * @returns The encrypted API key containing the IV, authentication tag, and ciphertext.
+   * @throws BadRequestException If the API key is empty.
+   * @throws InternalServerErrorException If the encryption key is not configured.
+   */
   encrypt(apiKey: string): string {
     const normalizedKey = apiKey.trim();
 
@@ -46,6 +54,15 @@ export class GeminiApiKeyService {
     return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
   }
 
+  /**
+   * Decrypts a stored Gemini API key.
+   *
+   * @param encryptedApiKey - The encrypted Gemini API key to decrypt.
+   * @returns The decrypted Gemini API key.
+   * @throws BadRequestException If the encrypted API key is empty.
+   * @throws InternalServerErrorException If the stored encrypted value is invalid
+   * or the encryption key is not configured.
+   */
   decrypt(encryptedApiKey: string): string {
     const normalized = encryptedApiKey.trim();
 
@@ -77,6 +94,12 @@ export class GeminiApiKeyService {
     return decrypted.toString('utf8');
   }
 
+  /**
+   * Retrieves and decrypts a user's personal Gemini API key.
+   *
+   * @param userId - The ID of the user.
+   * @returns The decrypted personal API key, or `null` when none is configured.
+   */
   async getUserGeminiApiKey(userId: string): Promise<string | null> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -90,6 +113,12 @@ export class GeminiApiKeyService {
     return this.decrypt(user.encryptedGeminiApiKey);
   }
 
+  /**
+   * Resolves the Gemini API key available to a user.
+   *
+   * @param userId - The ID of the user.
+   * @returns The user's personal key, the server key, or `null` when no key is configured.
+   */
   async getEffectiveGeminiApiKey(userId: string): Promise<string | null> {
     const userKey = await this.getUserGeminiApiKey(userId);
     if (userKey) {
@@ -99,6 +128,12 @@ export class GeminiApiKeyService {
     return this.configService.get<string>('GEMINI_API_KEY') ?? null;
   }
 
+  /**
+   * Checks whether a user has a personal Gemini API key configured.
+   *
+   * @param userId - The ID of the user.
+   * @returns `true` when the user has a stored personal key.
+   */
   async hasConfiguredGeminiKey(userId: string): Promise<boolean> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -108,6 +143,13 @@ export class GeminiApiKeyService {
     return Boolean(user?.encryptedGeminiApiKey);
   }
 
+  /**
+   * Stores an encrypted Gemini API key for a user.
+   *
+   * @param userId - The ID of the user.
+   * @param encryptedApiKey - The encrypted Gemini API key to store.
+   * @returns A promise that resolves when the key has been stored.
+   */
   async setUserGeminiApiKey(
     userId: string,
     encryptedApiKey: string,
@@ -118,6 +160,12 @@ export class GeminiApiKeyService {
     });
   }
 
+  /**
+   * Removes a user's stored Gemini API key.
+   *
+   * @param userId - The ID of the user.
+   * @returns A promise that resolves when the key has been removed.
+   */
   async clearUserGeminiApiKey(userId: string): Promise<void> {
     await this.prisma.user.update({
       where: { id: userId },
