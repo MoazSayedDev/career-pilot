@@ -1,15 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Eye, EyeOff, Loader2, Lock, Mail, User } from "lucide-react";
+import { Loader2, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 import { register as registerUser } from "../../services/auth/api/auth.service";
 import {
   makeRegisterSchema,
@@ -19,7 +20,7 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { translateServerMessage } from "@/lib/server-messages";
 
 const SignUpPageComponent = () => {
-  const [showPw, setShowPw] = useState(false);
+
   const router = useRouter();
   const { t, locale } = useI18n();
 
@@ -102,33 +103,20 @@ const SignUpPageComponent = () => {
           error={errors.password?.message}
           hint={t("auth.signUp.passwordHint")}
         >
-          <div className="relative">
-            <Input
-              {...register("password")}
-              placeholder={t("auth.signUp.passwordPlaceholder")}
-              type={showPw ? "text" : "password"}
-              icon={<Lock size={15} />}
-              disabled={isSubmitting}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPw((v) => !v)}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-            >
-              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          </div>
+          <PasswordInput
+            {...register("password")}
+            placeholder={t("auth.signUp.passwordPlaceholder")}
+            disabled={isSubmitting}
+          />
         </Field>
 
         <Field
           label={t("auth.signUp.confirmPassword")}
           error={errors.confirmPassword?.message}
         >
-          <Input
+          <PasswordInput
             {...register("confirmPassword")}
             placeholder={t("auth.signUp.confirmPlaceholder")}
-            type="password"
-            icon={<Lock size={15} />}
             disabled={isSubmitting}
           />
         </Field>

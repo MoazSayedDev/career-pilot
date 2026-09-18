@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle, CheckCircle, Eye, EyeOff, Loader2, Lock } from "lucide-react";
+import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -9,7 +9,7 @@ import { useForm } from "react-hook-form";
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
-import { Input } from "../../components/ui/Input";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 import { resetPassword } from "../../services/auth/api/auth.service";
 import {
   makeResetPasswordSchema,
@@ -19,7 +19,6 @@ import { useI18n } from "@/lib/i18n/I18nProvider";
 import { translateServerMessage } from "@/lib/server-messages";
 
 const ResetPasswordPageComponent = () => {
-  const [showPw, setShowPw] = useState(false);
   const [done, setDone] = useState(false);
   const router = useRouter();
   const { t } = useI18n();
@@ -143,33 +142,20 @@ const ResetPasswordPageComponent = () => {
             error={errors.password?.message}
             hint={t("auth.signUp.passwordHint")}
           >
-            <div className="relative">
-              <Input
-                {...register("password")}
-                placeholder={t("auth.reset.newPasswordPlaceholder")}
-                type={showPw ? "text" : "password"}
-                icon={<Lock size={15} />}
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPw((v) => !v)}
-                className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-              >
-                {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-              </button>
-            </div>
+            <PasswordInput
+              {...register("password")}
+              placeholder={t("auth.reset.newPasswordPlaceholder")}
+              disabled={isSubmitting}
+            />
           </Field>
 
           <Field
             label={t("auth.reset.confirmNewPassword")}
             error={errors.confirmPassword?.message}
           >
-            <Input
+            <PasswordInput
               {...register("confirmPassword")}
               placeholder={t("auth.reset.confirmPlaceholder")}
-              type={showPw ? "text" : "password"}
-              icon={<Lock size={15} />}
               disabled={isSubmitting}
             />
           </Field>
