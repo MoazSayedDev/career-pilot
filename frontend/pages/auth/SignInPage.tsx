@@ -1,7 +1,7 @@
 "use client";
 
 import axios from "axios";
-import { AlertCircle, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { AlertCircle, Mail } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -11,6 +11,7 @@ import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Field } from "../../components/ui/Field";
 import { Input } from "../../components/ui/Input";
+import { PasswordInput } from "../../components/ui/PasswordInput";
 
 import { login } from "../../services/auth/api/auth.service";
 import {
@@ -24,7 +25,6 @@ const SignInPageComponent = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { t } = useI18n();
-  const [showPw, setShowPw] = useState(false);
   const [remember, setRemember] = useState(false);
 
   const loginSchema = useMemo(() => makeLoginSchema(t), [t]);
@@ -114,24 +114,11 @@ const SignInPageComponent = () => {
 
         {/* Password */}
         <Field label={t("auth.signIn.password")}>
-          <div className="relative">
-            <Input
-              {...register("password")}
-              placeholder={t("auth.signIn.passwordPlaceholder")}
-              type={showPw ? "text" : "password"}
-              icon={<Lock size={15} />}
-              disabled={isSubmitting}
-            />
-
-            <button
-              type="button"
-              onClick={() => setShowPw((value) => !value)}
-              disabled={isSubmitting}
-              className="absolute end-3 top-1/2 -translate-y-1/2 text-gray-400 transition hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:text-gray-200"
-            >
-              {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-            </button>
-          </div>
+          <PasswordInput
+            {...register("password")}
+            placeholder={t("auth.signIn.passwordPlaceholder")}
+            disabled={isSubmitting}
+          />
         </Field>
 
         {errors.password && (
