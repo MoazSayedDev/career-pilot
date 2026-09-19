@@ -21,10 +21,12 @@ import { useRouter } from "next/navigation";
 
 import { Btn } from "@/components/ui/Btn";
 import { Card } from "@/components/ui/Card";
+import { GeminiKeyManager } from "@/components/ui/GeminiKeyManager";
 import { Textarea } from "@/components/ui/Textarea";
 
 import { getApiErrorMessage } from "@/lib/api-error";
 import { useI18n } from "@/lib/i18n/I18nProvider";
+import { translateServerMessage } from "@/lib/server-messages";
 
 import { getProfile } from "@/services/profile/api/profile.service";
 import type { Profile } from "@/services/profile/types/profile";
@@ -148,6 +150,20 @@ export default function DashboardPage() {
     } catch (error) {
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         router.push("/login");
+        return;
+      }
+
+      // 403 = monthly usage limit (usage module). Show the translated
+      // server message instead of the generic "forbidden" copy. No
+      // counter is kept client-side — the backend stays the source of
+      // truth for how many generations remain.
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        const message = error.response?.data?.message;
+        setGenerateError(
+          (typeof message === "string" && message
+            ? translateServerMessage(message, t)
+            : "") || t("errors.jdLimitReached"),
+        );
         return;
       }
 
@@ -277,7 +293,7 @@ export default function DashboardPage() {
               <p className="text-sm text-red-500">{generateError}</p>
             )}
 
-            <div className="flex gap-3 mt-3">
+            <div className="flex flex-wrap gap-3 mt-3">
               <Btn onClick={() => void handleGenerate()} disabled={!canGenerate}>
                 {generating ? (
                   <>
@@ -292,12 +308,28 @@ export default function DashboardPage() {
                 )}
               </Btn>
 
+              <Btn
+                variant="outline"
+                onClick={() => router.push("/resume/by-job-description")}
+                disabled={generating}
+              >
+                <ArrowRight size={15} className="rtl-flip" />
+                {t("resumeByJd.openFullPage")}
+              </Btn>
+
               <Btn variant="outline" onClick={() => setMode(null)} disabled={generating}>
                 {t("common.back")}
               </Btn>
             </div>
           </div>
         </Card>
+      )}
+
+      {/* Gemini key management — contextual to the AI flow. */}
+      {mode === "ai" && (
+        <div className="mb-6">
+          <GeminiKeyManager variant="compact" />
+        </div>
       )}
 
       {mode === "manual" && (

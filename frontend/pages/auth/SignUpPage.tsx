@@ -1,14 +1,16 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Loader2, Mail, User } from "lucide-react";
+import { AlertCircle, Loader2, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
+import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
+import { GoogleAuthButton } from "../../components/ui/GoogleAuthButton";
 import { Input } from "../../components/ui/Input";
 import { PasswordInput } from "../../components/ui/PasswordInput";
 import { register as registerUser } from "../../services/auth/api/auth.service";
@@ -23,6 +25,7 @@ const SignUpPageComponent = () => {
 
   const router = useRouter();
   const { t, locale } = useI18n();
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const registerSchema = useMemo(() => makeRegisterSchema(t), [t]);
 
@@ -67,11 +70,45 @@ const SignUpPageComponent = () => {
     }
   };
 
+  /** Shared error copy for every Google-auth failure mode. */
+  const handleGoogleError = (error: string) => {
+    const copy: Record<string, string> = {
+      popup_blocked: t("auth.google.popupBlocked"),
+      timeout: t("auth.google.timeout"),
+      cancelled: t("auth.google.cancelled"),
+      refresh_failed: t("auth.google.failed"),
+    };
+
+    setGoogleError(copy[error] ?? t("auth.google.failed"));
+  };
+
+  const handleGoogleSuccess = () => {
+    setGoogleError(null);
+    router.push("/dashboard");
+  };
+
   return (
     <AuthCard
       title={t("auth.signUp.title")}
       subtitle={t("auth.signUp.subtitle")}
     >
+      {/* Google OAuth */}
+      <GoogleAuthButton
+        mode="signup"
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        disabled={isSubmitting}
+      />
+
+      {googleError && (
+        <p className="flex items-center gap-1.5 text-sm text-red-500">
+          <AlertCircle size={14} />
+          {googleError}
+        </p>
+      )}
+
+      <Divider label={t("auth.signUp.orEmail")} />
+
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         {errors.root && (
           <p className="flex items-center gap-1 text-xs text-red-500">
