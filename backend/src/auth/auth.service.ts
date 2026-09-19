@@ -730,10 +730,151 @@ export class AuthService {
 
   /**
    * Helper to calculate remaining lock time
+   * @param lockedUntil - Account lock expiration time
+   * @returns Remaining lock duration in minutes
    */
   private calculateLockRemainingMinutes(lockedUntil: Date): number {
     const now = new Date();
     const diffMs = lockedUntil.getTime() - now.getTime();
     return Math.ceil(diffMs / (1000 * 60));
+  }
+
+  /**
+   * Authenticate a user through Google OAuth
+   * Finds an existing Google account, links an existing local account,
+   * or creates a new verified user before issuing tokens.
+   *
+   * @param googleUser - User data returned by Google OAuth
+   * @returns Authentication tokens and sanitized user data
+   */
+  async googleLogin(googleUser: {
+    googleId: string;
+    email: string;
+    username: string;
+    firstName?: string;
+    lastName?: string;
+    avatar?: string;
+    accessToken?: string;
+    refreshToken?: string;
+  }): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      accessToken: string;
+      refreshToken: string;
+      user: CurrentUserDto;
+    };
+  }> {
+    const email = googleUser.email.trim().toLowerCase();
+
+    let user = await this.usersService.findByGoogleId(googleUser.googleId);
+
+    /*
+     * User already linked with Google
+     */
+    if (!user) {
+      user = await this.usersService.findByEmail(email);
+    }
+
+    /*
+     * Existing local account
+     *
+     * Link Google to the existing account.
+     */
+    if (user) {
+      if (!user.googleId) {
+        user = await this.usersService.linkGoogleAccount(
+          user.id,
+          googleUser.googleId,
+        );
+      }
+    }
+
+    /*
+     * Completely new Google user
+     */
+    if (!user) {
+      const username = await this.generateUniqueUsername(googleUser.username);
+
+      user = await this.usersService.createGoogleUser({
+        username,
+        email,
+        googleId: googleUser.googleId,
+      });
+    }
+
+    /*
+     * Handle successful login
+     */
+    await this.usersService.handleSuccessfulLogin(user.id);
+
+    /*
+     * Generate access token
+     */
+    const accessToken = this.tokenService.generateAccessToken(
+      user.id,
+      user.email,
+    );
+
+    /*
+     * Generate refresh token
+     */
+    const refreshToken = this.tokenService.generateRefreshToken(user.id);
+
+    /*
+     * Hash refresh token before storing it
+     */
+    const refreshTokenHash =
+      await this.tokenService.hashRefreshToken(refreshToken);
+
+    /*
+     * Refresh token expires in 7 days
+     */
+    const expiresAt = new Date();
+
+    expiresAt.setDate(expiresAt.getDate() + 7);
+
+    await this.authRepository.createRefreshToken(
+      user.id,
+      refreshTokenHash,
+      expiresAt,
+    );
+
+    return {
+      success: true,
+      message: 'Google login successful',
+      data: {
+        accessToken,
+        refreshToken,
+        user: this.usersService.sanitizeUser(user),
+      },
+    };
+  }
+
+  /**
+   * Generate an available username from a Google display name
+   * Appends a numeric suffix when the base username is already in use.
+   *
+   * @param displayName - Display name returned by Google
+   * @returns Unique normalized username
+   */
+  private async generateUniqueUsername(displayName: string): Promise<string> {
+    const baseUsername =
+      displayName
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .slice(0, 20) || 'user';
+
+    let username = baseUsername;
+    let counter = 1;
+
+    while (await this.usersService.usernameExists(username)) {
+      username = `${baseUsername}_${counter}`;
+      counter++;
+    }
+
+    return username;
   }
 }

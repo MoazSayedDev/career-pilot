@@ -20,9 +20,7 @@ export class UsersService {
   private readonly accountLockDurationMinutes = 15;
   private readonly maxFailedAttempts = 5;
 
-  constructor(
-    private readonly usersRepository: UsersRepository,
-  ) {}
+  constructor(private readonly usersRepository: UsersRepository) {}
 
   /**
    * Create a new user
@@ -96,6 +94,10 @@ export class UsersService {
    * @returns Whether password is correct
    */
   async verifyPassword(user: User, password: string): Promise<boolean> {
+    if (!user.passwordHash) {
+      return false;
+    }
+
     return PasswordUtil.compare(password, user.passwordHash);
   }
 
@@ -208,4 +210,35 @@ export class UsersService {
     return this.usersRepository.existsByUsername(username);
   }
 
+  /**
+   * Find user by Google ID
+   * @param googleId - Google account ID
+   * @returns Full user object or null
+   */
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.usersRepository.findByGoogleId(googleId);
+  }
+
+  /**
+   * Create a user through Google OAuth
+   * @param data - Google user account data
+   * @returns Created user
+   */
+  async createGoogleUser(data: {
+    username: string;
+    email: string;
+    googleId: string;
+  }): Promise<User> {
+    return this.usersRepository.createGoogleUser(data);
+  }
+
+  /**
+   * Link Google account to an existing user
+   * @param userId - User ID
+   * @param googleId - Google account ID
+   * @returns Updated user
+   */
+  async linkGoogleAccount(userId: string, googleId: string): Promise<User> {
+    return this.usersRepository.linkGoogleAccount(userId, googleId);
+  }
 }

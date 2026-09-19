@@ -24,6 +24,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUserDto } from './dto/current-user.dto';
 import { request, type Request, type Response } from 'express';
+import { GoogleOauthGuard } from './guards/google-oauth.guard';
 
 /**
  * AuthController handles all authentication endpoints
@@ -119,9 +120,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      ...(dto.rememberMe === false
-        ? {}
-        : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
+      ...(dto.rememberMe === false ? {} : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
     });
 
     return {
@@ -316,6 +315,50 @@ export class AuthController {
       success: true,
       message: 'User data retrieved',
       data: userData,
+    };
+  }
+
+  /**
+   * GET /auth/google
+   * Start Google OAuth authentication
+   *
+   * The guard redirects the user to Google's consent screen.
+   */
+  @Get('google')
+  @UseGuards(GoogleOauthGuard)
+  async googleAuth(@Req() req) {
+    // Guard automatically redirects to Google
+  }
+
+  /**
+   * GET /auth/google/callback
+   * Complete Google OAuth authentication
+   *
+   * Creates or links the user account and sets the refresh token cookie.
+   * Response: 200 OK
+   */
+  @Get('google/callback')
+  @UseGuards(GoogleOauthGuard)
+  async googleAuthRedirect(
+    @Req() req: Request & { user: any },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.googleLogin(req.user);
+
+    res.cookie('refreshToken', result.data.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    return {
+      success: true,
+      message: result.message,
+      data: {
+        accessToken: result.data.accessToken,
+        user: result.data.user,
+      },
     };
   }
 }

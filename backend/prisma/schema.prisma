@@ -64,7 +64,8 @@ model User {
   id                    String   @id @default(uuid())
   username              String   @unique
   email                 String   @unique
-  passwordHash          String
+  passwordHash          String?
+  googleId     String? @unique
   encryptedGeminiApiKey String?
   isVerified            Boolean  @default(false)
   lastLoginAt           DateTime?

@@ -186,4 +186,36 @@ export class UsersRepository {
   private normalizeEmail(email: string): string {
     return email.trim().toLowerCase();
   }
+
+  async createGoogleUser(data: {
+    username: string;
+    email: string;
+    googleId: string;
+  }): Promise<User> {
+    return this.prisma.user.create({
+      data: {
+        username: data.username,
+        email: data.email,
+        googleId: data.googleId,
+        passwordHash: null,
+        isVerified: true,
+      },
+    });
+  }
+
+  async findByGoogleId(googleId: string): Promise<User | null> {
+    return this.prisma.user.findUnique({
+      where: { googleId },
+    });
+  }
+
+  async linkGoogleAccount(userId: string, googleId: string): Promise<User> {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        googleId,
+        isVerified: true,
+      },
+    });
+  }
 }

@@ -11,6 +11,7 @@ import { EmailModule } from '../email/email.module';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProfileModule } from 'src/profile/profile.module';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 /**
  * AuthModule handles all authentication-related operations
@@ -29,7 +30,7 @@ import { ProfileModule } from 'src/profile/profile.module';
     ProfileModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, JwtStrategy],
+  providers: [AuthService, AuthRepository, JwtStrategy, GoogleStrategy],
   exports: [AuthService, JwtStrategy],
 })
 export class AuthModule {}
