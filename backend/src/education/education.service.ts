@@ -3,9 +3,18 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateEducationDto } from './dto/create-education.dto';
 import { UpdateEducationDto } from './dto/update-education.dto';
 
+import { RedisService } from 'src/cache/redis/redis.service';
+
 @Injectable()
 export class EducationService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
 
   /**
    * Creates an education record for the authenticated user's profile.
@@ -26,12 +35,16 @@ export class EducationService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.education.create({
+    const education = await this.prisma.education.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return education;
   }
 
   /**
@@ -124,10 +137,14 @@ export class EducationService {
       throw new NotFoundException('Education not found');
     }
 
-    return this.prisma.education.update({
+    const updatedEducation = await this.prisma.education.update({
       where: { id: education.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return updatedEducation;
   }
 
   /**
@@ -160,8 +177,12 @@ export class EducationService {
       throw new NotFoundException('Education not found');
     }
 
-    return this.prisma.education.delete({
+    const deletedEducation = await this.prisma.education.delete({
       where: { id: education.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return deletedEducation;
   }
 }

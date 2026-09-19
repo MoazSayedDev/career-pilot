@@ -9,15 +9,18 @@ import { CreateProfileDto } from './dto/create-profile.dto';
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
-import type { Cache } from 'cache-manager';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class ProfileService {
   constructor(
+    private readonly redisService: RedisService,
     private readonly prisma: PrismaService,
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache,
   ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
 
   /**
    * Creates a profile for the authenticated user.
@@ -37,12 +40,16 @@ export class ProfileService {
       throw new ConflictException('Profile already exists');
     }
 
-    return this.prisma.profile.create({
+    const createdProfile = this.prisma.profile.create({
       data: {
         ...dto,
         userId,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return createdProfile;
   }
 
   /**
@@ -57,6 +64,14 @@ export class ProfileService {
    * @throws NotFoundException If the profile does not exist.
    */
   async findMe(userId: string) {
+    const cacheKey = this.getProfileCacheKey(userId);
+
+    const cachedProfile = await this.redisService.getJson(cacheKey);
+
+    if (cachedProfile) {
+      return cachedProfile;
+    }
+
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
       include: {
@@ -90,6 +105,8 @@ export class ProfileService {
       throw new NotFoundException('Profile not found');
     }
 
+    await this.redisService.setJson(cacheKey, profile, 60);
+
     return profile;
   }
 
@@ -111,12 +128,16 @@ export class ProfileService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.profile.update({
+    const updatedProfile = await this.prisma.profile.update({
       where: { userId },
       data: {
         ...dto,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return updatedProfile;
   }
 
   /**
@@ -139,8 +160,12 @@ export class ProfileService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.profile.delete({
+    const deletedProfile = this.prisma.profile.delete({
       where: { userId },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return deletedProfile;
   }
 }

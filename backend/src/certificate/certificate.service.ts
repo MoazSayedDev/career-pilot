@@ -3,9 +3,18 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateCertificateDto } from './dto/create-certificate.dto';
 import { UpdateCertificateDto } from './dto/update-certificate.dto';
 
+import { RedisService } from 'src/cache/redis/redis.service';
+
 @Injectable()
 export class CertificateService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
 
   /**
    * Creates a certificate for the authenticated user's profile.
@@ -26,12 +35,16 @@ export class CertificateService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.certificate.create({
+    const certificate = await this.prisma.certificate.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return certificate;
   }
 
   /**
@@ -128,10 +141,14 @@ export class CertificateService {
       throw new NotFoundException('Certificate not found');
     }
 
-    return this.prisma.certificate.update({
+    const updatedCertificate = await this.prisma.certificate.update({
       where: { id: certificate.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return updatedCertificate;
   }
 
   /**
@@ -164,8 +181,12 @@ export class CertificateService {
       throw new NotFoundException('Certificate not found');
     }
 
-    return this.prisma.certificate.delete({
+    const deletedCertificate = await this.prisma.certificate.delete({
       where: { id: certificate.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+
+    return deletedCertificate;
   }
 }
