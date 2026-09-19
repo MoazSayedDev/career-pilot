@@ -143,7 +143,9 @@
       "noAccount": "Don't have an account?",
       "createOne": "Create one",
       "invalidCredentials": "Invalid email or password.",
-      "genericError": "Something went wrong. Please try again."
+      "genericError": "Something went wrong. Please try again.",
+      "emailNotVerified": "Your email is not verified. Please verify it first.",
+      "accountLocked": "Account temporarily locked after repeated failed sign-ins. Try again shortly."
     },
     "signUp": {
       "title": "Create your account",
@@ -212,6 +214,13 @@
       "missingSession": "Missing reset session. Please request a new password reset.",
       "failed": "Unable to reset your password.",
       "tryAgain": "Request a new link"
+    },
+    "google": {
+      "popupBlocked": "Please allow pop-ups for this site to sign in with Google.",
+      "timeout": "Google sign-in timed out. Please try again.",
+      "cancelled": "Google sign-in was cancelled.",
+      "failed": "Google sign-in failed. Please try again.",
+      "verifying": "Completing sign-in…"
     }
   },
   "dashboard": {
@@ -572,7 +581,9 @@
     "serverError": "Something went wrong on our side. Please try again.",
     "networkError": "Network error. Please check your connection and try again.",
     "duplicateRecord": "This item already exists.",
-    "aiUnavailable": "The AI service is currently unavailable. Please try again later."
+    "aiUnavailable": "The AI service is currently unavailable. Please try again later.",
+    "cvLimitReached": "You've reached the monthly CV generation limit. Try again next month.",
+    "jdLimitReached": "You've reached the monthly limit for AI-generated CVs. Try again next month, or add your own Gemini API key."
   },
   "validation": {
     "emailInvalid": "Please enter a valid email address.",
@@ -701,6 +712,40 @@
       "security": "Security reports"
     }
   },
-  "auth.signIn.emailNotVerified": "Your email is not verified. Please verify it first.",
-  "auth.signIn.accountLocked": "Account temporarily locked after repeated failed sign-ins. Try again shortly."
+  "gemini": {
+    "title": "Gemini API Key",
+    "description": "Add your personal Gemini API key to bypass the monthly job description limit.",
+    "disclaimer": "Using a personal key bypasses the job description limit only. Other system limits still apply. Review the provider's terms and usage limits before use.",
+    "configured": "API key configured",
+    "notConfigured": "No API key configured",
+    "add": "Add API key",
+    "update": "Update key",
+    "remove": "Remove key",
+    "removing": "Removing…",
+    "placeholder": "Paste your Gemini API key",
+    "save": "Save key",
+    "saving": "Saving…",
+    "saved": "API key saved successfully.",
+    "removed": "API key removed.",
+    "saveFailed": "Failed to save API key.",
+    "removeFailed": "Failed to remove API key.",
+    "removeConfirm": "Are you sure you want to remove your Gemini API key?",
+    "getKeyHintPrefix": "Don't have a key? Get one from ",
+    "getKeyHintLink": "Google AI Studio",
+    "getKeyHintSuffix": ".",
+    "securityHint": "Keep your API key private and never share it publicly."
+  },
+  "resumeByJd": {
+    "title": "Generate CV by Job Description",
+    "subtitle": "Paste a job description and we'll build a tailored CV from your profile.",
+    "label": "Job Description",
+    "placeholder": "Paste the full job description here…",
+    "tooShort": "The job description is too short. Paste the full posting.",
+    "generate": "Generate CV",
+    "generating": "Generating your CV…",
+    "failed": "Failed to generate CV. Please try again.",
+    "limitReached": "Monthly limit reached",
+    "back": "Back to resume",
+    "openFullPage": "Open full page"
+  }
 }
