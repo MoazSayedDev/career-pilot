@@ -22,6 +22,10 @@ export class ProfileService {
     return `career-pilot:profile:${userId}`;
   }
 
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
+
   /**
    * Creates a profile for the authenticated user.
    *
@@ -48,6 +52,7 @@ export class ProfileService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return createdProfile;
   }
@@ -136,6 +141,7 @@ export class ProfileService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return updatedProfile;
   }
@@ -165,6 +171,7 @@ export class ProfileService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return deletedProfile;
   }

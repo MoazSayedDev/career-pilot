@@ -15,6 +15,10 @@ export class ExperienceService {
     return `career-pilot:profile:${userId}`;
   }
 
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
+
   /**
    * Creates a work experience record for the authenticated user's profile.
    *
@@ -42,6 +46,7 @@ export class ExperienceService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return experience;
   }
@@ -145,6 +150,7 @@ export class ExperienceService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return updatedExperience;
   }
@@ -184,6 +190,7 @@ export class ExperienceService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return deletedExperience;
   }

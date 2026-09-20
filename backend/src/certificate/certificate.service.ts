@@ -16,6 +16,10 @@ export class CertificateService {
     return `career-pilot:profile:${userId}`;
   }
 
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
+
   /**
    * Creates a certificate for the authenticated user's profile.
    *
@@ -43,6 +47,7 @@ export class CertificateService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return certificate;
   }
@@ -147,6 +152,7 @@ export class CertificateService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return updatedCertificate;
   }
@@ -186,6 +192,7 @@ export class CertificateService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return deletedCertificate;
   }

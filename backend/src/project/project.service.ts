@@ -10,8 +10,13 @@ export class ProjectService {
     private readonly prisma: PrismaService,
     private readonly redisService: RedisService,
   ) {}
+
   private getProfileCacheKey(userId: string): string {
     return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
   }
 
   /**
@@ -41,6 +46,7 @@ export class ProjectService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return project;
   }
@@ -137,6 +143,7 @@ export class ProjectService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return updatedProject;
   }
@@ -176,6 +183,7 @@ export class ProjectService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return deletedProject;
   }

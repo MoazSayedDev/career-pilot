@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { ResumeTemplate } from '@prisma/client';
+import { Resume, ResumeTemplate } from '@prisma/client';
 
 import { AiService } from '../ai/ai.service';
 import { GeminiApiKeyService } from '../gemini/gemini-api-key.service';
@@ -11,6 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { UsageService } from '../usage/usage.service';
 import { CreateResumeDto } from './dto/create-resume.dto';
 import { UpdateResumeDto } from './dto/update-resume.dto';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class ResumeService {
@@ -19,6 +20,7 @@ export class ResumeService {
     private readonly geminiApiKeyService: GeminiApiKeyService,
     private readonly prisma: PrismaService,
     private readonly usageService: UsageService,
+    private readonly redisService: RedisService,
   ) {}
 
   /**
@@ -44,12 +46,7 @@ export class ResumeService {
    * @throws {BadRequestException} When one or more selected related records
    * do not belong to the user's profile.
    */
-  async create(
-    userId: string,
-    dto: CreateResumeDto,
-    consumeCv = true,
-  ) {
-    // Check if profile exists
+  async create(userId: string, dto: CreateResumeDto, consumeCv = true) {
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
       select: {
@@ -63,7 +60,12 @@ export class ResumeService {
     }
 
     if (consumeCv) {
-      await this.usageService.consumeCv(userId);
+      const hasPersonalGeminiKey =
+        await this.geminiApiKeyService.hasConfiguredGeminiKey(userId);
+
+      if (!hasPersonalGeminiKey) {
+        await this.usageService.consumeCv(userId);
+      }
     }
 
     // Normalize optional relation IDs
@@ -74,7 +76,7 @@ export class ResumeService {
     const educationIds = dto.educationIds ?? [];
     const languageIds = dto.languageIds ?? [];
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = this.prisma.$transaction(async (tx) => {
       // Validate Skills
       if (skillIds.length) {
         const skills = await tx.skill.findMany({
@@ -268,6 +270,10 @@ export class ResumeService {
         id: resume.id,
       };
     });
+
+    await this.redisService.delete(`resumes:${userId}`);
+
+    return result;
   }
 
   /**
@@ -347,6 +353,14 @@ export class ResumeService {
    * @throws {NotFoundException} When the user's profile does not exist.
    */
   async findAll(userId: string) {
+    const cacheKey = `resumes:${userId}`;
+
+    const cachedResumes = await this.redisService.getJson(cacheKey);
+
+    if (cachedResumes) {
+      return cachedResumes;
+    }
+
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
       select: { id: true },
@@ -356,7 +370,7 @@ export class ResumeService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.resume.findMany({
+    const resumes = await this.prisma.resume.findMany({
       where: {
         profileId: profile.id,
       },
@@ -364,6 +378,10 @@ export class ResumeService {
         updatedAt: 'desc',
       },
     });
+
+    await this.redisService.setJson(cacheKey, resumes, 60);
+
+    return resumes;
   }
 
   /**
@@ -385,6 +403,14 @@ export class ResumeService {
    * belong to the authenticated user.
    */
   async findOne(userId: string, resumeId: string) {
+    const cacheKey = `resume:${userId}:${resumeId}`;
+
+    const cachedResume = await this.redisService.getJson<Resume>(cacheKey);
+
+    if (cachedResume) {
+      return cachedResume;
+    }
+
     const profile = await this.prisma.profile.findUnique({
       where: { userId },
       select: { id: true },
@@ -436,6 +462,8 @@ export class ResumeService {
     if (!resume) {
       throw new NotFoundException('Resume not found');
     }
+
+    await this.redisService.setJson(cacheKey, resume, 180);
 
     return resume;
   }
@@ -494,7 +522,7 @@ export class ResumeService {
     const educationIds = dto.educationIds ?? [];
     const languageIds = dto.languageIds ?? [];
 
-    return this.prisma.$transaction(async (tx) => {
+    const result = this.prisma.$transaction(async (tx) => {
       // Validate Skills
       const skills = await tx.skill.findMany({
         where: {
@@ -744,6 +772,10 @@ export class ResumeService {
         },
       });
     });
+    await this.redisService.delete(`resume:${userId}:${resumeId}`);
+    await this.redisService.delete(`resumes:${userId}`);
+
+    return result;
   }
 
   /**
@@ -776,10 +808,15 @@ export class ResumeService {
       throw new NotFoundException('Resume not found');
     }
 
-    return this.prisma.resume.delete({
+    const deletedResume = await this.prisma.resume.delete({
       where: {
         id: resume.id,
       },
     });
+
+    await this.redisService.delete(`resume:${userId}:${resumeId}`);
+    await this.redisService.delete(`resumes:${userId}`);
+
+    return deletedResume;
   }
 }

@@ -15,6 +15,10 @@ export class SkillService {
     return `career-pilot:profile:${userId}`;
   }
 
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
+
   /**
    * Creates a new skill for the authenticated user's profile.
    *
@@ -42,6 +46,7 @@ export class SkillService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return skill;
   }
@@ -136,6 +141,7 @@ export class SkillService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return updatedSkill;
   }
@@ -174,6 +180,7 @@ export class SkillService {
     });
 
     await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
 
     return deletedSkill;
   }
