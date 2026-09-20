@@ -9,7 +9,6 @@ export class RedisService implements OnModuleDestroy {
   ) {}
 
   async set(key: string, value: string, ttl?: number): Promise<'OK' | null> {
-    console.log('set ');
     if (ttl) {
       return this.redis.set(key, value, 'EX', ttl);
     }
@@ -18,28 +17,23 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async get(key: string): Promise<string | null> {
-    console.log('get ');
     return this.redis.get(key);
   }
 
   async delete(key: string): Promise<number> {
-    console.log('del');
     return this.redis.del(key);
   }
 
   async exists(key: string): Promise<boolean> {
-    console.log('exist');
     const result = await this.redis.exists(key);
     return result === 1;
   }
 
   async setJson<T>(key: string, value: T, ttl?: number): Promise<'OK' | null> {
-    console.log('set json');
     return this.set(key, JSON.stringify(value), ttl);
   }
 
   async getJson<T>(key: string): Promise<T | null> {
-    console.log('get json ');
     const value = await this.get(key);
 
     if (!value) {
@@ -50,7 +44,6 @@ export class RedisService implements OnModuleDestroy {
   }
 
   async deleteByPattern(pattern: string): Promise<void> {
-    console.log('del pattern');
     let cursor = '0';
 
     do {
