@@ -1,6 +1,6 @@
 services:
   backend:
-    image: moazsayed/career-pilot-backend:latest
+    image: moazsayed/career-pilot-backend:tagname
 
     env_file:
       - .env
