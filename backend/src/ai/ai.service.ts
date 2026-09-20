@@ -120,9 +120,7 @@ export class AiService {
    * @param userId - The ID of the authenticated user.
    * @returns An object indicating that the key is not configured.
    */
-  async clearGeminiApiKey(
-    userId: string,
-  ): Promise<{ configured: boolean }> {
+  async clearGeminiApiKey(userId: string): Promise<{ configured: boolean }> {
     await this.geminiApiKeyService.clearUserGeminiApiKey(userId);
     return { configured: false };
   }
@@ -137,8 +135,7 @@ export class AiService {
     userId: string,
   ): Promise<{ configured: boolean }> {
     return {
-      configured:
-        await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
+      configured: await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
     };
   }
 }

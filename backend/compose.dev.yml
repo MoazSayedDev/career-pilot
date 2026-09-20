@@ -1,13 +1,13 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
 
     command: sh -c "npx prisma migrate deploy && npm run start:dev"
 
     env_file:
-      - ./backend/.env
+      - .env
 
     environment:
       NODE_ENV: development
@@ -20,7 +20,7 @@ services:
       - '8000:8000'
 
     volumes:
-      - ./backend:/app
+      - .:/app
       - backend_node_modules:/app/node_modules
 
     depends_on:
