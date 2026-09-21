@@ -25,6 +25,50 @@ export class AiService {
       this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
   }
 
+  private async generateContentWithRetry(ai: GoogleGenAI, prompt: string) {
+    console.log('optimize----------------------generate ');
+    const maxAttempts = 5;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        console.log('optimize----------------------in try ');
+        return await ai.models.generateContent({
+          model: this.model,
+          contents: prompt,
+        });
+      } catch (error) {
+        const status = (error as { status?: number })?.status;
+
+        const retryable =
+          status === 429 ||
+          status === 500 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504;
+
+        if (!retryable || attempt === maxAttempts) {
+          throw error;
+        }
+
+        const delay = 1000 * 2 ** (attempt - 1);
+
+        this.logger.warn(
+          `Gemini request failed with ${status}. ` +
+            `Retry ${attempt + 1}/${maxAttempts} in ${delay}ms`,
+        );
+        console.log('--------retry');
+
+        await this.sleep(delay);
+      }
+    }
+
+    throw new Error('Gemini request failed after retries');
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   private async getClientForUser(userId: string): Promise<GoogleGenAI> {
     const apiKey =
       await this.geminiApiKeyService.getEffectiveGeminiApiKey(userId);
@@ -49,6 +93,7 @@ export class AiService {
    * returns an empty response, or cannot process the request.
    */
   async optimizeResume(userId: string, jobDescription: string) {
+    console.log('by job desc in optimize');
     const myProfile = await this.profileServices.findMe(userId);
     if (!myProfile) {
       throw new NotFoundException('Profile not found');
@@ -61,11 +106,8 @@ export class AiService {
 
     try {
       const ai = await this.getClientForUser(userId);
-      const response = await ai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-      });
-
+      console.log('optimize----------------------');
+      const response = await this.generateContentWithRetry(ai, prompt);
       const text = response.text;
 
       if (!text) {
