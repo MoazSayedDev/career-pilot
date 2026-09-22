@@ -542,6 +542,3 @@ This repository contains the CareerPilot backend, including authentication,
 profile and career-data APIs, resume management, Gemini integration, PDF
 generation, Redis support, and PostgreSQL persistence.
 
-## License
-
-No project license is declared in `package.json` or the repository files.
