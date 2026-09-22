@@ -9,6 +9,13 @@ resume CRUD, Gemini-powered resume optimization, and PDF generation.
 The service exposes authenticated APIs backed by PostgreSQL and Prisma. Redis
 is available for application caching and direct key/value operations.
 
+
+## Resume Preview
+
+![CareerPilot Resume Preview - Page 1](./docs/images/resume-preview-1.png)
+
+![CareerPilot Resume Preview - Page 2](./docs/images/resume-preview-2.png)
+
 ## Features
 
 - Registration, email verification, and password reset
