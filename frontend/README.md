@@ -14,8 +14,16 @@ Copy `.env.example` to `.env` and fill in the values:
 
 | Variable | Required | Used by | Description |
 | --- | --- | --- | --- |
-| `NEXT_PUBLIC_API_URL` | yes (prod) | `lib/axios.ts` | Base URL of the backend API. **Public value** — Next.js inlines it into client JS; never put secrets in it. |
-| `API_PROXY_TARGET` | dev only | server-side rewrites | Dev proxy target for `/api/*`. Never bundled into client code. |
+| `NEXT_PUBLIC_API_URL` | yes | `lib/axios.ts` | Base URL for API calls. `/api` (Mode A) or the backend origin (Mode B). **Public value** — Next.js inlines it into client JS; never put secrets in it. |
+| `API_PROXY_TARGET` | Mode A | `next.config.ts` rewrites | Backend origin the Next server forwards `/api/*` to. Server-side only; never bundled into client code. |
+
+**Mode A — same-origin API gateway (recommended):** set `NEXT_PUBLIC_API_URL=/api` and
+`API_PROXY_TARGET=https://backend-host`. Cookies stay first-party and CORS is
+eliminated — required whenever the refresh cookie is `SameSite=strict`.
+**Mode B — direct cross-origin:** set only `NEXT_PUBLIC_API_URL`; the backend must
+allowlist the frontend origin in `CORS_ORIGIN` and issue the refresh cookie with
+`SameSite=None; Secure`, otherwise login succeeds but the session is never
+persisted (silent auth failure).
 
 `.env*` files are git-ignored; secrets stay out of the repository.
 

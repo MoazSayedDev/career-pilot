@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import ResumeByJobDescriptionPage from "@/pages/app/ResumeByJobDescriptionPage";
+import ResumeByJobDescriptionPage from "@/views/app/ResumeByJobDescriptionPage";
 
 export default function ResumeByJobDescriptionRoute() {
   return (
