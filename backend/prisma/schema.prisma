@@ -238,7 +238,7 @@ model Language {
 model Resume {
   id String @id @default(uuid())
   title String
-  template ResumeTemplate
+  template ResumeTemplate  @default(CLASSIC)
   language CvLanguage @default(EN)
   jobDescription String?
   generatedSummary String?

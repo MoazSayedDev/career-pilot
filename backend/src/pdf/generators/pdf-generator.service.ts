@@ -94,30 +94,54 @@ export interface CvData {
   certificates?: CvCertificate[];
 }
 
+/**
+ * A single entry inside a section (one job, one project, ...).
+ *
+ * head -> the title row(s). Always kept together with the first body node.
+ * body -> description lines etc. Only the FIRST node is glued to the head;
+ *         the rest can flow onto the next page.
+ */
+interface ItemBlock {
+  head: Content[];
+  body: Content[];
+}
+
+/* -------------------------------------------------------------------------- */
+/* Look & feel constants (the only place you need to touch to tweak the style) */
+/* -------------------------------------------------------------------------- */
+
+const A4_WIDTH = 595.28;
+
+/** Item titles (job, project, degree...) are this much bigger than body text */
+const ITEM_TITLE_EXTRA = 1;
+
+const DOT_COLOR = '#999999';
+const SEPARATOR_COLOR = '#777777';
+const SECTION_RULE_COLOR = '#D9D9D9';
+
+/**
+ * true  -> Arabic (Native)  •  English (Professional)   (one line)
+ * false -> one language per line
+ */
+const LANGUAGES_INLINE = true;
+
+/** Matches a leading bullet marker such as "• ", "- ", "– " or "* " */
+const BULLET_PATTERN = /^[•\-–*·]\s+/;
+
+/* -------------------------------------------------------------------------- */
+/* Helpers                                                                    */
+/* -------------------------------------------------------------------------- */
+
 function linkLabel(type?: string): string {
   if (!type) return 'Website';
 
   const normalized = type.toLowerCase();
 
-  if (normalized.includes('github')) {
-    return 'GitHub';
-  }
-
-  if (normalized.includes('linkedin')) {
-    return 'LinkedIn';
-  }
-
-  if (normalized.includes('portfolio')) {
-    return 'Portfolio';
-  }
-
-  if (normalized.includes('live')) {
-    return 'Live Demo';
-  }
-
-  if (normalized.includes('website')) {
-    return 'Website';
-  }
+  if (normalized.includes('github')) return 'GitHub';
+  if (normalized.includes('linkedin')) return 'LinkedIn';
+  if (normalized.includes('portfolio')) return 'Portfolio';
+  if (normalized.includes('live')) return 'Live Demo';
+  if (normalized.includes('website')) return 'Website';
 
   return type;
 }
@@ -136,7 +160,7 @@ function createLinkText(
     if (index > 0) {
       parts.push({
         text: '  •  ',
-        color: '#999999',
+        color: DOT_COLOR,
       });
     }
 
@@ -152,6 +176,80 @@ function createLinkText(
     text: parts,
   };
 }
+
+/**
+ * Works out the printable width from pageMargins
+ * (number | [horizontal, vertical] | [left, top, right, bottom]).
+ */
+function getContentWidth(margins: unknown): number {
+  if (typeof margins === 'number') {
+    return A4_WIDTH - margins * 2;
+  }
+
+  if (Array.isArray(margins)) {
+    if (margins.length === 2) {
+      return A4_WIDTH - Number(margins[0]) * 2;
+    }
+
+    if (margins.length === 4) {
+      return A4_WIDTH - Number(margins[0]) - Number(margins[2]);
+    }
+  }
+
+  return A4_WIDTH - 80;
+}
+
+function dateRange(start?: string, end?: string, ongoing?: boolean): string {
+  return [start, end || (ongoing ? 'Present' : '')].filter(Boolean).join(' - ');
+}
+
+/**
+ * Splits a multi-line description into separate paragraphs so that
+ * long descriptions can break between lines instead of jumping
+ * to the next page as one huge block.
+ */
+function splitParagraphs(text?: string): string[] {
+  if (!text) return [];
+
+  return text
+    .split(/\r?\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+/**
+ * "NATIVE" -> "Native", "PROFESSIONAL_WORKING" -> "Professional working"
+ */
+function formatLevel(level?: string): string {
+  const cleaned = (level || '').replace(/[_-]+/g, ' ').trim().toLowerCase();
+
+  return cleaned ? cleaned.charAt(0).toUpperCase() + cleaned.slice(1) : '';
+}
+
+/**
+ * "ENGLISH" / "english" -> "English"
+ */
+function formatLanguageName(name?: string): string {
+  return (name || '')
+    .trim()
+    .toLowerCase()
+    .replace(
+      /(^|[\s-])(\p{L})/gu,
+      (_, sep: string, ch: string) => sep + ch.toUpperCase(),
+    );
+}
+
+function appendPart(parts: Content[], part: Content, separator: Content): void {
+  if (parts.length) {
+    parts.push(separator);
+  }
+
+  parts.push(part);
+}
+
+/* -------------------------------------------------------------------------- */
+/* Generator                                                                  */
+/* -------------------------------------------------------------------------- */
 
 export class PdfGenerator {
   static async generatePdf(
@@ -170,60 +268,200 @@ export class PdfGenerator {
      */
     const preset = getPreset(options.templateId);
 
-    /*
-     * ----------------------------------------------------
-     * SECTION HEADER
-     * ----------------------------------------------------
+    const contentWidth = getContentWidth(preset.pageMargins);
+
+    const dot: Content = { text: '  •  ', color: DOT_COLOR };
+    const dash: Content = { text: ' - ', color: SEPARATOR_COLOR };
+    const pipe: Content = { text: ' | ', color: SEPARATOR_COLOR };
+
+    /* ------------------------------------------------------------------ */
+    /* Small builders                                                     */
+    /* ------------------------------------------------------------------ */
+
+    const sectionHeader = (label: string): Content => ({
+      stack: [
+        {
+          text: label,
+          font: preset.family,
+          fontSize: preset.sectionSize,
+          bold: true,
+          color: preset.accent,
+          characterSpacing: 1,
+          margin: [0, preset.sectionGap, 0, 3],
+        },
+        {
+          canvas: [
+            {
+              type: 'line',
+              x1: 0,
+              y1: 0,
+              x2: contentWidth,
+              y2: 0,
+              lineWidth: 0.5,
+              lineColor: SECTION_RULE_COLOR,
+            },
+          ],
+          margin: [0, 0, 0, 6],
+        },
+      ],
+    });
+
+    const bodyText = (
+      text: string | Content[],
+      extra: Record<string, unknown> = {},
+    ): Content =>
+      ({
+        text,
+        font: preset.family,
+        fontSize: preset.bodySize,
+        color: preset.textColor,
+        lineHeight: preset.lineHeight,
+        margin: [0, 2, 0, 0],
+        ...extra,
+      }) as Content;
+
+    const smallText = (
+      text: string,
+      color: string,
+      extra: Record<string, unknown> = {},
+    ): Content =>
+      ({
+        text,
+        font: preset.family,
+        fontSize: preset.smallSize,
+        color,
+        margin: [0, 2, 0, 0],
+        ...extra,
+      }) as Content;
+
+    const rightText = (text: string, marginTop = 0): Content =>
+      ({
+        text,
+        font: preset.family,
+        fontSize: preset.smallSize,
+        color: preset.mutedColor,
+        alignment: 'right',
+        noWrap: true,
+        margin: [0, marginTop, 0, 0],
+      }) as Content;
+
+    /**
+     * Title on the left, date / meta on the right.
      */
+    const titleRow = (left: Content[], right: Content[] = []): Content => {
+      const columns: Content[] = [
+        {
+          width: '*',
+          text: left,
+          font: preset.family,
+          fontSize: preset.bodySize + ITEM_TITLE_EXTRA,
+          color: preset.textColor,
+        } as Content,
+      ];
 
-    const sectionHeader = (label: string): Content => {
+      if (right.length) {
+        columns.push({
+          width: 'auto',
+          stack: right,
+        } as Content);
+      }
+
       return {
-        stack: [
-          {
-            text: label,
-            font: preset.family,
-            fontSize: preset.sectionSize,
-            bold: true,
-            color: preset.mutedColor,
-            margin: [0, preset.sectionGap, 0, 0],
-          },
-
-          {
-            canvas: [
-              {
-                type: 'line',
-                x1: 0,
-                y1: 0,
-                x2: 100,
-                y2: 0,
-                lineWidth: 0.5,
-                lineColor: preset.accent,
-              },
-            ],
-            margin: [0, 0, 0, 6],
-          },
-        ],
+        columns,
+        columnGap: 10,
       };
     };
 
-    /*
-     * ----------------------------------------------------
-     * HEADER
-     * ----------------------------------------------------
+    /**
+     * Lines that start with a bullet character ("•", "-", "–", "*") are
+     * rendered as real list items so wrapped lines get a hanging indent.
      */
+    const descriptionNodes = (text?: string): Content[] =>
+      splitParagraphs(text).map((paragraph) => {
+        const match = paragraph.match(BULLET_PATTERN);
+
+        if (!match) {
+          return bodyText(paragraph);
+        }
+
+        return {
+          ul: [
+            {
+              text: paragraph.slice(match[0].length),
+              font: preset.family,
+              fontSize: preset.bodySize,
+              color: preset.textColor,
+              lineHeight: preset.lineHeight,
+            },
+          ],
+          markerColor: preset.mutedColor,
+          margin: [0, 2, 0, 0],
+        } as Content;
+      });
+
+    /* ------------------------------------------------------------------ */
+    /* Page-break helpers                                                 */
+    /* ------------------------------------------------------------------ */
+
+    const content: Content[] = [];
+
+    /**
+     * Adds a list-like section (experience, projects, ...).
+     *
+     * Page-break rules:
+     *  1. The section title is glued to the FIRST item, so a title is never
+     *     left alone at the bottom of a page.
+     *  2. Each item's title row is glued to its first body line, so a job
+     *     title is never separated from its description.
+     *  3. The remaining lines of a long description CAN flow to the next
+     *     page (no big empty gaps at the bottom of a page).
+     */
+    const addSection = (label: string, blocks: ItemBlock[]): void => {
+      blocks.forEach((block, index) => {
+        const [firstBody, ...restBody] = block.body;
+
+        content.push({
+          unbreakable: true,
+          stack: [
+            ...(index === 0 ? [sectionHeader(label)] : []),
+            ...block.head,
+            ...(firstBody ? [firstBody] : []),
+          ],
+          margin: [0, 0, 0, restBody.length ? 0 : preset.itemGap],
+        });
+
+        if (restBody.length) {
+          content.push({
+            stack: restBody,
+            margin: [0, 0, 0, preset.itemGap],
+          });
+        }
+      });
+    };
+
+    /**
+     * Adds a short section (summary, skills, languages) as one block
+     * together with its title.
+     */
+    const addShortSection = (label: string, nodes: Content[]): void => {
+      content.push({
+        unbreakable: true,
+        stack: [sectionHeader(label), ...nodes],
+        margin: [0, 0, 0, preset.itemGap],
+      });
+    };
+
+    /* ------------------------------------------------------------------ */
+    /* HEADER                                                             */
+    /* ------------------------------------------------------------------ */
 
     const headerStack: Content[] = [
       {
         text: cvData.fullName?.toUpperCase() || '',
-
         font: preset.family,
-
         fontSize: preset.nameSize,
-
         bold: true,
-
         color: preset.textColor,
-
         alignment: 'center',
       },
     ];
@@ -231,15 +469,10 @@ export class PdfGenerator {
     if (cvData.title) {
       headerStack.push({
         text: cvData.title,
-
         font: preset.family,
-
         fontSize: preset.titleSize,
-
         color: preset.mutedColor,
-
         alignment: 'center',
-
         margin: [0, 2, 0, 0],
       });
     }
@@ -250,57 +483,39 @@ export class PdfGenerator {
     const contactParts: Content[] = [];
 
     if (cvData.email) {
-      contactParts.push({
-        text: cvData.email,
-
-        link: `mailto:${cvData.email}`,
-
-        color: preset.mutedColor,
-      });
+      appendPart(
+        contactParts,
+        {
+          text: cvData.email,
+          link: `mailto:${cvData.email}`,
+          color: preset.mutedColor,
+        },
+        dot,
+      );
     }
 
     if (cvData.phone) {
-      if (contactParts.length) {
-        contactParts.push({
-          text: '  •  ',
-
-          color: '#999999',
-        });
-      }
-
-      contactParts.push({
-        text: cvData.phone,
-
-        color: preset.mutedColor,
-      });
+      appendPart(
+        contactParts,
+        { text: cvData.phone, color: preset.mutedColor },
+        dot,
+      );
     }
 
     if (cvData.location) {
-      if (contactParts.length) {
-        contactParts.push({
-          text: '  •  ',
-
-          color: '#999999',
-        });
-      }
-
-      contactParts.push({
-        text: cvData.location,
-
-        color: preset.mutedColor,
-      });
+      appendPart(
+        contactParts,
+        { text: cvData.location, color: preset.mutedColor },
+        dot,
+      );
     }
 
     if (contactParts.length) {
       headerStack.push({
         text: contactParts,
-
         font: preset.family,
-
         fontSize: preset.smallSize,
-
         alignment: 'center',
-
         margin: [0, 4, 0, 0],
       });
     }
@@ -313,19 +528,15 @@ export class PdfGenerator {
     if (linksContent) {
       headerStack.push({
         stack: [linksContent],
-
         font: preset.family,
-
         fontSize: preset.smallSize,
-
         alignment: 'center',
-
         margin: [0, 2, 0, 4],
       } as Content);
     }
 
     /*
-     * Blue line under header
+     * Accent line under the header
      */
     headerStack.push({
       canvas: [
@@ -333,7 +544,7 @@ export class PdfGenerator {
           type: 'line',
           x1: 0,
           y1: 0,
-          x2: 515.28,
+          x2: contentWidth,
           y2: 0,
           lineWidth: 1,
           lineColor: preset.accent,
@@ -342,656 +553,267 @@ export class PdfGenerator {
       margin: [0, 6, 0, 4],
     });
 
-    /*
-     * No line under header.
-     */
+    content.push(...headerStack);
 
-    const content: Content[] = [...headerStack];
-
-    /*
-     * ----------------------------------------------------
-     * SUMMARY
-     * ----------------------------------------------------
-     */
+    /* ------------------------------------------------------------------ */
+    /* SUMMARY                                                            */
+    /* ------------------------------------------------------------------ */
 
     if (cvData.summary?.trim()) {
-      content.push(sectionHeader('SUMMARY'));
-
-      content.push({
-        text: cvData.summary,
-
-        font: preset.family,
-
-        fontSize: preset.bodySize,
-
-        color: preset.textColor,
-
-        lineHeight: preset.lineHeight,
-
-        margin: [0, 0, 0, 2],
-      });
+      addShortSection('SUMMARY', [
+        bodyText(cvData.summary, { margin: [0, 0, 0, 2] }),
+      ]);
     }
 
-    /*
-     * ----------------------------------------------------
-     * EXPERIENCE
-     * ----------------------------------------------------
-     */
+    /* ------------------------------------------------------------------ */
+    /* EXPERIENCE                                                         */
+    /* ------------------------------------------------------------------ */
 
     if (cvData.experiences?.length) {
-      content.push(sectionHeader('EXPERIENCE'));
-
-      for (const exp of cvData.experiences) {
-        const dateText = [exp.startDate, exp.endDate]
-          .filter(Boolean)
-          .join(' - ');
-
+      const blocks: ItemBlock[] = cvData.experiences.map((exp) => {
         /*
          * Full Stack Developer - Tech Solutions | Cairo
          */
         const titleParts: Content[] = [];
 
         if (exp.jobTitle) {
-          titleParts.push({
-            text: exp.jobTitle,
-
-            bold: true,
-          });
+          appendPart(titleParts, { text: exp.jobTitle, bold: true }, dash);
         }
 
         if (exp.companyName) {
-          if (titleParts.length) {
-            titleParts.push({
-              text: ' - ',
-
-              color: '#777777',
-            });
-          }
-
-          titleParts.push({
-            text: exp.companyName,
-          });
+          appendPart(titleParts, { text: exp.companyName }, dash);
         }
 
         if (exp.location) {
-          if (titleParts.length) {
-            titleParts.push({
-              text: ' | ',
-
-              color: '#777777',
-            });
-          }
-
-          titleParts.push({
-            text: exp.location,
-
-            color: preset.mutedColor,
-          });
+          appendPart(
+            titleParts,
+            { text: exp.location, color: preset.mutedColor },
+            pipe,
+          );
         }
 
         /*
-         * Complete experience item
+         * Jan 2024 - Present
+         * Full Time
          */
-        const item: Content = {
-          unbreakable: true,
+        const dateText = dateRange(
+          exp.startDate,
+          exp.endDate,
+          exp.currentlyWorking,
+        );
 
-          stack: [
-            /*
-             * ---------------------------------------------
-             * TOP ROW
-             *
-             * LEFT:
-             * Full Stack Developer - Tech Solutions | Cairo
-             *
-             * RIGHT:
-             * Jan 2024 - Present
-             * Full Time
-             * ---------------------------------------------
-             */
-            {
-              columns: [
-                /*
-                 * LEFT SIDE
-                 */
-                {
-                  width: '*',
+        const right: Content[] = [];
 
-                  text: titleParts,
+        if (dateText) {
+          right.push(rightText(dateText));
+        }
 
-                  font: preset.family,
+        if (exp.employmentType) {
+          right.push(rightText(exp.employmentType, 1));
+        }
 
-                  fontSize: 11.5,
-
-                  color: preset.textColor,
-                },
-
-                /*
-                 * RIGHT SIDE
-                 */
-                {
-                  width: 'auto',
-
-                  stack: [
-                    /*
-                     * Date
-                     */
-                    {
-                      text: dateText,
-
-                      font: preset.family,
-
-                      fontSize: preset.smallSize,
-
-                      color: preset.mutedColor,
-
-                      alignment: 'right',
-
-                      noWrap: true,
-                    },
-
-                    /*
-                     * Employment type
-                     */
-                    ...(exp.employmentType
-                      ? [
-                          {
-                            text: exp.employmentType,
-
-                            font: preset.family,
-
-                            fontSize: preset.smallSize,
-
-                            color: preset.mutedColor,
-
-                            alignment: 'right',
-
-                            noWrap: true,
-
-                            margin: [0, 1, 0, 0],
-                          } as Content,
-                        ]
-                      : []),
-                  ],
-                },
-              ],
-
-              columnGap: 10,
-            },
-
-            /*
-             * ---------------------------------------------
-             * DESCRIPTION
-             * ---------------------------------------------
-             */
-            ...(exp.description
-              ? [
-                  {
-                    text: exp.description,
-
-                    font: preset.family,
-
-                    fontSize: preset.bodySize,
-
-                    color: preset.textColor,
-
-                    lineHeight: preset.lineHeight,
-
-                    margin: [0, 3, 0, 0],
-                  } as Content,
-                ]
-              : []),
-          ],
-
-          /*
-           * Space between experiences
-           */
-          margin: [0, 0, 0, preset.itemGap],
+        return {
+          head: [titleRow(titleParts, right)],
+          body: descriptionNodes(exp.description),
         };
+      });
 
-        content.push(item);
-      }
+      addSection('EXPERIENCE', blocks);
     }
 
-    /*
-     * ----------------------------------------------------
-     * PROJECTS
-     * ----------------------------------------------------
-     */
+    /* ------------------------------------------------------------------ */
+    /* PROJECTS                                                           */
+    /* ------------------------------------------------------------------ */
 
     if (cvData.projects?.length) {
-      content.push(sectionHeader('PROJECTS'));
-
-      for (const project of cvData.projects) {
-        const dateText = [project.startDate, project.endDate]
-          .filter(Boolean)
-          .join(' - ');
-
+      const blocks: ItemBlock[] = cvData.projects.map((project) => {
         const projectLinks = createLinkText(project.links, preset.accent);
 
-        const projectTitleParts: Content[] = [
-          {
-            text: project.title || '',
-
-            bold: true,
-          },
+        const titleParts: Content[] = [
+          { text: project.title || '', bold: true },
         ];
 
         if (projectLinks) {
-          projectTitleParts.push({
-            text: '  •  ',
-
-            color: '#999999',
-          });
-
-          projectTitleParts.push(projectLinks as any);
+          titleParts.push(dot);
+          titleParts.push(projectLinks);
         }
 
-        const projectItem: Content = {
-          unbreakable: true,
+        const dateText = dateRange(
+          project.startDate,
+          project.endDate,
+          project.currentlyOngoing,
+        );
 
-          stack: [
-            {
-              columns: [
-                {
-                  width: '*',
+        const body: Content[] = descriptionNodes(project.description);
 
-                  text: projectTitleParts,
+        if (project.technologies?.length) {
+          body.push(smallText(project.technologies.join(' • '), preset.accent));
+        }
 
-                  font: preset.family,
-
-                  fontSize: 12,
-
-                  color: preset.textColor,
-                },
-
-                {
-                  width: 'auto',
-
-                  text: dateText,
-
-                  font: preset.family,
-
-                  fontSize: preset.smallSize,
-
-                  color: preset.mutedColor,
-
-                  alignment: 'right',
-                },
-              ],
-
-              columnGap: 10,
-            },
-
-            ...(project.description
-              ? [
-                  {
-                    text: project.description,
-
-                    font: preset.family,
-
-                    fontSize: preset.bodySize,
-
-                    color: preset.textColor,
-
-                    lineHeight: preset.lineHeight,
-
-                    margin: [0, 2, 0, 0],
-                  } as Content,
-                ]
-              : []),
-
-            ...(project.technologies?.length
-              ? [
-                  {
-                    text: project.technologies.join(' • '),
-
-                    font: preset.family,
-
-                    fontSize: preset.smallSize,
-
-                    color: preset.accent,
-
-                    margin: [0, 2, 0, 0],
-                  } as Content,
-                ]
-              : []),
-          ],
-
-          margin: [0, 0, 0, preset.itemGap],
+        return {
+          head: [titleRow(titleParts, dateText ? [rightText(dateText)] : [])],
+          body,
         };
+      });
 
-        content.push(projectItem);
-      }
+      addSection('PROJECTS', blocks);
     }
 
-    /*
-     * ----------------------------------------------------
-     * EDUCATION
-     * ----------------------------------------------------
-     */
+    /* ------------------------------------------------------------------ */
+    /* EDUCATION                                                          */
+    /* ------------------------------------------------------------------ */
 
     if (cvData.education?.length) {
-      content.push(sectionHeader('EDUCATION'));
+      const comma: Content = { text: ', ' };
 
-      for (const education of cvData.education) {
-        const dateText = [
-          education.startDate,
-          education.endDate || (education.currentlyStudying ? 'Present' : ''),
-        ]
-          .filter(Boolean)
-          .join(' - ');
+      const blocks: ItemBlock[] = cvData.education.map((education) => {
+        /*
+         * Bachelor of Science, Chemistry, Al-Azhar University
+         */
+        const titleParts: Content[] = [];
 
-        const educationTitle: Content[] = [];
-
-        // Degree
         if (education.degree) {
-          educationTitle.push({
-            text: education.degree,
-            bold: true,
-          });
+          appendPart(titleParts, { text: education.degree, bold: true }, comma);
         }
 
-        // Field of study
         if (education.fieldOfStudy) {
-          educationTitle.push({
-            text: `, ${education.fieldOfStudy}`,
-          });
+          appendPart(titleParts, { text: education.fieldOfStudy }, comma);
         }
 
-        // University / school
         if (education.schoolName) {
-          educationTitle.push({
-            text: `, ${education.schoolName}`,
-            bold: true,
-          });
+          appendPart(
+            titleParts,
+            { text: education.schoolName, bold: true },
+            comma,
+          );
         }
 
-        const educationItem: Content = {
-          unbreakable: true,
+        const dateText = dateRange(
+          education.startDate,
+          education.endDate,
+          education.currentlyStudying,
+        );
 
-          stack: [
-            /*
-             * ---------------------------------------------
-             * DEGREE + FIELD + UNIVERSITY       DATE
-             * ---------------------------------------------
-             *
-             * Bachelor of Science, Chemistry, Al-Azhar University
-             *                                      2022 - 2027
-             */
-            {
-              columns: [
-                {
-                  width: '*',
+        const body: Content[] = [];
 
-                  text: educationTitle,
+        if (education.grade) {
+          body.push(smallText(`Grade: ${education.grade}`, preset.mutedColor));
+        }
 
-                  font: preset.family,
+        body.push(...descriptionNodes(education.description));
 
-                  fontSize: 12,
-
-                  color: preset.textColor,
-                },
-
-                {
-                  width: 'auto',
-
-                  text: dateText,
-
-                  font: preset.family,
-
-                  fontSize: preset.smallSize,
-
-                  color: preset.mutedColor,
-
-                  alignment: 'right',
-
-                  noWrap: true,
-                },
-              ],
-
-              columnGap: 10,
-            },
-
-            /*
-             * ---------------------------------------------
-             * GRADE
-             * ---------------------------------------------
-             */
-            ...(education.grade
-              ? [
-                  {
-                    text: `Grade: ${education.grade}`,
-
-                    font: preset.family,
-
-                    fontSize: preset.smallSize,
-
-                    color: preset.mutedColor,
-
-                    margin: [0, 2, 0, 0],
-                  } as Content,
-                ]
-              : []),
-
-            /*
-             * ---------------------------------------------
-             * DESCRIPTION
-             * ---------------------------------------------
-             */
-            ...(education.description
-              ? [
-                  {
-                    text: education.description,
-
-                    font: preset.family,
-
-                    fontSize: preset.bodySize,
-
-                    color: preset.textColor,
-
-                    lineHeight: preset.lineHeight,
-
-                    margin: [0, 2, 0, 0],
-                  } as Content,
-                ]
-              : []),
-          ],
-
-          margin: [0, 0, 0, preset.itemGap],
+        return {
+          head: [titleRow(titleParts, dateText ? [rightText(dateText)] : [])],
+          body,
         };
+      });
 
-        content.push(educationItem);
-      }
+      addSection('EDUCATION', blocks);
     }
-    /*
-     * ----------------------------------------------------
-     * CERTIFICATES
-     * ----------------------------------------------------
-     */
+
+    /* ------------------------------------------------------------------ */
+    /* CERTIFICATES                                                       */
+    /* ------------------------------------------------------------------ */
 
     if (cvData.certificates?.length) {
-      content.push(sectionHeader('CERTIFICATES'));
-
-      for (const certificate of cvData.certificates) {
-        const issuerContent: Content[] = [];
-
+      const blocks: ItemBlock[] = cvData.certificates.map((certificate) => {
         /*
-         * Certificate name
-         */
-        issuerContent.push({
-          text: certificate.name || '',
-
-          bold: true,
-        });
-
-        /*
-         * Issuer
+         * Docker & Kubernetes... - Udemy            May 2023
          *
          * The issuer itself becomes the clickable link.
          */
+        const titleParts: Content[] = [
+          { text: certificate.name || '', bold: true },
+        ];
+
         if (certificate.issuer) {
-          issuerContent.push({
-            text: ' - ',
+          titleParts.push(dash);
 
-            color: '#777777',
-          });
-
-          if (certificate.url) {
-            issuerContent.push({
-              text: certificate.issuer,
-
-              link: certificate.url,
-
-              color: preset.accent,
-
-              decoration: 'underline' as const,
-            });
-          } else {
-            issuerContent.push({
-              text: certificate.issuer,
-
-              color: preset.mutedColor,
-            });
-          }
+          titleParts.push(
+            certificate.url
+              ? {
+                  text: certificate.issuer,
+                  link: certificate.url,
+                  color: preset.accent,
+                  decoration: 'underline' as const,
+                }
+              : {
+                  text: certificate.issuer,
+                  color: preset.mutedColor,
+                },
+          );
         }
 
-        const certificateItem: Content = {
-          unbreakable: true,
+        return {
+          head: [
+            titleRow(
+              titleParts,
+              certificate.date ? [rightText(certificate.date)] : [],
+            ),
+          ],
+          body: certificate.summary
+            ? [smallText(certificate.summary, preset.mutedColor)]
+            : [],
+        };
+      });
 
-          stack: [
-            /*
-             * ---------------------------------------------
-             * Certificate name + issuer
-             *                                      Date
-             *
-             * Docker & Kubernetes... - Udemy       May 2023
-             * ---------------------------------------------
-             */
-            {
-              columns: [
-                {
-                  width: '*',
+      addSection('CERTIFICATES', blocks);
+    }
 
-                  text: issuerContent,
+    /* ------------------------------------------------------------------ */
+    /* SKILLS                                                             */
+    /* ------------------------------------------------------------------ */
 
-                  font: preset.family,
+    if (cvData.skills?.length) {
+      addShortSection('SKILLS', [
+        bodyText(cvData.skills.join('  •  '), { margin: [0, 0, 0, 0] }),
+      ]);
+    }
 
-                  fontSize: 12,
+    /* ------------------------------------------------------------------ */
+    /* LANGUAGES                                                          */
+    /* ------------------------------------------------------------------ */
 
-                  color: preset.textColor,
-                },
+    if (cvData.languages?.length) {
+      /*
+       * English (Native)
+       *
+       * Name in bold, level in the muted colour.
+       */
+      const languageItems: Content[] = cvData.languages.map((language) => {
+        const level = formatLevel(language.level);
 
-                /*
-                 * Date on the right
-                 */
-                {
-                  width: 'auto',
-
-                  text: certificate.date || '',
-
-                  font: preset.family,
-
-                  fontSize: preset.smallSize,
-
-                  color: preset.mutedColor,
-
-                  alignment: 'right',
-
-                  noWrap: true,
-                },
-              ],
-
-              columnGap: 10,
-            },
-
-            /*
-             * ---------------------------------------------
-             * Credential ID / Summary
-             * ---------------------------------------------
-             */
-            ...(certificate.summary
-              ? [
-                  {
-                    text: certificate.summary,
-
-                    font: preset.family,
-
-                    fontSize: preset.smallSize,
-
-                    color: preset.mutedColor,
-
-                    margin: [0, 2, 0, 0],
-                  } as Content,
-                ]
+        return {
+          text: [
+            { text: formatLanguageName(language.language), bold: true },
+            ...(level
+              ? [{ text: ` (${level})`, color: preset.mutedColor }]
               : []),
           ],
+        } as Content;
+      });
 
-          margin: [0, 0, 0, preset.itemGap],
-        };
+      if (LANGUAGES_INLINE) {
+        const parts: Content[] = [];
 
-        content.push(certificateItem);
+        languageItems.forEach((item) => appendPart(parts, item, dot));
+
+        addShortSection('LANGUAGES', [
+          bodyText(parts, { margin: [0, 0, 0, 0] }),
+        ]);
+      } else {
+        addShortSection(
+          'LANGUAGES',
+          languageItems.map((item) =>
+            bodyText([item], { margin: [0, 0, 0, 3] }),
+          ),
+        );
       }
     }
 
-    /*
-     * ----------------------------------------------------
-     * SKILLS
-     * ----------------------------------------------------
-     */
-
-    if (cvData.skills?.length) {
-      content.push(sectionHeader('SKILLS'));
-
-      content.push({
-        unbreakable: true,
-
-        text: cvData.skills.join('  •  '),
-
-        font: preset.family,
-
-        fontSize: preset.bodySize,
-
-        color: preset.textColor,
-
-        lineHeight: preset.lineHeight,
-
-        margin: [0, 0, 0, preset.itemGap],
-      });
-    }
-
-    /*
-     * ----------------------------------------------------
-     * LANGUAGES
-     * ----------------------------------------------------
-     */
-
-    if (cvData.languages?.length) {
-      content.push(sectionHeader('LANGUAGES'));
-
-      content.push({
-        unbreakable: true,
-
-        stack: cvData.languages.map((language) => ({
-          text: `${language.language} — ${language.level}`,
-
-          font: preset.family,
-
-          fontSize: preset.bodySize,
-
-          color: preset.textColor,
-
-          margin: [0, 0, 0, 3],
-        })),
-
-        margin: [0, 0, 0, preset.itemGap],
-      });
-    }
-
-    /*
-     * ----------------------------------------------------
-     * DOCUMENT
-     * ----------------------------------------------------
-     */
+    /* ------------------------------------------------------------------ */
+    /* DOCUMENT                                                           */
+    /* ------------------------------------------------------------------ */
 
     const documentDefinition: TDocumentDefinitions = {
       pageSize: 'A4',
@@ -1000,30 +822,22 @@ export class PdfGenerator {
 
       defaultStyle: {
         font: preset.family,
-
         fontSize: preset.bodySize,
-
         color: preset.textColor,
-
         lineHeight: preset.lineHeight,
       },
 
       content,
 
       /*
-       * Footer page number.
+       * Footer page number (only when there is more than one page).
        */
       footer: (currentPage, pageCount) => ({
         text: pageCount > 1 ? `${currentPage} / ${pageCount}` : '',
-
         alignment: 'center',
-
         font: preset.family,
-
         fontSize: 8,
-
         color: preset.mutedColor,
-
         margin: [0, 10, 0, 0],
       }),
     };

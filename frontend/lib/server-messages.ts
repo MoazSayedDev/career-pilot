@@ -27,6 +27,9 @@ const SERVER_MESSAGE_KEYS: Record<string, string> = {
     "errors.aiUnavailable",
   "AI service returned an empty response. Please try again.":
     "errors.aiUnavailable",
+  // Monthly usage limits (403 from the usage module).
+  "CV monthly limit reached.": "errors.cvLimitReached",
+  "Job description monthly limit reached.": "errors.jdLimitReached",
 };
 
 /**

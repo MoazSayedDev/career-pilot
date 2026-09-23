@@ -25,6 +25,47 @@ export class AiService {
       this.configService.get<string>('GEMINI_MODEL') ?? 'gemini-2.5-flash';
   }
 
+  private async generateContentWithRetry(ai: GoogleGenAI, prompt: string) {
+    const maxAttempts = 5;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      try {
+        return await ai.models.generateContent({
+          model: this.model,
+          contents: prompt,
+        });
+      } catch (error) {
+        const status = (error as { status?: number })?.status;
+
+        const retryable =
+          status === 429 ||
+          status === 500 ||
+          status === 502 ||
+          status === 503 ||
+          status === 504;
+
+        if (!retryable || attempt === maxAttempts) {
+          throw error;
+        }
+
+        const delay = 1000 * 2 ** (attempt - 1);
+
+        this.logger.warn(
+          `Gemini request failed with ${status}. ` +
+            `Retry ${attempt + 1}/${maxAttempts} in ${delay}ms`,
+        );
+
+        await this.sleep(delay);
+      }
+    }
+
+    throw new Error('Gemini request failed after retries');
+  }
+
+  private sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
   private async getClientForUser(userId: string): Promise<GoogleGenAI> {
     const apiKey =
       await this.geminiApiKeyService.getEffectiveGeminiApiKey(userId);
@@ -61,11 +102,7 @@ export class AiService {
 
     try {
       const ai = await this.getClientForUser(userId);
-      const response = await ai.models.generateContent({
-        model: this.model,
-        contents: prompt,
-      });
-
+      const response = await this.generateContentWithRetry(ai, prompt);
       const text = response.text;
 
       if (!text) {
@@ -120,9 +157,7 @@ export class AiService {
    * @param userId - The ID of the authenticated user.
    * @returns An object indicating that the key is not configured.
    */
-  async clearGeminiApiKey(
-    userId: string,
-  ): Promise<{ configured: boolean }> {
+  async clearGeminiApiKey(userId: string): Promise<{ configured: boolean }> {
     await this.geminiApiKeyService.clearUserGeminiApiKey(userId);
     return { configured: false };
   }
@@ -137,8 +172,7 @@ export class AiService {
     userId: string,
   ): Promise<{ configured: boolean }> {
     return {
-      configured:
-        await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
+      configured: await this.geminiApiKeyService.hasConfiguredGeminiKey(userId),
     };
   }
 }

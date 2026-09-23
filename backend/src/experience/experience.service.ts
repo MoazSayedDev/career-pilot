@@ -2,10 +2,22 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateExperienceDto } from './dto/create-experience.dto';
 import { UpdateExperienceDto } from './dto/update-experience.dto';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class ExperienceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
 
   /**
    * Creates a work experience record for the authenticated user's profile.
@@ -26,12 +38,17 @@ export class ExperienceService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.experience.create({
+    const experience = await this.prisma.experience.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return experience;
   }
 
   /**
@@ -127,10 +144,15 @@ export class ExperienceService {
       throw new NotFoundException('Experience not found');
     }
 
-    return this.prisma.experience.update({
+    const updatedExperience = await this.prisma.experience.update({
       where: { id: experience.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return updatedExperience;
   }
 
   /**
@@ -163,8 +185,13 @@ export class ExperienceService {
       throw new NotFoundException('Experience not found');
     }
 
-    return this.prisma.experience.delete({
+    const deletedExperience = await this.prisma.experience.delete({
       where: { id: experience.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return deletedExperience;
   }
 }

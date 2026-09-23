@@ -39,6 +39,7 @@ import { EmailModule } from './email/email.module';
 import { AiService } from './ai/ai.service';
 import { UsageModule } from './usage/usage.module';
 import { GeminiModule } from './gemini/gemini.module';
+import { RedisModule } from './cache/redis/redis.module';
 
 @Module({
   imports: [
@@ -89,6 +90,7 @@ import { GeminiModule } from './gemini/gemini.module';
     PdfModule,
     UsageModule,
     GeminiModule,
+    RedisModule,
   ],
   controllers: [],
   providers: [

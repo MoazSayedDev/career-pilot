@@ -2,10 +2,22 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
 
   /**
    * Creates a new project for the authenticated user's profile.
@@ -26,12 +38,17 @@ export class ProjectService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.project.create({
+    const project = await this.prisma.project.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return project;
   }
 
   /**
@@ -120,10 +137,15 @@ export class ProjectService {
       throw new NotFoundException('Project not found');
     }
 
-    return this.prisma.project.update({
+    const updatedProject = await this.prisma.project.update({
       where: { id: project.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return updatedProject;
   }
 
   /**
@@ -156,8 +178,13 @@ export class ProjectService {
       throw new NotFoundException('Project not found');
     }
 
-    return this.prisma.project.delete({
+    const deletedProject = await this.prisma.project.delete({
       where: { id: project.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return deletedProject;
   }
 }

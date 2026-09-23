@@ -16,7 +16,7 @@ export class CreateResumeDto {
   title!: string;
 
   @IsEnum(ResumeTemplate)
-  template!: ResumeTemplate;
+  template?: ResumeTemplate = 'CLASSIC';
 
   /** Output language of the CV document (Arabic CVs render RTL). */
   @IsOptional()

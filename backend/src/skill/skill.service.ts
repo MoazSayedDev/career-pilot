@@ -2,10 +2,22 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateSkillDto } from './dto/create-skill.dto';
 import { UpdateSkillDto } from './dto/update-skill.dto';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class SkillService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
 
   /**
    * Creates a new skill for the authenticated user's profile.
@@ -26,12 +38,17 @@ export class SkillService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.skill.create({
+    const skill = await this.prisma.skill.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return skill;
   }
 
   /**
@@ -118,10 +135,15 @@ export class SkillService {
       throw new NotFoundException('Skill not found');
     }
 
-    return this.prisma.skill.update({
+    const updatedSkill = await this.prisma.skill.update({
       where: { id: skill.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return updatedSkill;
   }
 
   /**
@@ -153,8 +175,13 @@ export class SkillService {
       throw new NotFoundException('Skill not found');
     }
 
-    return this.prisma.skill.delete({
+    const deletedSkill = await this.prisma.skill.delete({
       where: { id: skill.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return deletedSkill;
   }
 }

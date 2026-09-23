@@ -2,10 +2,22 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateLanguageDto } from './dto/create-language.dto';
 import { UpdateLanguageDto } from './dto/update-language.dto';
+import { RedisService } from 'src/cache/redis/redis.service';
 
 @Injectable()
 export class LanguageService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
 
   /**
    * Creates a language record for the authenticated user's profile.
@@ -26,12 +38,17 @@ export class LanguageService {
       throw new NotFoundException('Profile not found');
     }
 
-    return this.prisma.language.create({
+    const language = await this.prisma.language.create({
       data: {
         ...dto,
         profileId: profile.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return language;
   }
 
   /**
@@ -88,10 +105,15 @@ export class LanguageService {
       throw new NotFoundException('Language not found');
     }
 
-    return this.prisma.language.update({
+    const updatedLanguage = await this.prisma.language.update({
       where: { id: language.id },
       data: dto,
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return updatedLanguage;
   }
 
   /**
@@ -156,8 +178,13 @@ export class LanguageService {
       throw new NotFoundException('Language not found');
     }
 
-    return this.prisma.language.delete({
+    const deletedLanguage = await this.prisma.language.delete({
       where: { id: language.id },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return deletedLanguage;
   }
 }

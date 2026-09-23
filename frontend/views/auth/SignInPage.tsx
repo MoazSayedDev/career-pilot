@@ -9,7 +9,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
+import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
+import { GoogleAuthButton } from "../../components/ui/GoogleAuthButton";
 import { Input } from "../../components/ui/Input";
 import { PasswordInput } from "../../components/ui/PasswordInput";
 
@@ -26,6 +28,7 @@ const SignInPageComponent = () => {
   const searchParams = useSearchParams();
   const { t } = useI18n();
   const [remember, setRemember] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const loginSchema = useMemo(() => makeLoginSchema(t), [t]);
 
@@ -79,11 +82,57 @@ const SignInPageComponent = () => {
     }
   };
 
+  /** Destination for a successful login (shared by both flows). */
+  const redirectAfterLogin = () => {
+    // Return the user to the protected page that sent them here, but
+    // only allow in-app destinations (open-redirect protection).
+    const requested = searchParams?.get("redirect");
+    const target =
+      requested && requested.startsWith("/") && !requested.startsWith("//")
+        ? requested
+        : "/dashboard";
+    router.push(target);
+  };
+
+  /** Shared error copy for every Google-auth failure mode. */
+  const handleGoogleError = (error: string) => {
+    const copy: Record<string, string> = {
+      popup_blocked: t("auth.google.popupBlocked"),
+      timeout: t("auth.google.timeout"),
+      cancelled: t("auth.google.cancelled"),
+      refresh_failed: t("auth.google.failed"),
+    };
+
+    setGoogleError(copy[error] ?? t("auth.google.failed"));
+  };
+
+  const handleGoogleSuccess = () => {
+    setGoogleError(null);
+    redirectAfterLogin();
+  };
+
   return (
     <AuthCard
       title={t("auth.signIn.title")}
       subtitle={t("auth.signIn.subtitle")}
     >
+      {/* Google OAuth */}
+      <GoogleAuthButton
+        mode="signin"
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        disabled={isSubmitting}
+      />
+
+      {googleError && (
+        <p className="flex items-center gap-1.5 text-sm text-red-500">
+          <AlertCircle size={14} />
+          {googleError}
+        </p>
+      )}
+
+      <Divider label={t("auth.signIn.orEmail")} />
+
       <form
         onSubmit={handleSubmit(onSubmit)}
         className="flex flex-col gap-4"

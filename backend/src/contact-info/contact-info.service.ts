@@ -10,9 +10,22 @@ import {
 } from './dto/create-contact-info.dto';
 import { UpdateContactInfoDto } from './dto/update-contact-info.dto';
 
+import { RedisService } from 'src/cache/redis/redis.service';
+
 @Injectable()
 export class ContactInfoService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly redisService: RedisService,
+  ) {}
+
+  private getProfileCacheKey(userId: string): string {
+    return `career-pilot:profile:${userId}`;
+  }
+
+  private getResumeCachePattern(userId: string): string {
+    return `resume:${userId}:*`;
+  }
 
   /**
    * Creates contact information for the authenticated user's profile.
@@ -47,7 +60,7 @@ export class ContactInfoService {
 
     this.validateUniqueLinkTypes(links);
 
-    return this.prisma.contactInfo.create({
+    const contactInfo = await this.prisma.contactInfo.create({
       data: {
         ...contactInfoData,
         profileId: profile.id,
@@ -61,6 +74,11 @@ export class ContactInfoService {
         links: true,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return contactInfo;
   }
 
   /**
@@ -118,7 +136,7 @@ export class ContactInfoService {
 
     this.validateUniqueLinkTypes(links);
 
-    return this.prisma.contactInfo.update({
+    const updatedContactInfo = await this.prisma.contactInfo.update({
       where: {
         id: contactInfo.id,
       },
@@ -136,6 +154,11 @@ export class ContactInfoService {
         links: true,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return updatedContactInfo;
   }
 
   /**
@@ -163,11 +186,16 @@ export class ContactInfoService {
       throw new NotFoundException('Contact info not found');
     }
 
-    return this.prisma.contactInfo.delete({
+    const deletedContactInfo = await this.prisma.contactInfo.delete({
       where: {
         id: contactInfo.id,
       },
     });
+
+    await this.redisService.delete(this.getProfileCacheKey(userId));
+    await this.redisService.deleteByPattern(this.getResumeCachePattern(userId));
+
+    return deletedContactInfo;
   }
 
   /**
