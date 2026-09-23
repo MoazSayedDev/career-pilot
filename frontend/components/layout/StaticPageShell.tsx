@@ -23,7 +23,7 @@ export function StaticPageShell({
   sections: Array<{ heading: string; body: string[] }>;
   children?: React.ReactNode;
 }) {
-  const { t, dir } = useI18n();
+  const { dir } = useI18n();
   const BackArrow = dir === "rtl" ? ArrowRight : ArrowLeft;
 
   return (

@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import ResumePreviewPage from "@/pages/app/ResumePreviewPage";
+import ResumePreviewPage from "@/views/app/ResumePreviewPage";
 
 export default function ResumePreviewRoute() {
   return (

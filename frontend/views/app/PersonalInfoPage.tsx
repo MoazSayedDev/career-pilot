@@ -90,7 +90,6 @@ export default function PersonalInfoPage() {
   const [personalInfoPreview, setPersonalInfoPreview] =
     useState<PersonalInfo>(LOADING_INITIAL);
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [saved, setSaved] = useState(false);
@@ -121,14 +120,10 @@ export default function PersonalInfoPage() {
     },
   });
 
-  const [existingContactInfo, setExistingContactInfo] =
-    useState<ContactInfo | null>(null);
-
   useEffect(() => {
     let mounted = true;
 
     const load = async () => {
-      setLoading(true);
       setError(null);
 
       try {
@@ -161,8 +156,6 @@ export default function PersonalInfoPage() {
 
         if (contactResp.status === "fulfilled" && contactResp.value) {
           const c = contactResp.value as ContactInfo;
-
-          setExistingContactInfo(c);
 
           contactForm.reset({
             phone: c.phone ?? "",
@@ -201,8 +194,6 @@ export default function PersonalInfoPage() {
       } catch (err) {
         console.error(err);
         setError(t("profile.personalInfo.loadFailed"));
-      } finally {
-        setLoading(false);
       }
     };
 

@@ -1,4 +1,4 @@
-import ExperiencePage from "@/pages/app/ExperiencePage";
+import ExperiencePage from "@/views/app/ExperiencePage";
 
 export default function Experience() {
   return (

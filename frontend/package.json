@@ -12,7 +12,7 @@
     "@hookform/resolvers": "^5.9.0",
     "axios": "^1.18.1",
     "lucide-react": "^1.33.0",
-    "next": "16.2.10",
+    "next": "16.3.6",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.85.0",
@@ -24,7 +24,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.2.10",
+    "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

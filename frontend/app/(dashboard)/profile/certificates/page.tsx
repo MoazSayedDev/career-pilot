@@ -1,4 +1,4 @@
-import CertificatesPage from "@/pages/app/CertificatesPage";
+import CertificatesPage from "@/views/app/CertificatesPage";
 
 export default function CertificatesRoute() {
   return <CertificatesPage />;

@@ -331,7 +331,9 @@ export default function ResumePreviewPage() {
       skills,
       hasContent,
     };
-  }, [profile, resume, t, locale]);
+    // cvLocale (not locale) is the dependency actually used by the date
+    // formatter: an AR CV keeps "ar" dates even while the UI locale flips.
+  }, [profile, resume, t, cvLocale]);
 
   const fileName = `${sanitizeFileNamePart(profile?.firstName ?? "") || "Your"}_${
     sanitizeFileNamePart(profile?.lastName ?? "") || "CV"
