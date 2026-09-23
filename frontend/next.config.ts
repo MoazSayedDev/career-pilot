@@ -34,35 +34,12 @@ const SECURITY_HEADERS = [
   },
 ] as const;
 
-/**
- * Same-origin API gateway (server-side only, never bundled).
- *
- * When API_PROXY_TARGET is set, the browser talks ONLY to this app's own
- * origin (/api/*) and the Next server forwards requests to the backend.
- * This keeps auth cookies first-party (SameSite=strict cookies are
- * rejected across origins, which broke session persistence) and removes
- * CORS from the picture entirely. Unset => requests go directly to
- * NEXT_PUBLIC_API_URL as before.
- */
-const API_PROXY_TARGET = process.env.API_PROXY_TARGET;
-
 const nextConfig: NextConfig = {
   /**
    * Never advertise the framework/version (`X-Powered-By: Next.js`) —
    * it only helps attackers target known version-specific issues.
    */
   poweredByHeader: false,
-
-  async rewrites() {
-    if (!API_PROXY_TARGET) return [];
-
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${API_PROXY_TARGET}/:path*`,
-      },
-    ];
-  },
 
   async headers() {
     return [{ source: "/:path*", headers: [...SECURITY_HEADERS] }];

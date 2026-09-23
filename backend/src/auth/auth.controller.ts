@@ -25,6 +25,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { CurrentUserDto } from './dto/current-user.dto';
 import { request, type Request, type Response } from 'express';
 import { GoogleOauthGuard } from './guards/google-oauth.guard';
+import { refreshTokenCookieOptions } from './auth-cookie';
 
 /**
  * AuthController handles all authentication endpoints
@@ -117,9 +118,7 @@ export class AuthController {
     // "Remember me" (default true) keeps a 7-day persistent cookie;
     // unchecked logins get a browser-session cookie instead.
     res.cookie('refreshToken', result.data.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...refreshTokenCookieOptions(),
       ...(dto.rememberMe === false ? {} : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
     });
 
@@ -162,9 +161,7 @@ export class AuthController {
     });
 
     res.cookie('refreshToken', result.data.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...refreshTokenCookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -200,11 +197,7 @@ export class AuthController {
 
     const result = await this.authService.logout(user.sub, refreshToken);
 
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
+    res.clearCookie('refreshToken', refreshTokenCookieOptions());
 
     return result;
   }
@@ -229,11 +222,7 @@ export class AuthController {
   }> {
     const result = await this.authService.logoutAll(user.sub);
 
-    res.clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-    });
+    res.clearCookie('refreshToken', refreshTokenCookieOptions());
 
     return result;
   }
@@ -334,31 +323,35 @@ export class AuthController {
    * GET /auth/google/callback
    * Complete Google OAuth authentication
    *
-   * Creates or links the user account and sets the refresh token cookie.
-   * Response: 200 OK
+   * Creates or links the user account, sets the refresh token cookie,
+   * and returns a tiny auto-closing HTML page instead of JSON — the
+   * flow runs inside the frontend's popup, and `window.close()` only
+   * works on windows the script itself opened, so the closing script
+   * must come from the popup document itself. No tokens are included
+   * in the page; the frontend verifies the session via /auth/refresh.
+   * Response: 200 text/html
    */
   @Get('google/callback')
   @UseGuards(GoogleOauthGuard)
   async googleAuthRedirect(
     @Req() req: Request & { user: any },
-    @Res({ passthrough: true }) res: Response,
+    @Res() res: Response,
   ) {
     const result = await this.authService.googleLogin(req.user);
 
     res.cookie('refreshToken', result.data.refreshToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      ...refreshTokenCookieOptions(),
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    return {
-      success: true,
-      message: result.message,
-      data: {
-        accessToken: result.data.accessToken,
-        user: result.data.user,
-      },
-    };
+    // Static markup only — no user data or tokens are interpolated.
+    res
+      .status(HttpStatus.OK)
+      .type('html')
+      .send(
+        '<!doctype html><html><body><script>' +
+          'try{window.close()}catch(e){}' +
+          '</script><p>You can close this window.</p></body></html>',
+      );
   }
 }
