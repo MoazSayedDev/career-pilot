@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { OTPPage } from "@/pages/auth/OTPPage";
+import { OTPPage } from "@/views/auth/OTPPage";
 
 export default function VerifyEmailPage() {
   return (

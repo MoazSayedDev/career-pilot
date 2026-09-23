@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 
-import { SignInPage } from "@/pages/auth/SignInPage";
+import { SignInPage } from "@/views/auth/SignInPage";
 
 export default function LoginPage() {
   return (

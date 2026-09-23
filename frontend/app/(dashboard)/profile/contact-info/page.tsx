@@ -1,4 +1,4 @@
-import PersonalInfoPage from "@/pages/app/PersonalInfoPage";
+import PersonalInfoPage from "@/views/app/PersonalInfoPage";
 
 export default function ContactInfoPage() {
   return (

@@ -1,4 +1,4 @@
-import EducationPage from "@/pages/app/EducationPage";
+import EducationPage from "@/views/app/EducationPage";
 
 export default function Education() {
   return (

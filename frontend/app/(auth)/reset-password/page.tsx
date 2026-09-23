@@ -1,4 +1,4 @@
-import { ResetPasswordPage } from "@/pages/auth/ResetPasswordPage";
+import { ResetPasswordPage } from "@/views/auth/ResetPasswordPage";
 import { Suspense } from "react";
 
 export default function ResetPassword() {
