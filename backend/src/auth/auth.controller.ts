@@ -119,7 +119,7 @@ export class AuthController {
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax',
+      sameSite: 'none',
       ...(dto.rememberMe === false ? {} : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
     });
 
@@ -165,7 +165,7 @@ export class AuthController {
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE==='true',
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
@@ -204,7 +204,7 @@ export class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax',
+      sameSite: 'none',
     });
 
     return result;
@@ -233,7 +233,7 @@ export class AuthController {
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax',
+      sameSite: 'none',
     });
 
     return result;
@@ -349,7 +349,7 @@ export class AuthController {
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
       secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
