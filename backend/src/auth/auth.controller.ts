@@ -118,10 +118,11 @@ export class AuthController {
     // unchecked logins get a browser-session cookie instead.
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict',
       ...(dto.rememberMe === false ? {} : { maxAge: 7 * 24 * 60 * 60 * 1000 }), // 7 days
     });
+
 
     return {
       success: true,
@@ -163,7 +164,7 @@ export class AuthController {
 
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE==='true',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
@@ -202,7 +203,7 @@ export class AuthController {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict',
     });
 
@@ -231,7 +232,7 @@ export class AuthController {
 
     res.clearCookie('refreshToken', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict',
     });
 
@@ -347,7 +348,7 @@ export class AuthController {
 
     res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.COOKIE_SECURE === 'true',
       sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
