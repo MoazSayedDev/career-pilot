@@ -211,16 +211,57 @@ OTPs, usage records, and the encrypted `encryptedGeminiApiKey` value.
 
 ## Caching
 
-The Redis module uses `ioredis` and defaults to `localhost:6379`. It provides:
+CareerPilot uses Redis for application caching and direct key/value operations through a dedicated `RedisService`.
 
-- `set`, `get`, `delete`, and `exists`
-- JSON serialization and deserialization helpers
-- Optional TTL support
-- SCAN-based pattern deletion
+### Redis Service
 
-The project also registers Nest's cache manager globally with a default TTL of
-60 seconds. The current source does not define a separate list of business
-objects cached by the application.
+The Redis service provides:
+
+* Basic key/value operations: `set`, `get`, `delete`, and `exists`
+* JSON serialization/deserialization helpers
+* Optional TTL support
+* SCAN-based pattern deletion for related cache entries
+
+### Application-level caching
+
+The application currently uses Redis to cache frequently accessed profile and resume data.
+
+#### Profile cache
+
+The complete authenticated user profile is cached using the key:
+
+```text
+career-pilot:profile:{userId}
+```
+
+The cached profile includes:
+
+* Contact information and profile links
+* Skills
+* Experiences
+* Projects
+* Education
+* Certificates
+* Languages
+
+Profiles use a **60-second TTL**. On a cache miss, the profile is loaded from PostgreSQL, stored in Redis, and then returned.
+
+#### Resume cache
+
+Resume-related data is also cached per user to reduce repeated database queries when retrieving resumes and their related profile data.
+
+#### Cache invalidation
+
+Profile and career-data changes invalidate:
+
+* The affected profile cache
+* Related resume cache entries
+
+Resume mutations also invalidate the corresponding resume cache entries.
+
+This follows a **cache-aside strategy**: the application checks Redis first and falls back to PostgreSQL on a cache miss.
+
+Nest's Cache Manager is also registered globally with a default TTL of 60 seconds for cache-manager-based caching where applicable.
 
 ## API
 
@@ -300,7 +341,7 @@ Swagger/OpenAPI configuration.
 | `APP_URL` | Application URL | No |
 | `CORS_ORIGIN` | Comma-separated allowed frontend origins | No |
 | `GEMINI_API_KEY` | Optional server-level Gemini fallback | No |
-| `GEMINI_MODEL` | Gemini model; defaults to `gemini-2.5-flash` | No |
+| `GEMINI_MODEL` | Gemini model; defaults to `gemini-3.6-flash` | No |
 | `GEMINI_ENCRYPTION_KEY` | Key material for encrypting user Gemini keys | Yes |
 | `GOOGLE_CLIENT_ID` | Google OAuth client ID | OAuth only |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth client secret | OAuth only |
