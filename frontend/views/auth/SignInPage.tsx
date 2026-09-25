@@ -3,7 +3,7 @@
 import axios from "axios";
 import { AlertCircle, Mail } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
@@ -22,6 +22,7 @@ import {
 } from "../../services/auth/schemas/login.schema";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { translateServerMessage } from "@/lib/server-messages";
+import { continueGoogleAuthOutcome } from "@/lib/google-auth";
 
 const SignInPageComponent = () => {
   const router = useRouter();
@@ -31,6 +32,46 @@ const SignInPageComponent = () => {
   const [googleError, setGoogleError] = useState<string | null>(null);
 
   const loginSchema = useMemo(() => makeLoginSchema(t), [t]);
+
+  /** Destination for a successful login (shared by both flows). */
+  const redirectAfterLogin = () => {
+    // Return the user to the protected page that sent them here, but
+    // only allow in-app destinations (open-redirect protection).
+    const requested = searchParams?.get("redirect");
+    const target =
+      requested && requested.startsWith("/") && !requested.startsWith("//")
+        ? requested
+        : "/dashboard";
+    router.push(target);
+  };
+
+  /**
+   * Return leg of the Google OAuth flow: the callback completion page
+   * landed here with `?logged_in=…`. Verify the session for real
+   * (`/auth/refresh` + `/auth/me`) and continue to the dashboard — or
+   * surface the failure (consent denied, backend down) as a normal
+   * login error. Ordinary page loads resolve `null` and do nothing.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    void continueGoogleAuthOutcome().then((result) => {
+      if (!result || cancelled) return;
+
+      if (result.success) {
+        redirectAfterLogin();
+        return;
+      }
+
+      setGoogleError(t("auth.google.failed"));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per page load; the redirect target is stable here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     register,
@@ -80,18 +121,6 @@ const SignInPageComponent = () => {
         message: t("auth.signIn.genericError"),
       });
     }
-  };
-
-  /** Destination for a successful login (shared by both flows). */
-  const redirectAfterLogin = () => {
-    // Return the user to the protected page that sent them here, but
-    // only allow in-app destinations (open-redirect protection).
-    const requested = searchParams?.get("redirect");
-    const target =
-      requested && requested.startsWith("/") && !requested.startsWith("//")
-        ? requested
-        : "/dashboard";
-    router.push(target);
   };
 
   /** Shared error copy for every Google-auth failure mode. */

@@ -1,21 +1,19 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import { useI18n } from "@/lib/i18n/I18nProvider";
-import {
-  isGoogleAuthInProgress,
-  startGoogleAuth,
-  type GoogleAuthError,
-} from "@/lib/google-auth";
+import { beginGoogleAuth } from "@/lib/google-auth";
 import type { CurrentUser } from "@/services/auth/types/auth.types";
+import type { GoogleAuthError } from "@/lib/google-auth";
 import { cn } from "@/utils";
 
 interface GoogleAuthButtonProps {
   /** Controls the label: sign-in vs sign-up copy. */
   mode: "signin" | "signup";
+  /** Kept for call-site compatibility; the flow completes on the login page. */
   onSuccess: (user: CurrentUser) => void;
+  /** Kept for call-site compatibility; failures surface on the login page. */
   onError: (error: GoogleAuthError) => void;
   disabled?: boolean;
 }
@@ -45,66 +43,33 @@ const GoogleIcon = () => (
 /**
  * Shared Google OAuth button used by the sign-in and sign-up pages.
  *
- * Owns the popup lifecycle only — no API logic lives here beyond
- * what `lib/google-auth.ts` already provides. Renders an inline
- * "verifying" state (instead of navigating) while the refresh +
- * /auth/me round-trip completes.
+ * Deliberately NOT a popup: the OAuth callback URL is owned by the
+ * backend (Passport `callbackURL`), so when it points at a different
+ * origin no popup code can ever observe the return. The button therefore
+ * navigates the whole tab to the same-origin `/api/auth/google` entry
+ * point; the callback completion page brings the tab back to
+ * `/login?logged_in=…`, where `SignInPage`/`SignUpPage` verify the
+ * session and finish the flow (`continueGoogleAuthOutcome`).
  */
 export function GoogleAuthButton({
   mode,
-  onSuccess,
-  onError,
   disabled = false,
 }: GoogleAuthButtonProps) {
   const { t } = useI18n();
-  const [pending, setPending] = useState(false);
 
-  // If the popup was closed by the user without finishing (or the
-  // tab was refreshed), clear the stuck loading state.
-  useEffect(() => {
-    if (!pending) return;
+  const handleClick = useCallback(() => {
+    beginGoogleAuth();
+  }, []);
 
-    const interval = window.setInterval(() => {
-      if (!isGoogleAuthInProgress()) {
-        setPending(false);
-      }
-    }, 2000);
-
-    return () => window.clearInterval(interval);
-  }, [pending]);
-
-  const handleClick = useCallback(async () => {
-    if (pending || disabled) return;
-
-    setPending(true);
-
-    const result = await startGoogleAuth();
-
-    setPending(false);
-
-    if (!result) {
-      onError("popup_blocked");
-      return;
-    }
-
-    if (result.success) {
-      onSuccess(result.user);
-      return;
-    }
-
-    onError(result.error);
-  }, [pending, disabled, onSuccess, onError]);
-
-  const label = pending
-    ? t("auth.google.verifying")
-    : t(mode === "signin" ? "auth.signIn.google" : "auth.signUp.google");
+  const label = t(
+    mode === "signin" ? "auth.signIn.google" : "auth.signUp.google",
+  );
 
   return (
     <button
       type="button"
-      onClick={() => void handleClick()}
-      disabled={disabled || pending}
-      aria-busy={pending}
+      onClick={handleClick}
+      disabled={disabled}
       className={cn(
         "flex w-full items-center justify-center gap-3 rounded-lg border border-gray-200 bg-white px-4 py-2.5",
         "text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50",
@@ -113,11 +78,7 @@ export function GoogleAuthButton({
         "disabled:cursor-not-allowed disabled:opacity-50",
       )}
     >
-      {pending ? (
-        <Loader2 size={16} className="animate-spin text-blue-600" />
-      ) : (
-        <GoogleIcon />
-      )}
+      <GoogleIcon />
       <span>{label}</span>
     </button>
   );

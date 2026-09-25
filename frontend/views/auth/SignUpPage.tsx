@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2, Mail, User } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
@@ -20,6 +20,7 @@ import {
 } from "../../services/auth/schemas/register.schema";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { translateServerMessage } from "@/lib/server-messages";
+import { continueGoogleAuthOutcome } from "@/lib/google-auth";
 
 const SignUpPageComponent = () => {
 
@@ -28,6 +29,33 @@ const SignUpPageComponent = () => {
   const [googleError, setGoogleError] = useState<string | null>(null);
 
   const registerSchema = useMemo(() => makeRegisterSchema(t), [t]);
+
+  /**
+   * Return leg of the Google OAuth flow (same as SignInPage): the
+   * callback completion page lands here with `?logged_in=…`; verify the
+   * session and go to the dashboard, or surface the failure. Ordinary
+   * page loads resolve `null` and do nothing.
+   */
+  useEffect(() => {
+    let cancelled = false;
+
+    void continueGoogleAuthOutcome().then((result) => {
+      if (!result || cancelled) return;
+
+      if (result.success) {
+        router.push("/dashboard");
+        return;
+      }
+
+      setGoogleError(t("auth.google.failed"));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // Runs once per page load.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const {
     register,
