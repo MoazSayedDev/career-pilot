@@ -28,12 +28,16 @@ export function proxy(request: NextRequest) {
   // Signed-in users do not need the standalone auth pages. The bounce is
   // skipped when the client arrived here because its session expired
   // (?session=expired) — otherwise the proxy and the axios interceptor
-  // would ping-pong each other for dead-cookie holders.
+  // would ping-pong each other for dead-cookie holders — and right after
+  // an OAuth return (?logged_in=…): the session cookie the callback just
+  // set is fresh, and the login page verifies it via /auth/refresh before
+  // navigating, so bouncing here would race the axios refresh call.
   const isAuthPage = AUTH_PAGES.some((page) => pathname === page);
   if (
     isAuthPage &&
     hasSession &&
-    request.nextUrl.searchParams.get("session") !== "expired"
+    request.nextUrl.searchParams.get("session") !== "expired" &&
+    !request.nextUrl.searchParams.has("logged_in")
   ) {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
