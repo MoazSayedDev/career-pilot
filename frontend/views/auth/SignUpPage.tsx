@@ -10,7 +10,9 @@ import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
 import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
-import { GoogleAuthButton } from "../../components/ui/GoogleAuthButton";
+// Google OAuth temporarily hidden from users until OAuth is reconfigured
+// (button + handlers commented out below; proxy plumbing stays active).
+// import { GoogleAuthButton } from "../../components/ui/GoogleAuthButton";
 import { Input } from "../../components/ui/Input";
 import { PasswordInput } from "../../components/ui/PasswordInput";
 import { register as registerUser } from "../../services/auth/api/auth.service";
@@ -98,7 +100,7 @@ const SignUpPageComponent = () => {
     }
   };
 
-  /** Shared error copy for every Google-auth failure mode. */
+  /* Google OAuth temporarily hidden — restored together with the button below.
   const handleGoogleError = (error: string) => {
     const copy: Record<string, string> = {
       popup_blocked: t("auth.google.popupBlocked"),
@@ -114,19 +116,23 @@ const SignUpPageComponent = () => {
     setGoogleError(null);
     router.push("/dashboard");
   };
+  */
 
   return (
     <AuthCard
       title={t("auth.signUp.title")}
       subtitle={t("auth.signUp.subtitle")}
     >
-      {/* Google OAuth */}
+      {/* Google OAuth: temporarily hidden from users until OAuth is
+          reconfigured for production. */}
+      {/*
       <GoogleAuthButton
         mode="signup"
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
         disabled={isSubmitting}
       />
+      */}
 
       {googleError && (
         <p className="flex items-center gap-1.5 text-sm text-red-500">
