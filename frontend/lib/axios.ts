@@ -5,12 +5,17 @@ import { getAccessToken, setAccessToken, clearAccessToken } from "./auth-token";
 /**
  * Axios instance
  *
- * - baseURL: Base URL of the backend API.
- * - withCredentials: Allows the browser to send cookies
- *   with requests. This is required for the HttpOnly refresh token cookie.
+ * - baseURL: Same-origin "/api" prefix. Every request goes through the
+ *   Next.js Route Handler proxy (app/api/[...path]/route.ts) which
+ *   forwards it to the backend. Keeping requests same-origin means the
+ *   refresh-token cookie is stored on THIS origin, so the server-side
+ *   route protection in proxy.ts can actually see it and no CORS
+ *   configuration is needed.
+ * - withCredentials: Allows the browser to send cookies with requests.
+ *   This is required for the HttpOnly refresh token cookie.
  */
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: "/api",
 
   headers: {
     "Content-Type": "application/json",
