@@ -2,13 +2,16 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { AlertCircle, Loader2, Mail, User } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import { Divider } from "../../components/ui/Divider";
+// Divider between social sign-up and email sign-up is hidden while the
+// Google button is hidden (there is nothing to divide).
+// import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
 // Google OAuth temporarily hidden from users until OAuth is reconfigured
 // (button + handlers commented out below; proxy plumbing stays active).
@@ -141,7 +144,8 @@ const SignUpPageComponent = () => {
         </p>
       )}
 
-      <Divider label={t("auth.signUp.orEmail")} />
+      {/* Hidden with the Google button (see above). */}
+      {/* <Divider label={t("auth.signUp.orEmail")} /> */}
 
       <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4" noValidate>
         {errors.root && (
@@ -205,15 +209,15 @@ const SignUpPageComponent = () => {
 
         <p className="text-center text-xs text-gray-400 dark:text-gray-500">
           {t("auth.signUp.termsPrefix")}{" "}
-          <a href="/terms" className="text-blue-700 hover:underline dark:text-blue-400">
+          <Link href="/terms" className="text-blue-700 hover:underline dark:text-blue-400">
             {t("auth.signUp.termsOfService")}
-          </a>{" "}
+          </Link>{" "}
           {/* Arabic "و" attaches to the following word */}
           {t("auth.signUp.termsAnd")}
           {locale === "ar" ? "" : " "}
-          <a href="/privacy" className="text-blue-700 hover:underline dark:text-blue-400">
+          <Link href="/privacy" className="text-blue-700 hover:underline dark:text-blue-400">
             {t("auth.signUp.privacyPolicy")}
-          </a>
+          </Link>
         </p>
       </form>
 

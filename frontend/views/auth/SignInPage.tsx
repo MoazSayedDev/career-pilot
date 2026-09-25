@@ -9,7 +9,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 import { AuthCard } from "../../components/ui/AuthCard";
 import { Btn } from "../../components/ui/Btn";
-import { Divider } from "../../components/ui/Divider";
+// Divider between social sign-in and email sign-in is hidden while the
+// Google button is hidden (there is nothing to divide).
+// import { Divider } from "../../components/ui/Divider";
 import { Field } from "../../components/ui/Field";
 // Google OAuth temporarily hidden from users until OAuth is reconfigured
 // (button + handlers commented out below; proxy plumbing stays active).
@@ -167,7 +169,8 @@ const SignInPageComponent = () => {
         </p>
       )}
 
-      <Divider label={t("auth.signIn.orEmail")} />
+      {/* Hidden with the Google button (see above). */}
+      {/* <Divider label={t("auth.signIn.orEmail")} /> */}
 
       <form
         onSubmit={handleSubmit(onSubmit)}
