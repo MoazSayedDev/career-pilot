@@ -47,30 +47,15 @@ function formatDate(dateStr: string | null | undefined, locale: string): string 
 }
 
 /**
- * Mirrors formatEmploymentType in the backend PDF mapper:
- * "FULL_TIME" -> "Full Time" (or the localized employment-type label).
+ * Mirrors formatEmploymentType in the backend PDF mapper for LINK types
+ * rendered outside the document language rules (same values both ways).
  */
-function formatEnum(
+function formatLinkType(
   value: string | null | undefined,
-  t: (key: string, params?: Record<string, string | number>) => string,
 ): string {
   if (!value) return "";
 
-  const key = `employmentType.${value}`;
-
-  const localized = t(key);
-
-  // Unknown enum values are not in the dictionary; fall back to
-  // "Full Time"-style title casing like the backend PDF mapper.
-  if (localized === key) {
-    return value
-      .toLowerCase()
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
-  }
-
-  return localized;
+  return value;
 }
 
 /**
@@ -131,7 +116,10 @@ const SectionHeader = ({
   </h2>
 );
 
-/** Section labels for the CV document itself, independent of UI language. */
+/**
+ * Section labels for the CV document itself, independent of UI language.
+ * An AR CV keeps Arabic headings even inside an English UI and vice versa.
+ */
 const CV_SECTION_LABELS_AR: Record<string, string> = {
   summary: "الملخص",
   experience: "الخبرة المهنية",
@@ -142,10 +130,54 @@ const CV_SECTION_LABELS_AR: Record<string, string> = {
   languages: "اللغات",
 };
 
+const CV_SECTION_LABELS_EN: Record<string, string> = {
+  summary: "Summary",
+  experience: "Professional Experience",
+  projects: "Projects",
+  education: "Education",
+  certificates: "Certificates",
+  skills: "Skills",
+  languages: "Languages",
+};
+
+/** Employment types inside the CV document, per CV language. */
+const CV_EMPLOYMENT_TYPE_AR: Record<string, string> = {
+  FULL_TIME: "دوام كامل",
+  PART_TIME: "دوام جزئي",
+  CONTRACT: "عقد مؤقت",
+  INTERNSHIP: "تدريب",
+  FREELANCE: "عمل حر",
+};
+
+const CV_EMPLOYMENT_TYPE_EN: Record<string, string> = {
+  FULL_TIME: "Full Time",
+  PART_TIME: "Part Time",
+  CONTRACT: "Contract",
+  INTERNSHIP: "Internship",
+  FREELANCE: "Freelance",
+};
+
+/** In-document labels (grade / credential ID / technologies), per CV language. */
+const CV_LABELS_AR = {
+  technologies: (list: string) => `التقنيات: ${list}`,
+  grade: (grade: string) => `التقدير: ${grade}`,
+  credentialId: (id: string) => `معرّف الاعتماد: ${id}`,
+  github: "GitHub",
+  liveDemo: "نسخة مباشرة",
+};
+
+const CV_LABELS_EN = {
+  technologies: (list: string) => `Technologies: ${list}`,
+  grade: (grade: string) => `Grade: ${grade}`,
+  credentialId: (id: string) => `Credential ID: ${id}`,
+  github: "GitHub",
+  liveDemo: "Live Demo",
+};
+
 export default function ResumePreviewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const resumeId = searchParams?.get("id");
 
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
@@ -162,7 +194,11 @@ export default function ResumePreviewPage() {
   // the UI language — an Arabic CV renders RTL even in an English UI.
   const cvLanguage: "EN" | "AR" = resume?.language === "AR" ? "AR" : "EN";
   const isArCv = cvLanguage === "AR";
-  const cvLocale = isArCv ? "ar" : locale;
+  // The CV document carries its OWN language: every in-document string
+  // (headings, dates, labels) follows the CV language — NOT the UI
+  // language — so an Arabic CV renders fully Arabic even in an English
+  // UI and vice versa.
+  const cvLocale = isArCv ? "ar" : "en-US";
   const preset = findCvTemplate(resume?.template ?? "MODERN");
   const accent = preset.preview.accent;
   const cvFamilyClass =
@@ -172,7 +208,17 @@ export default function ResumePreviewPage() {
         ? "font-mono"
         : "";
   const cvSectionLabel = (key: string) =>
-    isArCv ? CV_SECTION_LABELS_AR[key] : t(`resume.preview.section.${key}`);
+    (isArCv ? CV_SECTION_LABELS_AR : CV_SECTION_LABELS_EN)[key] ??
+    t(`resume.preview.section.${key}`);
+  const cvEmploymentType = (value: string) =>
+    (isArCv ? CV_EMPLOYMENT_TYPE_AR : CV_EMPLOYMENT_TYPE_EN)[value] ??
+    value
+      .toLowerCase()
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  const cvPresent = isArCv ? "حتى الآن" : "Present";
+  const cvLabels = isArCv ? CV_LABELS_AR : CV_LABELS_EN;
 
   useEffect(() => {
     let cancelled = false;
@@ -245,9 +291,9 @@ export default function ResumePreviewPage() {
         jobTitle: exp.position ?? "",
         company: exp.company ?? "",
         location: exp.location ?? "",
-        employmentType: formatEnum(exp.employmentType, t),
+        employmentType: cvEmploymentType(exp.employmentType ?? ""),
         dateRange: `${formatDate(exp.startDate, cvLocale)} - ${
-          exp.currentlyWorking ? t("common.present") : formatDate(exp.endDate, cvLocale)
+          exp.currentlyWorking ? cvPresent : formatDate(exp.endDate, cvLocale)
         }`,
         bullets:
           item.customDescription?.length > 0
@@ -260,9 +306,9 @@ export default function ResumePreviewPage() {
       const proj = item.project ?? ({} as Resume["projects"][number]["project"]);
 
       const links = [
-        proj.github ? { type: t("resume.preview.label.github"), url: proj.github } : null,
+        proj.github ? { type: cvLabels.github, url: proj.github } : null,
         proj.liveDemo
-          ? { type: t("resume.preview.label.liveDemo"), url: proj.liveDemo }
+          ? { type: cvLabels.liveDemo, url: proj.liveDemo }
           : null,
       ].filter(Boolean) as { type: string; url: string }[];
 
@@ -273,7 +319,7 @@ export default function ResumePreviewPage() {
         technologies: proj.technologies ?? [],
         links,
         dateRange: `${formatDate(proj.startDate, cvLocale)} - ${
-          proj.endDate ? formatDate(proj.endDate, cvLocale) : t("common.present")
+          proj.endDate ? formatDate(proj.endDate, cvLocale) : cvPresent
         }`,
       };
     });
@@ -331,9 +377,11 @@ export default function ResumePreviewPage() {
       skills,
       hasContent,
     };
-    // cvLocale (not locale) is the dependency actually used by the date
-    // formatter: an AR CV keeps "ar" dates even while the UI locale flips.
-  }, [profile, resume, t, cvLocale]);
+    // cvLocale (not the UI locale) drives the date formatter. The cv* values
+    // are pure functions of isArCv and never change between renders of the
+    // same document language, so eslint-disable keeps the list minimal here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile, resume, t, cvLocale, isArCv]);
 
   const fileName = `${sanitizeFileNamePart(profile?.firstName ?? "") || "Your"}_${
     sanitizeFileNamePart(profile?.lastName ?? "") || "CV"
@@ -557,7 +605,7 @@ export default function ResumePreviewPage() {
                       className="underline"
                       style={{ color: accent }}
                     >
-                      {formatEnum(link.type, t)}
+                      {formatLinkType(link.type)}
                     </a>
                   </span>
                 ))}
@@ -700,9 +748,7 @@ export default function ResumePreviewPage() {
 
                         {project.technologies.length > 0 && (
                           <p className="mt-1 text-[#0066cc] dark:text-blue-400">
-                            {t("resume.preview.label.technologies", {
-                              list: project.technologies.join(", "),
-                            })}
+                            {cvLabels.technologies(project.technologies.join(", "))}
                           </p>
                         )}
                       </div>
@@ -742,9 +788,7 @@ export default function ResumePreviewPage() {
 
                         {education.grade && (
                           <p className="mt-0.5 text-sm text-[#4a4a4a] dark:text-gray-300">
-                            {t("resume.preview.label.grade", {
-                              grade: education.grade,
-                            })}
+                            {cvLabels.grade(education.grade)}
                           </p>
                         )}
 
@@ -804,9 +848,7 @@ export default function ResumePreviewPage() {
 
                           {certificate.credentialId && (
                             <p className="text-[11px] text-[#777777] dark:text-gray-500">
-                              {t("resume.preview.label.credentialId", {
-                                id: certificate.credentialId,
-                              })}
+                              {cvLabels.credentialId(certificate.credentialId)}
                             </p>
                           )}
                         </div>

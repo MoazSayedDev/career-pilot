@@ -22,7 +22,9 @@ import { Card } from "@/components/ui/Card";
 import { Btn } from "@/components/ui/Btn";
 
 import { createResume } from "@/services/resume/api/resume.service";
-import { CV_TEMPLATES } from "@/lib/cv-templates";
+// Template gallery is hidden (product decision); presets still exist in
+// lib/cv-templates and the default template is submitted unchanged.
+// import { CV_TEMPLATES } from "@/lib/cv-templates";
 import { getProfile } from "@/services/profile/api/profile.service";
 
 import type { CreateResumeDto } from "@/services/resume/types/resume";
@@ -44,7 +46,9 @@ export default function StartBuildingPage() {
   const [profile, setProfile] = useState<ProfileResponse | null>(null);
 
   const [title, setTitle] = useState("");
-  const [template, setTemplate] = useState("MODERN");
+  // The builder always submits the default template while the gallery
+  // is hidden; `setTemplate` returns with the gallery UI.
+  const [template] = useState("MODERN");
   const [cvLanguage, setCvLanguage] = useState<"EN" | "AR">("EN");
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
@@ -274,49 +278,9 @@ export default function StartBuildingPage() {
               />
             </div>
 
-            {/* Template gallery */}
-            <div>
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t("resume.build.template")}
-              </span>
-
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {CV_TEMPLATES.map((preset) => {
-                  const active = template === preset.id;
-                  const name = locale === "ar" ? preset.nameAr : preset.nameEn;
-
-                  return (
-                    <button
-                      key={preset.id}
-                      type="button"
-                      onClick={() => setTemplate(preset.id)}
-                      aria-pressed={active}
-                      className={`rounded-xl border p-3 text-start transition-all ${
-                        active
-                          ? "border-blue-600 bg-blue-50 ring-2 ring-blue-500/30 dark:border-blue-500 dark:bg-blue-950/40"
-                          : "border-gray-200 bg-white hover:border-blue-300 dark:border-gray-700 dark:bg-gray-900 dark:hover:border-blue-700"
-                      }`}
-                    >
-                      <span
-                        className="mb-2 block h-2 w-2/3 rounded"
-                        style={{ backgroundColor: preset.preview.accent }}
-                      />
-                      <span className="mb-1 block h-1.5 w-1/2 rounded bg-gray-200 dark:bg-gray-700" />
-                      <span
-                        className="mb-2 block h-px w-full"
-                        style={{ backgroundColor: preset.preview.accent, opacity: 0.35 }}
-                      />
-                      <span className="block text-sm font-semibold text-gray-900 dark:text-gray-100">
-                        {name}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-emerald-600 dark:text-emerald-400">
-                        {t("landing.templates.atsSafe")}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+            {/* Template gallery hidden (product decision): the builder
+                always uses the default template. The `template` state and
+                payload field stay intact so nothing else needs to change. */}
 
             {/* CV language */}
             <div>
