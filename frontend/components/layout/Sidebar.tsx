@@ -8,6 +8,7 @@ import {
   Zap,
   FolderOpen,
   LogOut,
+  Files,
   FileText,
   Award,
 } from "lucide-react";
@@ -27,6 +28,7 @@ const NAV_ITEMS = [
   { href: "/profile/skill", labelKey: "nav.skills", icon: Zap },
   { href: "/profile/projects", labelKey: "nav.projects", icon: FolderOpen },
   { href: "/profile/certificates", labelKey: "nav.certificates", icon: Award },
+  { href: "/cvs", labelKey: "nav.cvs", icon: Files },
   { href: "/resume", labelKey: "nav.resume", icon: FileText },
 ];
 

@@ -7,7 +7,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * real authorization still happens on every API call via JWT guards,
  * because a stolen/forged cookie value would not pass those checks.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/resume"];
+const PROTECTED_PREFIXES = ["/dashboard", "/profile", "/resume", "/cvs"];
 
 const AUTH_PAGES = ["/login", "/register", "/forget-password", "/reset-password"];
 
@@ -50,6 +50,7 @@ export const config = {
     "/dashboard/:path*",
     "/profile/:path*",
     "/resume/:path*",
+    "/cvs/:path*",
     "/login",
     "/register",
     "/forget-password",
