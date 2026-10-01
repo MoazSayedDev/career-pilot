@@ -132,6 +132,9 @@ export interface CreateResumeDto {
   languageIds: string[];
 }
 
+/** Mirrors the backend UpdateResumeDto (PartialType of CreateResumeDto). */
+export type UpdateResumeDto = Partial<CreateResumeDto>;
+
 export interface CreateResumeByJobDescriptionDto {
   jobDescription: string;
 }
