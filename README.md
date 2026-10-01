@@ -350,10 +350,6 @@ CareerPilot applies several security measures across authentication, API request
 * The production Compose configuration places Nginx in front of the backend API.
 * Arabic resume generation handles right-to-left text, reshaping, and bidirectional text before PDF generation.
 
-## Testing
-
-The backend includes unit and end-to-end test commands for validating application behavior.
-
 ```bash
 cd backend
 
