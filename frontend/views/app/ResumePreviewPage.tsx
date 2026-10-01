@@ -9,11 +9,12 @@ import {
   FileDown,
   FileText,
   Loader2,
+  Pencil,
+  Printer,
   RefreshCw,
 } from "lucide-react";
 
 import { Btn } from "@/components/ui/Btn";
-import { Card } from "@/components/ui/Card";
 import { PageHeader } from "@/components/ui/PageHeader";
 
 import { getApiErrorMessage } from "@/lib/api-error";
@@ -50,9 +51,7 @@ function formatDate(dateStr: string | null | undefined, locale: string): string 
  * Mirrors formatEmploymentType in the backend PDF mapper for LINK types
  * rendered outside the document language rules (same values both ways).
  */
-function formatLinkType(
-  value: string | null | undefined,
-): string {
+function formatLinkType(value: string | null | undefined): string {
   if (!value) return "";
 
   return value;
@@ -157,6 +156,14 @@ const CV_EMPLOYMENT_TYPE_EN: Record<string, string> = {
   FREELANCE: "Freelance",
 };
 
+/** Language proficiency levels inside the CV document, per CV language. */
+const CV_LANGUAGE_LEVEL_AR: Record<string, string> = {
+  BASIC: "أساسي",
+  CONVERSATIONAL: "محادثة",
+  PROFESSIONAL: "مهني",
+  NATIVE: "لغة أم",
+};
+
 /** In-document labels (grade / credential ID / technologies), per CV language. */
 const CV_LABELS_AR = {
   technologies: (list: string) => `التقنيات: ${list}`,
@@ -217,6 +224,20 @@ export default function ResumePreviewPage() {
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
+  // Mirrors formatLevel in the backend PDF generator: enum -> "Native".
+  const cvLanguageLevel = (value: string) => {
+    if (!value) return "";
+
+    if (isArCv) {
+      return CV_LANGUAGE_LEVEL_AR[value] ?? value;
+    }
+
+    return value
+      .toLowerCase()
+      .split(/[_-]+/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  };
   const cvPresent = isArCv ? "حتى الآن" : "Present";
   const cvLabels = isArCv ? CV_LABELS_AR : CV_LABELS_EN;
 
@@ -354,6 +375,14 @@ export default function ResumePreviewPage() {
       .map((item) => item.skill?.name)
       .filter(Boolean) as string[];
 
+    const languages = (resume?.languages ?? [])
+      .map((item) => ({
+        id: item.id,
+        name: item.language?.language ?? "",
+        level: cvLanguageLevel(item.language?.level ?? ""),
+      }))
+      .filter((item) => item.name);
+
     const summary = resume?.generatedSummary ?? "";
 
     const hasContent =
@@ -362,7 +391,8 @@ export default function ResumePreviewPage() {
       projects.length > 0 ||
       education.length > 0 ||
       certificates.length > 0 ||
-      skills.length > 0;
+      skills.length > 0 ||
+      languages.length > 0;
 
     return {
       fullName,
@@ -375,6 +405,7 @@ export default function ResumePreviewPage() {
       education,
       certificates,
       skills,
+      languages,
       hasContent,
     };
     // cvLocale (not the UI locale) drives the date formatter. The cv* values
@@ -442,7 +473,7 @@ export default function ResumePreviewPage() {
           subtitle={t("resume.preview.subtitleReview")}
         />
 
-        <Card className="flex flex-col items-center gap-4 p-10 text-center">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col items-center gap-4 p-10 text-center">
           <FileText size={32} className="text-gray-300 dark:text-gray-600" />
 
           <p className="text-sm text-gray-600 dark:text-gray-400">{loadError}</p>
@@ -453,11 +484,11 @@ export default function ResumePreviewPage() {
               {t("common.retry")}
             </Btn>
 
-            <Btn onClick={() => router.push("/resume")}>
-              {t("resume.preview.back")}
+            <Btn onClick={() => router.push("/cvs")}>
+              {t("resume.preview.backCvs")}
             </Btn>
           </div>
-        </Card>
+        </div>
       </div>
     );
   }
@@ -471,7 +502,7 @@ export default function ResumePreviewPage() {
           subtitle={t("resume.preview.subtitleReview")}
         />
 
-        <Card className="flex flex-col items-center gap-4 p-10 text-center">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-800 dark:bg-gray-900 flex flex-col items-center gap-4 p-10 text-center">
           <FileText size={32} className="text-gray-300 dark:text-gray-600" />
 
           <p className="font-medium text-gray-900 dark:text-gray-100">
@@ -482,47 +513,67 @@ export default function ResumePreviewPage() {
             {t("resume.preview.noResumeHint")}
           </p>
 
-          <Btn onClick={() => router.push("/resume")}>
-            {t("resume.preview.buildResume")}
-            <ArrowLeft size={15} className="rotate-180 rtl-flip" />
-          </Btn>
-        </Card>
+          <div className="flex gap-3">
+            <Btn onClick={() => router.push("/resume")}>
+              {t("resume.preview.buildResume")}
+              <ArrowLeft size={15} className="rotate-180 rtl-flip" />
+            </Btn>
+
+            <Btn variant="outline" onClick={() => router.push("/cvs")}>
+              {t("resume.preview.backCvs")}
+            </Btn>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <PageHeader
-        icon={<Eye size={24} />}
-        title={t("resume.preview.title")}
-        subtitle={t("resume.preview.subtitle")}
-      />
+    <div className="mx-auto max-w-3xl print:max-w-none">
+      <div className="print:hidden">
+        <PageHeader
+          icon={<Eye size={24} />}
+          title={t("resume.preview.title")}
+          subtitle={t("resume.preview.subtitle")}
+        />
+      </div>
 
-      {/* Actions */}
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <Btn variant="outline" size="sm" onClick={() => router.push("/resume")}>
+      {/* Actions — screen only; the printed sheet is the document itself. */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 print:hidden">
+        <Btn variant="outline" size="sm" onClick={() => router.push("/cvs")}>
           <ArrowLeft size={14} className="rtl-flip" />
-          {t("resume.preview.back")}
+          {t("resume.preview.backCvs")}
         </Btn>
 
-        <Btn onClick={() => void handleGeneratePdf()} disabled={downloading}>
-          {downloading ? (
-            <>
-              <Loader2 size={16} className="animate-spin" />
-              {t("resume.preview.generating")}
-            </>
-          ) : (
-            <>
-              <FileDown size={16} />
-              {t("resume.preview.generatePdf")}
-            </>
-          )}
-        </Btn>
+        <div className="flex flex-wrap items-center gap-3">
+          <Btn variant="outline" size="sm" onClick={() => router.push("/cvs")}>
+            <Pencil size={14} />
+            {t("resume.preview.editCv")}
+          </Btn>
+
+          <Btn variant="outline" size="sm" onClick={() => window.print()}>
+            <Printer size={14} />
+            {t("resume.preview.print")}
+          </Btn>
+
+          <Btn onClick={() => void handleGeneratePdf()} disabled={downloading}>
+            {downloading ? (
+              <>
+                <Loader2 size={16} className="animate-spin" />
+                {t("resume.preview.generating")}
+              </>
+            ) : (
+              <>
+                <FileDown size={16} />
+                {t("resume.preview.generatePdf")}
+              </>
+            )}
+          </Btn>
+        </div>
       </div>
 
       {downloaded && !downloadError && (
-        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
+        <div className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 print:hidden dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">
           <span className="flex items-center gap-2">
             <CheckCircle2 size={15} />
             {t("resume.preview.success")}
@@ -540,16 +591,17 @@ export default function ResumePreviewPage() {
       )}
 
       {downloadError && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 print:hidden dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">
           {downloadError}
         </div>
       )}
 
-      {/* Resume sheet */}
-      <Card className="overflow-hidden shadow-xl dark:bg-gray-900">
+      {/* Resume sheet — renders as paper (like the generated PDF, which is
+          always light) on screen and prints as the document itself. */}
+      <div className="cv-sheet overflow-hidden rounded-xl border border-gray-200 bg-white shadow-xl print:rounded-none print:border-0 print:shadow-none">
         <div
           dir={isArCv ? "rtl" : "ltr"}
-          className={`px-6 py-10 sm:px-10 ${cvFamilyClass}`}
+          className={`px-6 py-10 sm:px-10 print:px-0 print:py-0 ${cvFamilyClass}`}
           style={{ textAlign: isArCv ? "right" : "left" }}
         >
           {/* Header */}
@@ -559,7 +611,7 @@ export default function ResumePreviewPage() {
             }
           >
             <h1
-              className={`text-2xl font-bold text-gray-900 sm:text-3xl dark:text-gray-100 ${
+              className={`text-2xl font-bold text-gray-900 sm:text-3xl ${
                 preset.preview.headingCase === "uppercase" && !isArCv
                   ? "uppercase tracking-[0.2em]"
                   : ""
@@ -582,7 +634,7 @@ export default function ResumePreviewPage() {
             )}
 
             {cv.contactItems.length > 0 && (
-              <p className="mt-3 text-xs text-[#555555] sm:text-sm dark:text-gray-400">
+              <p className="mt-3 text-xs text-[#555555] sm:text-sm">
                 {cv.contactItems.join("  •  ")}
               </p>
             )}
@@ -596,7 +648,7 @@ export default function ResumePreviewPage() {
                 {cv.links.map((link, index) => (
                   <span key={`${link.id}-${index}`}>
                     {index > 0 && (
-                      <span className="mr-3 text-[#999999] dark:text-gray-600">•</span>
+                      <span className="mr-3 text-[#999999]">•</span>
                     )}
                     <a
                       href={safeHref(link.url)}
@@ -626,11 +678,11 @@ export default function ResumePreviewPage() {
           </header>
 
           {!cv.hasContent ? (
-            <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+            <p className="py-12 text-center text-sm text-[#9ca3af]">
               {t("resume.preview.emptyResume")}
             </p>
           ) : (
-            <div className="mt-5 space-y-6 text-sm text-[#2a2a2a] dark:text-gray-200">
+            <div className="mt-5 space-y-6 text-sm text-[#2a2a2a]">
               {cv.summary && (
                 <section>
                   <SectionHeader
@@ -655,20 +707,20 @@ export default function ResumePreviewPage() {
 
                   <div className="space-y-5">
                     {cv.experiences.map((experience) => (
-                      <div key={experience.id}>
+                      <div key={experience.id} className="break-inside-avoid">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
+                          <p className="text-[15px] font-bold text-[#1a1a1a]">
                             {experience.jobTitle}
 
                             {experience.company && (
-                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
+                              <span className="font-normal text-[#4a4a4a]">
                                 {" "}
                                 - {experience.company}
                               </span>
                             )}
 
                             {experience.location && (
-                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
+                              <span className="font-normal text-[#4a4a4a]">
                                 {" "}
                                 | {experience.location}
                               </span>
@@ -676,12 +728,12 @@ export default function ResumePreviewPage() {
                           </p>
 
                           <div className="text-end">
-                            <p className="text-xs text-[#666666] dark:text-gray-400">
+                            <p className="text-xs text-[#666666]">
                               {experience.dateRange}
                             </p>
 
                             {experience.employmentType && (
-                              <p className="text-[11px] italic text-[#777777] dark:text-gray-500">
+                              <p className="text-[11px] italic text-[#777777]">
                                 {experience.employmentType}
                               </p>
                             )}
@@ -689,7 +741,7 @@ export default function ResumePreviewPage() {
                         </div>
 
                         {experience.bullets.length > 0 && (
-                          <ul className="mt-1.5 list-disc space-y-1 ps-5 leading-relaxed text-[#2a2a2a] dark:text-gray-300">
+                          <ul className="mt-1.5 list-disc space-y-1 ps-5 leading-relaxed">
                             {experience.bullets.map((bullet, index) => (
                               <li key={index}>{bullet}</li>
                             ))}
@@ -712,14 +764,14 @@ export default function ResumePreviewPage() {
 
                   <div className="space-y-5">
                     {cv.projects.map((project) => (
-                      <div key={project.id}>
+                      <div key={project.id} className="break-inside-avoid">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
+                          <p className="text-[15px] font-bold text-[#1a1a1a]">
                             {project.title}
 
                             {project.links.map((link, index) => (
                               <span key={link.type}>
-                                <span className="mx-2 text-[#666666] dark:text-gray-400">
+                                <span className="mx-2 text-[#666666]">
                                   {index === 0 ? "-" : "|"}
                                 </span>
 
@@ -727,7 +779,7 @@ export default function ResumePreviewPage() {
                                   href={safeHref(link.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-xs font-normal text-[#0066cc] underline dark:text-blue-400"
+                                  className="text-xs font-normal text-[#0066cc] underline"
                                 >
                                   {link.type}
                                 </a>
@@ -735,7 +787,7 @@ export default function ResumePreviewPage() {
                             ))}
                           </p>
 
-                          <p className="text-xs text-[#666666] dark:text-gray-400">
+                          <p className="text-xs text-[#666666]">
                             {project.dateRange}
                           </p>
                         </div>
@@ -747,7 +799,7 @@ export default function ResumePreviewPage() {
                         )}
 
                         {project.technologies.length > 0 && (
-                          <p className="mt-1 text-[#0066cc] dark:text-blue-400">
+                          <p className="mt-1 text-[#0066cc]">
                             {cvLabels.technologies(project.technologies.join(", "))}
                           </p>
                         )}
@@ -768,26 +820,26 @@ export default function ResumePreviewPage() {
 
                   <div className="space-y-4">
                     {cv.education.map((education) => (
-                      <div key={education.id}>
+                      <div key={education.id} className="break-inside-avoid">
                         <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                          <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
+                          <p className="text-[15px] font-bold text-[#1a1a1a]">
                             {education.degreeLine}
 
                             {education.university && (
-                              <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
+                              <span className="font-normal text-[#4a4a4a]">
                                 {" "}
                                 - {education.university}
                               </span>
                             )}
                           </p>
 
-                          <p className="text-xs text-[#666666] dark:text-gray-400">
+                          <p className="text-xs text-[#666666]">
                             {education.dateRange}
                           </p>
                         </div>
 
                         {education.grade && (
-                          <p className="mt-0.5 text-sm text-[#4a4a4a] dark:text-gray-300">
+                          <p className="mt-0.5 text-sm text-[#4a4a4a]">
                             {cvLabels.grade(education.grade)}
                           </p>
                         )}
@@ -816,13 +868,13 @@ export default function ResumePreviewPage() {
                     {cv.certificates.map((certificate) => (
                       <div
                         key={certificate.id}
-                        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1"
+                        className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 break-inside-avoid"
                       >
-                        <p className="text-[15px] font-bold text-[#1a1a1a] dark:text-gray-100">
+                        <p className="text-[15px] font-bold text-[#1a1a1a]">
                           {certificate.name}
 
                           {certificate.issuer && (
-                            <span className="font-normal text-[#4a4a4a] dark:text-gray-300">
+                            <span className="font-normal text-[#4a4a4a]">
                               {" "}
                               -{" "}
                               {certificate.url ? (
@@ -830,7 +882,7 @@ export default function ResumePreviewPage() {
                                   href={safeHref(certificate.url)}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="text-[#0066cc] underline dark:text-blue-400"
+                                  className="text-[#0066cc] underline"
                                 >
                                   {certificate.issuer}
                                 </a>
@@ -842,12 +894,12 @@ export default function ResumePreviewPage() {
                         </p>
 
                         <div className="text-end">
-                          <p className="text-xs text-[#666666] dark:text-gray-400">
+                          <p className="text-xs text-[#666666]">
                             {certificate.date}
                           </p>
 
                           {certificate.credentialId && (
-                            <p className="text-[11px] text-[#777777] dark:text-gray-500">
+                            <p className="text-[11px] text-[#777777]">
                               {cvLabels.credentialId(certificate.credentialId)}
                             </p>
                           )}
@@ -859,7 +911,7 @@ export default function ResumePreviewPage() {
               )}
 
               {cv.skills.length > 0 && (
-                <section>
+                <section className="break-inside-avoid">
                   <SectionHeader
                     label={cvSectionLabel("skills")}
                     accent={accent}
@@ -870,10 +922,38 @@ export default function ResumePreviewPage() {
                   <p className="leading-relaxed">{cv.skills.join("  •  ")}</p>
                 </section>
               )}
+
+              {cv.languages.length > 0 && (
+                <section className="break-inside-avoid">
+                  <SectionHeader
+                    label={cvSectionLabel("languages")}
+                    accent={accent}
+                    centered={preset.preview.headerStyle === "centered"}
+                    rule={preset.preview.headerStyle === "rule" || preset.preview.headerStyle === "plain"}
+                  />
+
+                  <p className="leading-relaxed">
+                    {cv.languages.map((language, index) => (
+                      <span key={language.id}>
+                        {index > 0 && "  •  "}
+                        <span className="font-medium text-[#1a1a1a]">
+                          {language.name}
+                        </span>
+                        {language.level && (
+                          <span className="text-[#666666]">
+                            {" "}
+                            ({language.level})
+                          </span>
+                        )}
+                      </span>
+                    ))}
+                  </p>
+                </section>
+              )}
             </div>
           )}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

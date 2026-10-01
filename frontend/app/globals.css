@@ -54,3 +54,15 @@ html[lang="ar"] .font-sans {
 [dir="rtl"] input[type="date"]::-webkit-calendar-picker-indicator {
   transform: scaleX(-1);
 }
+
+/* Printing the CV preview: the app chrome is hidden with print: utilities,
+   and the sheet prints as the document itself on a white page. */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body {
+    background: #ffffff !important;
+  }
+}
