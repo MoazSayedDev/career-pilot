@@ -48,6 +48,8 @@
     "skills": "Skills",
     "projects": "Projects",
     "certificates": "Certificates",
+    "cvs": "My CVs",
+    "aiCv": "AI CV",
     "resume": "Resume",
     "resumePreview": "Resume Preview",
     "logout": "Logout",
@@ -518,14 +520,19 @@
       "selectedTwo": "2 items selected",
       "selectedFew": "{count} items selected",
       "selectedMany": "{count} items selected",
-      "language": "CV language",
-      "languageHint": "Controls the output PDF document language (Arabic renders RTL)."
+      "optionsTitle": "Create a new CV",
+      "optionsHint": "Build it manually from your profile, or let AI tailor one to a job description.",
+      "manualOption": "Create manually",
+      "aiOption": "Create with AI"
     },
     "preview": {
       "title": "Resume Preview",
       "subtitle": "This is exactly how your resume will look in the generated PDF",
       "subtitleReview": "Review your resume before generating the PDF",
       "back": "Back to Resume",
+      "backCvs": "Back to CVs",
+      "editCv": "Edit CV",
+      "print": "Print",
       "generatePdf": "Generate PDF",
       "generating": "Generating PDF...",
       "success": "PDF generated — check your downloads folder.",
@@ -543,7 +550,8 @@
         "projects": "Projects",
         "education": "Education",
         "certificates": "Certificates",
-        "skills": "Skills"
+        "skills": "Skills",
+        "languages": "Languages"
       },
       "label": {
         "technologies": "Technologies: {list}",
@@ -553,6 +561,32 @@
         "liveDemo": "Live Demo"
       }
     }
+  },
+  "cvs": {
+    "title": "My CVs",
+    "subtitle": "All the CVs you have created, in one place",
+    "create": "Create CV",
+    "createWithAi": "Create with AI",
+    "loading": "Loading your CVs...",
+    "loadFailed": "Failed to load your CVs. Please try again.",
+    "empty": "No CVs yet",
+    "emptyHint": "Create your first CV manually, or let AI tailor one to a job description.",
+    "untitled": "Untitled CV",
+    "created": "Created",
+    "updated": "Last updated",
+    "view": "View {name}",
+    "edit": "Edit {name}",
+    "delete": "Delete {name}",
+    "deleteMessage": "\"{name}\" will be permanently deleted. This action cannot be undone.",
+    "deleteConfirm": "Yes, delete",
+    "renameTitle": "Rename CV",
+    "renameLabel": "CV name",
+    "renaming": "Saving...",
+    "renameSuccess": "CV renamed successfully.",
+    "deleteSuccess": "CV deleted successfully.",
+    "actionFailed": "The action failed. Please try again.",
+    "langEN": "English",
+    "langAR": "Arabic"
   },
   "employmentType": {
     "FULL_TIME": "Full Time",
