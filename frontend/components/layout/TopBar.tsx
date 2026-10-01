@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu, Wand2 } from "lucide-react";
 
 import { usePathname, useRouter } from "next/navigation";
 
@@ -19,6 +19,8 @@ const BREADCRUMB_KEYS: Record<string, string> = {
   "/profile/projects": "nav.projects",
   "/profile/skill": "nav.skills",
 
+  "/cvs": "nav.cvs",
+
   "/resume": "nav.resume",
   "/resume/preview": "nav.resumePreview",
 };
@@ -35,7 +37,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
     : t("nav.dashboard");
 
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20 dark:bg-gray-900 dark:border-gray-800">
+    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20 print:hidden dark:bg-gray-900 dark:border-gray-800">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-gray-500 min-w-0 dark:text-gray-400">
         <button
@@ -70,6 +72,18 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
 
       {/* User */}
       <div className="flex items-center gap-2">
+        {/* Persistent entry point for AI CV generation. */}
+        <button
+          type="button"
+          onClick={() => router.push("/resume/by-job-description")}
+          title={t("nav.aiCv")}
+          aria-label={t("nav.aiCv")}
+          className="flex h-8 items-center gap-1.5 rounded-lg bg-blue-700 px-2.5 text-xs font-medium text-white transition-colors hover:bg-blue-800 md:px-3 dark:hover:bg-blue-600"
+        >
+          <Wand2 size={14} className="flex-shrink-0" />
+          <span className="hidden md:inline">{t("nav.aiCv")}</span>
+        </button>
+
         <LanguageSwitcher />
 
         <ThemeToggle />

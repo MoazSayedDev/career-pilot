@@ -11,6 +11,7 @@ import {
   Award,
   Check,
   Eye,
+  Files,
   Layers,
   Target,
   Loader2,
@@ -196,6 +197,11 @@ export default function DashboardPage() {
         </div>
 
         <div className="hidden md:flex items-center gap-3">
+          <Btn size="sm" variant="outline" onClick={() => router.push("/cvs")}>
+            <Files size={14} />
+            {t("nav.cvs")}
+          </Btn>
+
           <Btn size="sm" variant="outline" onClick={() => router.push("/resume/preview")}>
             <Eye size={14} />
             {t("dashboard.previewCv")}

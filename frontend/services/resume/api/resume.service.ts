@@ -5,6 +5,7 @@ import {
   CreateResumeResponse,
   Resume,
   ResumeDetails,
+  UpdateResumeDto,
 } from "../types/resume";
 
 const BASE_URL = "/resume";
@@ -30,6 +31,19 @@ export const createResumeByJobDescription = async (
   const response = await axios.post(`${BASE_URL}/by-job-description`, data, {
     timeout: AI_TIMEOUT_MS,
   });
+  return response.data.data;
+};
+
+export const updateResume = async (
+  resumeId: string,
+  data: UpdateResumeDto,
+): Promise<ResumeDetails> => {
+  const response = await axios.patch(`${BASE_URL}/${resumeId}`, data);
+  return response.data.data;
+};
+
+export const deleteResume = async (resumeId: string): Promise<Resume> => {
+  const response = await axios.delete(`${BASE_URL}/${resumeId}`);
   return response.data.data;
 };
 

@@ -9,9 +9,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="flex h-screen bg-[#f8fafc] font-sans dark:bg-gray-950">
+    <div className="flex h-screen bg-[#f8fafc] font-sans print:h-auto print:overflow-visible dark:bg-gray-950">
       {/* Desktop sidebar */}
-      <div className="hidden md:flex flex-shrink-0">
+      <div className="hidden md:flex flex-shrink-0 print:hidden">
         <Sidebar />
       </div>
 
@@ -29,9 +29,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden print:overflow-visible">
         <TopBar onMenuClick={() => setMobileNavOpen(true)} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto p-6 print:overflow-visible print:p-0">{children}</main>
       </div>
     </div>
   );

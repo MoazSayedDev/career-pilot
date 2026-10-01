@@ -14,8 +14,10 @@ import {
   GraduationCap,
   Languages,
   Loader2,
+  Pencil,
   Plus,
   Sparkles,
+  Wand2,
 } from "lucide-react";
 
 import { Card } from "@/components/ui/Card";
@@ -49,7 +51,6 @@ export default function StartBuildingPage() {
   // The builder always submits the default template while the gallery
   // is hidden; `setTemplate` returns with the gallery UI.
   const [template] = useState("MODERN");
-  const [cvLanguage, setCvLanguage] = useState<"EN" | "AR">("EN");
 
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [selectedExperiences, setSelectedExperiences] = useState<string[]>([]);
@@ -169,7 +170,6 @@ export default function StartBuildingPage() {
       const payload: CreateResumeDto = {
         title: title.trim(),
         template,
-        language: cvLanguage,
 
         skillIds: selectedSkills,
         experienceIds: selectedExperiences,
@@ -240,8 +240,43 @@ export default function StartBuildingPage() {
           </div>
         )}
 
-        {/* Resume Details */}
+        {/* Create options: the manual builder (this page) or AI generation. */}
         <Card className="mb-5 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold text-gray-900 dark:text-gray-100">
+                {t("resume.build.optionsTitle")}
+              </h2>
+
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t("resume.build.optionsHint")}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Btn
+                variant="outline"
+                onClick={() =>
+                  document
+                    .getElementById("resume-details")
+                    ?.scrollIntoView({ behavior: "smooth", block: "start" })
+                }
+              >
+                <Pencil size={16} />
+                {t("resume.build.manualOption")}
+              </Btn>
+
+              <Btn onClick={() => router.push("/resume/by-job-description")}>
+                <Wand2 size={16} />
+                {t("resume.build.aiOption")}
+              </Btn>
+            </div>
+          </div>
+        </Card>
+
+        {/* Resume Details */}
+        <div id="resume-details" className="mb-5 scroll-mt-20">
+          <Card className="p-5">
           <div className="mb-5">
             <h2 className="font-semibold text-gray-900 dark:text-gray-100">
               {t("resume.build.details")}
@@ -252,7 +287,7 @@ export default function StartBuildingPage() {
             </p>
           </div>
 
-          <div className="grid gap-5 sm:grid-cols-2">
+          <div>
             {/* Resume Title */}
             <div>
               <label
@@ -281,36 +316,9 @@ export default function StartBuildingPage() {
             {/* Template gallery hidden (product decision): the builder
                 always uses the default template. The `template` state and
                 payload field stay intact so nothing else needs to change. */}
-
-            {/* CV language */}
-            <div>
-              <span className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t("resume.build.language")}
-              </span>
-
-              <div className="flex gap-3">
-                {(["EN", "AR"] as const).map((lang) => (
-                  <button
-                    key={lang}
-                    type="button"
-                    onClick={() => setCvLanguage(lang)}
-                    aria-pressed={cvLanguage === lang}
-                    className={`rounded-xl border px-5 py-2.5 text-sm font-semibold transition-all ${
-                      cvLanguage === lang
-                        ? "border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-500/30 dark:border-blue-500 dark:bg-blue-950/40 dark:text-blue-200"
-                        : "border-gray-200 bg-white text-gray-700 hover:border-blue-300 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-blue-700"
-                    }`}
-                  >
-                    {lang === "EN" ? "English" : "العربية"}
-                  </button>
-                ))}
-              </div>
-              <p className="mt-1.5 text-xs text-gray-400 dark:text-gray-500">
-                {t("resume.build.languageHint")}
-              </p>
-            </div>
           </div>
         </Card>
+        </div>
 
         {/* Skills */}
         <SelectionSection
