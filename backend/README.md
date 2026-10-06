@@ -148,7 +148,7 @@ The effective Gemini key is resolved in this order:
 1. The user's personal encrypted Gemini key
 2. The optional server-level `GEMINI_API_KEY` fallback
 
-The configured model defaults to `gemini-2.5-flash`. Requests retry transient
+The configured model defaults to `gemini-3.6-flash`. Requests retry transient
 Gemini failures with exponential backoff for statuses 429, 500, 502, 503, and
 504. `POST /ai/optimize-resume` sends the user's profile and a job description
 to Gemini and parses the returned resume-selection data.
@@ -340,6 +340,8 @@ Swagger/OpenAPI configuration.
 | `NODE_ENV` | Runtime environment | No |
 | `APP_URL` | Application URL | No |
 | `CORS_ORIGIN` | Comma-separated allowed frontend origins | No |
+| `COOKIE_SECURE` | Set to `true` when the backend is served over HTTPS | No |
+| `COOKIE_CROSS_SITE` | Legacy compatibility setting; the current backend always uses `SameSite=None` for refresh cookies, so this variable is not read | No |
 | `GEMINI_API_KEY` | Optional server-level Gemini fallback | No |
 | `GEMINI_MODEL` | Gemini model; defaults to `gemini-3.6-flash` | No |
 | `GEMINI_ENCRYPTION_KEY` | Key material for encrypting user Gemini keys | Yes |
@@ -504,6 +506,10 @@ The production setup provides:
 * Backend access internally on port `8000`
 * Public HTTP access through Nginx on port `80`
 
+For HTTPS, Certbot provisions certificates under `certbot/conf`, which is
+mounted into Nginx. Nginx redirects port `80` to `443` and terminates TLS
+before proxying requests to the internal backend on port `8000`.
+
 The backend is not directly published to the host in production; it is exposed
 internally to Nginx.
 
@@ -582,4 +588,3 @@ backend -> internal port 8000
 This repository contains the CareerPilot backend, including authentication,
 profile and career-data APIs, resume management, Gemini integration, PDF
 generation, Redis support, and PostgreSQL persistence.
-

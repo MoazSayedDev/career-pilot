@@ -6,6 +6,11 @@ Users can maintain a structured career profile, select the experience and qualif
 
 Authentication, career profile data, resume content, and usage records are persisted through the backend API.
 
+## Live Demo
+
+[Open the live demo](https://free-career-pilot.duckdns.org). The demo server has
+limited resources, so response times and availability may vary.
+
 ## Features
 
 ### Authentication and Account Management
@@ -159,7 +164,18 @@ flowchart LR
     API --> SMTP[SMTP Service]
 ```
 
-The frontend is deployed and served separately from the backend production stack.
+The frontend is deployed and served separately from the backend production
+stack as a Next.js application (built with `npm run build` and served with
+`npm run start`). The repository does not require a specific frontend hosting
+provider; the live demo uses `https://free-career-pilot.duckdns.org`.
+
+### HTTPS and production domains
+
+The backend Nginx configuration redirects HTTP port `80` to HTTPS port `443`
+and terminates TLS using certificates provisioned by Certbot and mounted from
+`backend/certbot/conf`. It then proxies API requests to the internal NestJS
+service on port `8000`; the production Compose file publishes both `80` and
+`443`.
 
 ## Project Structure
 
@@ -361,6 +377,11 @@ npm run test:e2e
 
 * [Backend Documentation](backend/README.md)
 * [Frontend Documentation](frontend/README.md)
+
+## Contributors and Acknowledgments
+
+Thanks to [Abdallah Bakr](https://github.com/Abdallah-m-Bakr) for building
+the frontend and helping bring CareerPilot to life.
 
 ## Engineering Scope
 

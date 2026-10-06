@@ -16,12 +16,12 @@ Copy `.env.example` to `.env` and fill in the values:
 | --- | --- | --- | --- |
 | `NEXT_PUBLIC_API_URL` | yes | `lib/axios.ts`, `lib/google-auth.ts` | Base URL of the backend API (e.g. `https://api.example.com`). **Public value** — Next.js inlines it into client JS; never put secrets in it. |
 
-The frontend calls the backend **directly from the browser**. Because the
-login refresh cookie is set by the backend origin, the backend must be
-configured for the cross-site architecture (exact-origin CORS allowlist +
-`COOKIE_CROSS_SITE=true` for a `SameSite=None; Secure` cookie) — see
-`backend/.env.example`. Both frontend and backend must be served over
-HTTPS in production for this to work.
+The frontend calls the backend **directly from the browser**. Configure the
+backend with an exact-origin `CORS_ORIGIN` allowlist and
+`COOKIE_SECURE=true` in production. The current backend always sets the
+refresh cookie to `SameSite=None`; `COOKIE_CROSS_SITE` is retained only as a
+legacy compatibility name and is not read by the application. Both frontend
+and backend must be served over HTTPS in production.
 
 ## Commands
 
