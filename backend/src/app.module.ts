@@ -40,6 +40,7 @@ import { AiService } from './ai/ai.service';
 import { UsageModule } from './usage/usage.module';
 import { GeminiModule } from './gemini/gemini.module';
 import { RedisModule } from './cache/redis/redis.module';
+import { AdminAnalyticsModule } from './admin/admin-analytics.module';
 
 @Module({
   imports: [
@@ -75,6 +76,7 @@ import { RedisModule } from './cache/redis/redis.module';
     TokenModule,
     OtpModule,
     EmailModule,
+    AdminAnalyticsModule,
 
     // Feature modules
     ProfileModule,
