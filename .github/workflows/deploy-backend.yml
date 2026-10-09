@@ -20,7 +20,8 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    environment: career-pilot
+    
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
