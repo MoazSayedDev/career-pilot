@@ -177,6 +177,29 @@ and terminates TLS using certificates provisioned by Certbot and mounted from
 service on port `8000`; the production Compose file publishes both `80` and
 `443`.
 
+## CI/CD Deployment
+
+CareerPilot uses GitHub Actions to automate backend continuous integration and
+deployment. The workflow is defined in
+[`deploy-backend.yml`](.github/workflows/deploy-backend.yml).
+
+When changes to the `backend/` directory are pushed to the `main` branch, the
+workflow:
+
+1. Checks out the repository and configures Docker Buildx.
+2. Builds the production backend Docker image.
+3. Pushes the image to Docker Hub.
+4. Connects to the production server over SSH.
+5. Pulls the new image and restarts only the backend service with Docker
+   Compose.
+
+The workflow can also be started manually from the GitHub Actions interface
+using `workflow_dispatch`. Deployment credentials and connection details are
+stored as GitHub Actions secrets, including the Docker Hub credentials, server
+host and user, SSH private key, and SSH known hosts. The server's PostgreSQL,
+Redis, and Nginx services remain managed by the production Docker Compose
+stack.
+
 ## Project Structure
 
 ```text
