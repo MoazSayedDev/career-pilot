@@ -1,2 +1,2 @@
-export const CV_MONTHLY_LIMIT = 3;
+export const CV_MONTHLY_LIMIT = 4;
 export const JOB_DESCRIPTION_MONTHLY_LIMIT = 3;
