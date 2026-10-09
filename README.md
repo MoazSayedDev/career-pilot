@@ -200,14 +200,44 @@ host and user, SSH private key, and SSH known hosts. The server's PostgreSQL,
 Redis, and Nginx services remain managed by the production Docker Compose
 stack.
 
+### Deployment workflow
+
+```mermaid
+flowchart LR
+    Push[Push backend changes to main] --> Actions[GitHub Actions]
+    Manual[Manual workflow dispatch] --> Actions
+
+    Actions --> Checkout[Checkout repository]
+    Checkout --> Build[Build backend Docker image]
+    Build --> Registry[Push image to Docker Hub]
+    Registry --> SSH[Connect to production server over SSH]
+    SSH --> Pull[Pull the new backend image]
+    Pull --> Restart[Restart backend with Docker Compose]
+    Restart --> Live[Updated backend service]
+```
+
+Only backend changes and changes to the deployment workflow trigger automatic
+deployment. The workflow uses a concurrency group so deployments run in order
+and an in-progress deployment is not cancelled by a newer push.
+
 ## Project Structure
 
 ```text
 career-pilot/
 │
+├── .github/
+│   └── workflows/
+│       └── deploy-backend.yml  # Build, publish, and deploy the backend
+│
 ├── backend/
 │   ├── prisma/              # Prisma schema and migrations
+│   │   └── migrations/       # Database migration history
+│   ├── docs/                 # Backend documentation and images
+│   ├── nginx/                # Production reverse-proxy configuration
 │   ├── src/                 # NestJS modules, controllers, and services
+│   ├── test/                 # End-to-end tests
+│   ├── Dockerfile            # Backend production image
+│   ├── docker-compose.yml    # Base Compose services
 │   ├── compose.dev.yml      # Backend development Compose overlay
 │   ├── compose.prod.yml     # Backend production Compose overlay
 │   └── README.md            # Backend setup and API documentation
@@ -215,7 +245,10 @@ career-pilot/
 ├── frontend/
 │   ├── app/                 # Next.js routes and application pages
 │   ├── components/          # Shared UI components
+│   ├── lib/                 # API clients, authentication, and shared logic
+│   ├── public/              # Static frontend assets
 │   ├── services/            # API clients and validation schemas
+│   ├── utils/               # Shared frontend utilities
 │   ├── views/               # Screen-level view components
 │   └── README.md            # Frontend setup and architecture notes
 │
