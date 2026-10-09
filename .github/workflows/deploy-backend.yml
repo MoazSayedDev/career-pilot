@@ -21,7 +21,7 @@ jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     environment: career-pilot
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -66,4 +66,4 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "$SERVER_USER@$SERVER_HOST" \
-            'cd /path/to/project && docker compose pull backend && docker compose up -d --no-deps backend'
+            'cd /career-pilot/backend && docker compose pull backend && docker compose up -d --no-deps backend'
