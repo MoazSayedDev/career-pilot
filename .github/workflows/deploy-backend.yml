@@ -66,4 +66,4 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "$SERVER_USER@$SERVER_HOST" \
-            'cd /career-pilot/backend && docker compose pull backend && docker compose up -d --no-deps backend'
+            'cd /home/ubuntu/career-pilot/backend && docker compose pull backend && docker compose up -d --no-deps backend'
