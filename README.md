@@ -420,7 +420,6 @@ CareerPilot applies several security measures across authentication, API request
 * Usage records enforce monthly generation limits when users rely on the server-level Gemini API key.
 * The backend is containerized with health-checked PostgreSQL and Redis services.
 * The production Compose configuration places Nginx in front of the backend API.
-* Arabic resume generation handles right-to-left text, reshaping, and bidirectional text before PDF generation.
 
 ```bash
 cd backend
@@ -453,7 +452,6 @@ CareerPilot was built to demonstrate practical backend and full-stack engineerin
 * Secure storage of user-provided API credentials
 * Retry and failure-handling strategies
 * PDF generation
-* Arabic text processing
 * REST API design
 * Request validation and security
 * Dockerized development and production deployment
